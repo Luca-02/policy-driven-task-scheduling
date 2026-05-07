@@ -1,0 +1,40 @@
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+name: thesis
+nodes:
+  - role: control-plane
+
+  - role: worker
+    labels:
+      attribute/cert: certA
+      attribute/isolation: strict
+      attribute/gpu: a100
+      attribute/cpu: "16"
+
+  - role: worker
+    labels:
+      attribute/cert: certB
+      attribute/isolation: standard
+      attribute/gpu: t4
+      attribute/cpu: "8"
+
+  - role: worker
+    labels:
+      attribute/cert: certC
+      attribute/isolation: standard
+      attribute/gpu: none
+      attribute/cpu: "4"
+
+  - role: worker
+    labels:
+      attribute/cert: certC
+      attribute/isolation: strict
+      attribute/gpu: a100
+      attribute/cpu: "24"
+
+  - role: worker
+    labels:
+      attribute/cert: certA
+      attribute/isolation: strict
+      attribute/gpu: none
+      attribute/cpu: "4"
