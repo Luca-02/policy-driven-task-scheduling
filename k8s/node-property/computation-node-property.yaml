@@ -1,0 +1,34 @@
+apiVersion: thesis.io/v1alpha1
+kind: NodePropertyDefinition
+metadata:
+  name: computation
+spec:
+  levels:
+    # Level 1: cpu >= 4
+    - level: 1
+      disjunction:
+        - clause:
+            - key: cpu
+              operator: Gte
+              values: [4]
+    # Level 2: (gpu = t4) OR (cpu >= 8)
+    - level: 2
+      disjunction:
+        - clause:
+            - key: gpu
+              operator: Eq
+              values: ["t4"]
+        - clause:
+            - key: cpu
+              operator: Gte
+              values: [8]
+    # Level 3: (gpu in {a100, h100}) AND (cpu >= 16)
+    - level: 3
+      disjunction:
+        - clause:
+            - key: gpu
+              operator: In
+              values: ["a100", "h100"]
+            - key: cpu
+              operator: Gte
+              values: [16]

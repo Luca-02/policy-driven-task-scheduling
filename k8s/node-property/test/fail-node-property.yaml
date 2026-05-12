@@ -1,0 +1,22 @@
+apiVersion: thesis.io/v1alpha1
+kind: NodePropertyDefinition
+metadata:
+  name: fail
+spec:
+  levels:
+    - level: 1
+      disjunction:
+        - clause:
+            - key: cert
+              operator: Eq
+              values: ["certC"]
+    - level: 1
+      disjunction:
+        - clause:
+            - key: cert
+              operator: Eq
+              values: ["certB"]
+        - clause:
+            - key: isolation
+              operator: Eq
+              values: ["strict"]

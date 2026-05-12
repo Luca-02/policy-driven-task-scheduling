@@ -1,0 +1,34 @@
+apiVersion: thesis.io/v1alpha1
+kind: NodePropertyDefinition
+metadata:
+  name: security
+spec:
+  levels:
+    # Level 1: cert = certC
+    - level: 1
+      disjunction:
+        - clause:
+            - key: cert
+              operator: Eq
+              values: ["certC"]
+    # Level 2: (cert = certB) OR (isolation = strict)
+    - level: 2
+      disjunction:
+        - clause:
+            - key: cert
+              operator: Eq
+              values: ["certB"]
+        - clause:
+            - key: isolation
+              operator: Eq
+              values: ["strict"]
+    # Level 3: (cert in {certA, certB}) AND (isolation = strict)
+    - level: 3
+      disjunction:
+        - clause:
+            - key: cert
+              operator: In
+              values: ["certA", "certB"]
+            - key: isolation
+              operator: Eq
+              values: ["strict"]
