@@ -1,0 +1,12 @@
+apiVersion: thesis.io/v1alpha1
+kind: NodePropertyDefinition
+metadata:
+  name: test-fail-exists-value
+spec:
+  levels:
+    - level: 1
+      disjunction:
+        - clause:
+            - key: some-key
+              operator: Exists
+              values: ["value"]

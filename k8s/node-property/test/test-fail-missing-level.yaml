@@ -1,0 +1,11 @@
+apiVersion: thesis.io/v1alpha1
+kind: NodePropertyDefinition
+metadata:
+  name: test-fail-missing-level
+spec:
+  levels:
+    - disjunction:
+        - clause:
+            - key: some-key
+              operator: Eq
+              values: ["value"]

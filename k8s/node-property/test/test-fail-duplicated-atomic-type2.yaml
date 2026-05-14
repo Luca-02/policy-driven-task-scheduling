@@ -1,0 +1,15 @@
+apiVersion: thesis.io/v1alpha1
+kind: NodePropertyDefinition
+metadata:
+  name: test-fail-duplicated-atomic-type2
+spec:
+  levels:
+    - level: 1
+      disjunction:
+        - clause:
+            - key: some-key1
+              operator: In
+              values: ["val1", "val2"]
+            - key: some-key1
+              operator: In
+              values: ["val1", "val2"]
