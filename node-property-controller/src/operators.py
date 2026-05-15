@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class Operator(ABC):
     """Base class for all operators. Each subclass encapsulates its own logic."""
 
@@ -23,7 +24,7 @@ class Operator(ABC):
 
 class NumericOperator(Operator):
     """Base for operators that require integer comparison."""
- 
+
     def _parse(self, node_values, values):
         try:
             return int(node_values), int(values[0])
@@ -36,82 +37,81 @@ class NumericOperator(Operator):
 
 class ExistsOperator(Operator):
     name = "Exists"
- 
+
     def evaluate(self, node_values, _):
         return node_values is not None
 
 
 class NotExistsOperator(Operator):
     name = "NotExists"
- 
+
     def evaluate(self, node_values, _):
         return node_values is None
 
 
 class EqOperator(Operator):
     name = "Eq"
- 
+
     def evaluate(self, node_values, values):
         return node_values is not None and node_values == values[0]
- 
- 
+
+
 class NotEqOperator(Operator):
     name = "NotEq"
- 
+
     def evaluate(self, node_values, values):
         return node_values is not None and node_values != values[0]
- 
- 
+
+
 class InOperator(Operator):
     name = "In"
- 
+
     def evaluate(self, node_values, values):
         return node_values is not None and node_values in values
- 
- 
+
+
 class NotInOperator(Operator):
     name = "NotIn"
- 
+
     def evaluate(self, node_values, values):
         return node_values is not None and node_values not in values
- 
- 
+
+
 class GtOperator(NumericOperator):
     name = "Gt"
- 
+
     def evaluate(self, node_values, values):
         if node_values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int > cmp_int
- 
- 
+
+
 class LtOperator(NumericOperator):
     name = "Lt"
- 
+
     def evaluate(self, node_values, values):
         if node_values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int < cmp_int
- 
- 
+
+
 class GteOperator(NumericOperator):
     name = "Gte"
- 
+
     def evaluate(self, node_values, values):
         if node_values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int >= cmp_int
- 
- 
+
+
 class LteOperator(NumericOperator):
     name = "Lte"
- 
+
     def evaluate(self, node_values, values):
         if node_values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int <= cmp_int
- 

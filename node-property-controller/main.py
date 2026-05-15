@@ -1,60 +1,91 @@
-import logging
+import os
+
 import kopf
-
+from dotenv import load_dotenv
 from kubernetes import client, config
+from src.controller import Controller
 
-GROUP = "thesis.io"
-VERSION = "v1alpha1"
-PLURAL = "node-property-definitions"
+load_dotenv()
+
+GROUP = os.getenv("GROUP", "example.com")
+VERSION = os.getenv("VERSION", "v1alpha1")
+PLURAL = os.getenv("PLURAL", "node-property-definitions")
 
 # Kubernetes API client
-v1 = None
+ctrl = None
 
-
-def print_cluster_nodes(logger):
-    if v1 is None:
-        logger.error("Kubernetes API client not initialized")
-        return
-
-    try:
-        nodes = v1.list_node()
-
-        logger.info(f"📦 Cluster nodes: {len(nodes.items)}")
-        for node in nodes.items:
-            logger.debug(f"{node.metadata.name}: {node.metadata.labels}")
-    except Exception as e:
-        logger.error(f"Error reading nodes: {e}")
-
-# TODO: add controller also on node insertion or update or delete ecc
 
 @kopf.on.startup()
 def startup(logger, **kwargs):
+    """Initialize Kubernetes client and controller instance"""
+    global ctrl
+    
     try:
         config.load_incluster_config()
-        logging.info("Loaded in-cluster kubeconfig")
+        logger.info("Loaded in-cluster kubeconfig")
     except config.ConfigException:
         config.load_kube_config()
-        logging.info("Loaded local kubeconfig")
+        logger.info("Loaded local kubeconfig")
 
-    global v1
-    v1 = client.CoreV1Api()
-    logger.info("🚀 NodePropertyDefinition controller started")
-    print_cluster_nodes(logger)
+    ctrl = Controller(v1=client.CoreV1Api())
+    logger.info("🚀 NodePropertyDefinition Controller started!")
 
 
+# --------------------------------------------------
+# NodePropertyDefinition handlers
+# --------------------------------------------------
+
+@kopf.on.resume(GROUP, VERSION, PLURAL)
 @kopf.on.create(GROUP, VERSION, PLURAL)
-def on_create(name, spec, logger, **kwargs):
-    logger.info(f"🟢 NEW CRD: {name}")
-    logger.debug(f"spec: {spec}")
-
-
 @kopf.on.update(GROUP, VERSION, PLURAL)
-def on_update(name, spec, diff, logger, **kwargs):
-    logger.info(f"🟡 UPDATED CRD: {name}")
-    logger.debug(f"diff: {diff}")
-    logger.debug(f"spec: {spec}")
+def on_property_created_or_updated(body, reason, logger, **kwargs):
+    name = body["metadata"]["name"]
+    spec = body.get("spec", {})
+    if reason == "resume":
+        logger.info(f"🔵 NodePropertyDefinition {name!r} resumed with spec: {spec}")
+    elif reason == "create":
+        logger.info(f"🟢 NodePropertyDefinition {name!r} created with spec: {spec}")
+    elif reason == "update":
+        logger.info(f"🟡 NodePropertyDefinition {name!r} updated with spec: {spec}")
+
+    if ctrl is not None:
+        ctrl.on_property_created_or_updated(name, spec, logger)
+
 
 @kopf.on.delete(GROUP, VERSION, PLURAL)
-def on_delete(name, spec, logger, **kwargs):
-    logger.info(f"🔴 DELETED CRD: {name}")
-    logger.debug(f"spec: {spec}")
+def on_property_deleted(body, logger, **kwargs):
+    name = body["metadata"]["name"]
+    logger.info(f"🔴 NodePropertyDefinition {name!r} deleted")
+
+    if ctrl is not None:
+        ctrl.on_property_deleted(name, logger)
+
+
+# ------------------------------------------------------------------
+# Node handlers
+# ------------------------------------------------------------------
+
+@kopf.on.resume("", "v1", "nodes")
+@kopf.on.create("", "v1", "nodes")
+@kopf.on.update("", "v1", "nodes")
+def on_node_created_or_updated(body, reason, logger, **kwargs):
+    name = body["metadata"]["name"]
+    labels = body["metadata"].get("labels") or {}
+    if reason == "resume":
+        logger.info(f"🔵 Node {name!r} resumed with labels: {labels}")
+    elif reason == "create":
+        logger.info(f"🟢 Node {name!r} created with labels: {labels}")
+    elif reason == "update":
+        logger.info(f"🟡 Node {name!r} updated with labels: {labels}")
+
+    if ctrl is not None:
+        ctrl.on_node_created_or_updated(name, labels, logger)
+
+
+@kopf.on.delete("", "v1", "nodes")
+def on_node_deleted(body, logger, **kwargs):
+    name = body["metadata"]["name"]
+    logger.info(f"🔴 Node {name!r} deleted")
+    
+    if ctrl is not None:
+        ctrl.on_node_deleted(name, logger)

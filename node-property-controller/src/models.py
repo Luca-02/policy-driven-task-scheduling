@@ -14,15 +14,17 @@ _OPERATORS: dict[str, operators.Operator] = {
 class Condition:
     """
     A single expression: key operator values.
+    At the initialization, the operator string is converted to an Operator 
+    instance, it can raise ValueError if the operator is unknown.
     """
- 
+
     def __init__(self, key: str, operator: str, values: list[str] | None = None):
         if operator not in _OPERATORS:
             raise ValueError(f"Unknown operator: {operator!r}")
         self.key = key
         self.operator = _OPERATORS[operator]
         self.values = values or []
- 
+
     def evaluate(self, attributes: dict[str, str]) -> bool:
         """
         Evaluate the condition against the given attributes.
@@ -32,6 +34,9 @@ class Condition:
 
         Returns:
             bool: True if the condition is satisfied, False otherwise.
+
+        Raises:
+            ValueError: If the operator requires numeric values but they are not numeric.
         """
         node_value = attributes.get(self.key)
         return self.operator.evaluate(node_value, self.values)
@@ -112,18 +117,34 @@ class Node:
     The property levels are evaluated against these attributes.
     """
 
-    def __init__(self, name: str, attributes: dict[str, str]):
-        self.name: str = name
-        self.attributes: dict[str, str] = attributes
+    def __init__(
+            self,
+            name: str,
+            attributes: dict[str, str] | None = None,
+            properties: dict[str, int] | None = None):
+        self.name = name
+        self.attributes = attributes or {}
+        self.properties = properties or {}
 
-    def evaluate_property(self, prop: Property) -> int:
+    def delete_property(self, property_name: str):
+        """
+        Remove a property from the node's properties.
+
+        Args:
+            property_name (str): The name of the property to remove.
+        """
+        self.properties.pop(property_name, None)
+
+    def evaluate_property(self, property: Property) -> int:
         """
         Evaluate the given property against the node's attributes.
 
         Args:
-            prop (Property): The property to evaluate.
+            property (Property): The property to evaluate.
 
         Returns:
             int: The highest satisfied level of the property.
         """
-        return prop.max_level(self.attributes)
+        level = property.max_level(self.attributes)
+        self.properties[property.name] = level
+        return level

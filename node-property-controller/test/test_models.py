@@ -2,6 +2,10 @@ import unittest
 
 from src.models import Clause, Condition, Level, Node, Property
 
+# --------------------------------------------------
+# Thesis example testing
+# --------------------------------------------------
+
 THESIS_SECURITY = Property(name="security", levels=[
     Level(level=1, clauses=[
         Clause([Condition("cert", "Eq", ["certC"])]),
@@ -60,6 +64,10 @@ class TestThesisExample(unittest.TestCase):
     def test_n4(self): self._check("n4", 2, 3)
     def test_n5(self): self._check("n5", 3, 1)
 
+
+# --------------------------------------------------
+# Models testing
+# --------------------------------------------------
 
 class TestCondition(unittest.TestCase): 
     def test_eq(self):
