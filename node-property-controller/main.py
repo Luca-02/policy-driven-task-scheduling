@@ -1,11 +1,11 @@
 import kopf
 from kubernetes import client, config
 
-from src.controller import Controller
 from src.config import Config
+from src.controller import Controller
 
-cfg = Config.from_env()
-ctrl = None
+cfg: Config = Config.from_env()
+ctrl: Controller | None = None
 
 
 @kopf.on.startup()
@@ -21,9 +21,11 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     # settings.persistence.finalizer = f"{cfg.group}/finalizer"
 
     # standard server-side progress storage in annotations
-    settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(prefix=cfg.group)
+    settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(
+        prefix=cfg.group
+    )
 
-    # set a high priority for peering to ensure our handlers run before other controllers 
+    # set a high priority for peering to ensure our handlers run before other controllers
     # that might react to the same events
     settings.peering.priority = 100
 
@@ -35,6 +37,7 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 # --------------------------------------------------
 # NodePropertyDefinition handlers
 # --------------------------------------------------
+
 
 @kopf.on.resume(cfg.group, cfg.version, cfg.plural)
 @kopf.on.create(cfg.group, cfg.version, cfg.plural)
@@ -66,6 +69,7 @@ def on_property_deleted(body, logger, **kwargs):
 # Node handlers
 # ------------------------------------------------------------------
 
+
 @kopf.on.resume("", "v1", "nodes")
 @kopf.on.create("", "v1", "nodes")
 @kopf.on.update("", "v1", "nodes")
@@ -87,6 +91,6 @@ def on_node_created_or_updated(body, reason, logger, **kwargs):
 def on_node_deleted(body, logger, **kwargs):
     name = body["metadata"]["name"]
     logger.info(f"🔴 Node {name!r} deleted")
-    
+
     if ctrl is not None:
         ctrl.on_node_deleted(name, logger)

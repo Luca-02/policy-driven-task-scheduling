@@ -25,15 +25,15 @@ Whenever either changes, the affected nodes are re-evaluated and their property 
 
 All configurable via environment variables (with defaults):
 
-| Variable             | Default                       | Description                          |
-|----------------------|-------------------------------|--------------------------------------|
-| `GROUP`              | `thesis.io`                   | CRD API group                        |
-| `VERSION`            | `v1alpha1`                    | CRD API version                      |
-| `PLURAL`             | `node-property-definitions`   | CRD plural name                      |
-| `ATTRIBUTE_PREFIX`   | `attribute.node.thesis.io`    | Prefix for input attribute labels    |
-| `PROPERTY_PREFIX`    | `property.node.thesis.io`     | Prefix for output property labels    |
-| `LOG_LEVEL`          | `INFO`                        | One of DEBUG, INFO, WARNING, ERROR   |
-| `LIVENESS_ENDPOINT`  | `http://0.0.0.0:9090/healthz` | Liveness endpoint URL                |
+| Variable            | Default                       | Description                        |
+| ------------------- | ----------------------------- | ---------------------------------- |
+| `GROUP`             | `thesis.io`                   | CRD API group                      |
+| `VERSION`           | `v1alpha1`                    | CRD API version                    |
+| `PLURAL`            | `node-property-definitions`   | CRD plural name                    |
+| `ATTRIBUTE_PREFIX`  | `attribute.node.thesis.io`    | Prefix for input attribute labels  |
+| `PROPERTY_PREFIX`   | `property.node.thesis.io`     | Prefix for output property labels  |
+| `LOG_LEVEL`         | `INFO`                        | One of DEBUG, INFO, WARNING, ERROR |
+| `LIVENESS_ENDPOINT` | `http://0.0.0.0:9090/healthz` | Liveness endpoint URL              |
 
 ---
 

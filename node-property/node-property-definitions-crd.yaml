@@ -77,11 +77,11 @@ spec:
                                       ? has(self.values) && size(self.values) > 0
                                       : true
                                     message: "In/NotIn require at least one value"
-                                  # Gt/Lt/Gte/Lte -> the value must be an integer 
-                                  - rule: | 
+                                  # Gt/Lt/Gte/Lte -> the value must be an integer
+                                  - rule: |
                                       (self.operator in ['Gt', 'Lt', 'Gte', 'Lte']) 
                                       ? self.values.all(v, type(v) == int) 
-                                      : true 
+                                      : true
                                     message: "Gt/Lt/Gte/Lte require integer values"
                                   # Exists/NotExists -> values do not have to be set
                                   - rule: |
@@ -97,7 +97,19 @@ spec:
                                     maxLength: 64
                                   operator:
                                     type: string
-                                    enum: ["Eq", "NotEq", "Gt", "Lt", "Gte", "Lte", "In", "NotIn", "Exists", "NotExists"]
+                                    enum:
+                                      [
+                                        "Eq",
+                                        "NotEq",
+                                        "Gt",
+                                        "Lt",
+                                        "Gte",
+                                        "Lte",
+                                        "In",
+                                        "NotIn",
+                                        "Exists",
+                                        "NotExists",
+                                      ]
                                   values:
                                     type: array
                                     minItems: 1

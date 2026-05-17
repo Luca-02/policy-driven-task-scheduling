@@ -22,7 +22,7 @@ class Operator(ABC):
         pass
 
 
-class NumericOperator(Operator):
+class NumericOperator(Operator, ABC):
     """Base for operators that require integer comparison."""
 
     def _parse(self, node_values, values):

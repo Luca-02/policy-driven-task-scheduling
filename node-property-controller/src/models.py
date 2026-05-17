@@ -1,12 +1,18 @@
 import src.operators as operators
 
 _OPERATORS: dict[str, operators.Operator] = {
-    op.name: op for op in [
-        operators.ExistsOperator(), operators.NotExistsOperator(),
-        operators.EqOperator(), operators.NotEqOperator(),
-        operators.InOperator(), operators.NotInOperator(),
-        operators.GtOperator(), operators.LtOperator(),
-        operators.GteOperator(), operators.LteOperator(),
+    op.name: op
+    for op in [
+        operators.ExistsOperator(),
+        operators.NotExistsOperator(),
+        operators.EqOperator(),
+        operators.NotEqOperator(),
+        operators.InOperator(),
+        operators.NotInOperator(),
+        operators.GtOperator(),
+        operators.LtOperator(),
+        operators.GteOperator(),
+        operators.LteOperator(),
     ]
 }
 
@@ -14,7 +20,7 @@ _OPERATORS: dict[str, operators.Operator] = {
 class Condition:
     """
     A single expression: key operator values.
-    At the initialization, the operator string is converted to an Operator 
+    At the initialization, the operator string is converted to an Operator
     instance, it can raise ValueError if the operator is unknown.
     """
 
@@ -36,7 +42,7 @@ class Condition:
             bool: True if the condition is satisfied, False otherwise.
 
         Raises:
-            ValueError: If the operator requires numeric values but they are not numeric.
+            ValueError: If the operator requires numeric values, but they are not numeric.
         """
         node_value = attributes.get(self.key)
         return self.operator.evaluate(node_value, self.values)
@@ -77,10 +83,10 @@ class Level:
     def evaluate(self, attributes: dict[str, str]) -> bool:
         """
         Evaluate the DNF expression of the level against the given attributes.
-        
+
         Args:
             attributes (dict[str, str]): Dict of node attributes to evaluate against the level's DNF expression.
-            
+
         Returns:
             bool: True if the level's DNF expression is satisfied, False otherwise.
         """
@@ -89,7 +95,7 @@ class Level:
 
 class Property:
     """
-    A property with multiple levels, each defined by a DNF expression. 
+    A property with multiple levels, each defined by a DNF expression.
     The highest satisfied level is returned.
     """
 
@@ -113,7 +119,7 @@ class Property:
 
 class Node:
     """
-    A node with a set of attributes. 
+    A node with a set of attributes.
     The property levels are evaluated against these attributes.
     """
 
@@ -121,7 +127,7 @@ class Node:
         self,
         name: str,
         attributes: dict[str, str] | None = None,
-        properties: dict[str, int] | None = None
+        properties: dict[str, int] | None = None,
     ):
         self.name = name
         self.attributes = attributes or {}
@@ -136,16 +142,16 @@ class Node:
         """
         self.properties.pop(property_name, None)
 
-    def evaluate_property(self, property: Property) -> int:
+    def evaluate_property(self, prop: Property) -> int:
         """
         Evaluate the given property against the node's attributes.
 
         Args:
-            property (Property): The property to evaluate.
+            prop (Property): The property to evaluate.
 
         Returns:
             int: The highest satisfied level of the property.
         """
-        level = property.max_level(self.attributes)
-        self.properties[property.name] = level
+        level = prop.max_level(self.attributes)
+        self.properties[prop.name] = level
         return level

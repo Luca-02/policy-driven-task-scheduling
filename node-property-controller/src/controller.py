@@ -11,8 +11,9 @@ def _synchronized(method):
     def wrapper(self, *args, **kwargs):
         with self._lock:
             return method(self, *args, **kwargs)
+
     return wrapper
- 
+
 
 class Controller:
     def __init__(self, v1: client.CoreV1Api, config: Config):
@@ -36,7 +37,7 @@ class Controller:
         """
         prefix = f"{config.attribute_prefix}/"
         return {
-            key[len(prefix):]: value
+            key[len(prefix) :]: value
             for key, value in labels.items()
             if key.startswith(prefix)
         }
@@ -58,7 +59,7 @@ class Controller:
         for key, value in labels.items():
             if key.startswith(prefix):
                 try:
-                    result[key[len(prefix):]] = int(value)
+                    result[key[len(prefix) :]] = int(value)
                 except (ValueError, TypeError):
                     pass
         return result
@@ -67,7 +68,7 @@ class Controller:
     def _parse_property(name: str, spec: dict) -> Property:
         """
         Parse a NodePropertyDefinition spec into a Property object.
-        
+
         Args:
             name: Property name.
             spec: Property specification containing levels and conditions.
@@ -104,15 +105,15 @@ class Controller:
             A Node object with extracted attributes.
         """
         return Node(
-            name = name,
-            attributes = Controller._extract_node_attributes(labels, config),
-            properties = Controller._extract_node_properties(labels, config),
+            name=name,
+            attributes=Controller._extract_node_attributes(labels, config),
+            properties=Controller._extract_node_properties(labels, config),
         )
 
     def _patch_node_label(self, node_name, label_key, value, logger):
         """
         Patch a node's label to set or remove a property level.
-        
+
         Args:
             node_name: Name of the node to patch.
             label_key: The label key to set or remove.
@@ -137,18 +138,20 @@ class Controller:
             logger: Logger object.
         """
         try:
-            property = self._parse_property(name, spec)
+            prop = self._parse_property(name, spec)
         except Exception as e:
             logger.error(f"Property {name!r} has invalid spec, skipping: {e}")
             return
 
-        self._properties[name] = property
-        logger.info(f"Property {name!r} loaded with {len(property.levels)} levels, relabeling nodes")
+        self._properties[name] = prop
+        logger.info(
+            f"Property {name!r} loaded with {len(prop.levels)} levels, relabeling nodes"
+        )
 
         # Relabel all nodes for the updated property
-        label_key = f"{self._config.property_prefix}/{property.name}"
+        label_key = f"{self._config.property_prefix}/{prop.name}"
         for node_name, node in self._nodes.items():
-            level = node.evaluate_property(property)
+            level = node.evaluate_property(prop)
             self._patch_node_label(node_name, label_key, level, logger)
 
     @_synchronized
@@ -194,20 +197,21 @@ class Controller:
         # Remove stale property labels that no longer apply
         property_prefix = f"{self._config.property_prefix}/"
         stale = [
-            key for key in labels
+            key
+            for key in labels
             if key.startswith(property_prefix)
-               and key[len(property_prefix):] not in self._properties
+            and key[len(property_prefix) :] not in self._properties
         ]
         for label_key in stale:
-            prop_name = label_key[len(property_prefix):]
+            prop_name = label_key[len(property_prefix) :]
             node.delete_property(prop_name)
             logger.info(f"Node {name!r}: removing stale property label {label_key!r}")
             self._patch_node_label(name, label_key, None, logger)
 
             # Relabel the node for all properties
-        for property in self._properties.values():
-            label_key = f"{self._config.property_prefix}/{property.name}"
-            level = node.evaluate_property(property)
+        for prop in self._properties.values():
+            label_key = f"{self._config.property_prefix}/{prop.name}"
+            level = node.evaluate_property(prop)
             self._patch_node_label(node.name, label_key, level, logger)
 
     @_synchronized
