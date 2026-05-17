@@ -118,10 +118,11 @@ class Node:
     """
 
     def __init__(
-            self,
-            name: str,
-            attributes: dict[str, str] | None = None,
-            properties: dict[str, int] | None = None):
+        self,
+        name: str,
+        attributes: dict[str, str] | None = None,
+        properties: dict[str, int] | None = None
+    ):
         self.name = name
         self.attributes = attributes or {}
         self.properties = properties or {}

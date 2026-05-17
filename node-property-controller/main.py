@@ -1,25 +1,15 @@
-import os
-
 import kopf
-from dotenv import load_dotenv
 from kubernetes import client, config
+
 from src.controller import Controller
+from src.config import Config
 
-load_dotenv()
-
-GROUP = os.getenv("GROUP", "example.com")
-VERSION = os.getenv("VERSION", "v1alpha1")
-PLURAL = os.getenv("PLURAL", "node-property-definitions")
-
-# Kubernetes API client
+cfg = Config.from_env()
 ctrl = None
 
 
 @kopf.on.startup()
-def startup(logger, **kwargs):
-    """Initialize Kubernetes client and controller instance"""
-    global ctrl
-    
+def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     try:
         config.load_incluster_config()
         logger.info("Loaded in-cluster kubeconfig")
@@ -27,7 +17,18 @@ def startup(logger, **kwargs):
         config.load_kube_config()
         logger.info("Loaded local kubeconfig")
 
-    ctrl = Controller(v1=client.CoreV1Api())
+    # # finalizer to ensure delete handlers run even if the CR is deleted concurrently
+    # settings.persistence.finalizer = f"{cfg.group}/finalizer"
+
+    # standard server-side progress storage in annotations
+    settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(prefix=cfg.group)
+
+    # set a high priority for peering to ensure our handlers run before other controllers 
+    # that might react to the same events
+    settings.peering.priority = 100
+
+    global ctrl
+    ctrl = Controller(v1=client.CoreV1Api(), config=cfg)
     logger.info("🚀 NodePropertyDefinition Controller started!")
 
 
@@ -35,9 +36,9 @@ def startup(logger, **kwargs):
 # NodePropertyDefinition handlers
 # --------------------------------------------------
 
-@kopf.on.resume(GROUP, VERSION, PLURAL)
-@kopf.on.create(GROUP, VERSION, PLURAL)
-@kopf.on.update(GROUP, VERSION, PLURAL)
+@kopf.on.resume(cfg.group, cfg.version, cfg.plural)
+@kopf.on.create(cfg.group, cfg.version, cfg.plural)
+@kopf.on.update(cfg.group, cfg.version, cfg.plural)
 def on_property_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     spec = body.get("spec", {})
@@ -52,7 +53,7 @@ def on_property_created_or_updated(body, reason, logger, **kwargs):
         ctrl.on_property_created_or_updated(name, spec, logger)
 
 
-@kopf.on.delete(GROUP, VERSION, PLURAL)
+@kopf.on.delete(cfg.group, cfg.version, cfg.plural)
 def on_property_deleted(body, logger, **kwargs):
     name = body["metadata"]["name"]
     logger.info(f"🔴 NodePropertyDefinition {name!r} deleted")

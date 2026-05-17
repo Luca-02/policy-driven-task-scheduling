@@ -1,41 +1,40 @@
+from functools import wraps
 from threading import Lock
 from kubernetes import client
 
+from src.config import Config
 from src.models import Clause, Condition, Level, Node, Property
 
-ATTRIBUTE_PREFIX = "attribute.node.thesis.io"
-PROPERTY_PREFIX = "property.node.thesis.io"
 
-
-def synchronized_with_attr(lock_name):
-    def decorator(method):
-        def synced_method(self, *args, **kws):
-            lock = getattr(self, lock_name)
-            with lock:
-                return method(self, *args, **kws)
-        return synced_method
-    return decorator
-
+def _synchronized(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapper
+ 
 
 class Controller:
-    def __init__(self, v1: client.CoreV1Api):
-        self._v1 = v1
-        self._nodes = {}
-        self._properties = {}
+    def __init__(self, v1: client.CoreV1Api, config: Config):
+        self._v1: client.CoreV1Api = v1
+        self._config: Config = config
+        self._nodes: dict[str, Node] = {}
+        self._properties: dict[str, Property] = {}
         self._lock = Lock()
 
     @staticmethod
-    def _extract_node_attributes(labels):
+    def _extract_node_attributes(labels: dict, config: Config) -> dict[str, str]:
         """
         Extract node attributes from labels using the defined prefix.
 
         Args:
             labels: Dictionary of node labels and their prefix.
+            config: Configuration object containing the attribute prefix.
 
         Returns:
             Dictionary of node attributes without the prefix.
         """
-        prefix = f"{ATTRIBUTE_PREFIX}/"
+        prefix = f"{config.attribute_prefix}/"
         return {
             key[len(prefix):]: value
             for key, value in labels.items()
@@ -43,17 +42,18 @@ class Controller:
         }
 
     @staticmethod
-    def _extract_node_properties(labels):
+    def _extract_node_properties(labels: dict, config: Config) -> dict[str, int]:
         """
         Extract node properties from labels using the defined prefix.
 
         Args:
             labels: Dictionary of node labels and their prefix.
+            config: Configuration object containing the property prefix.
 
         Returns:
             Dictionary of node properties without the prefix.
         """
-        prefix = f"{PROPERTY_PREFIX}/"
+        prefix = f"{config.property_prefix}/"
         result = {}
         for key, value in labels.items():
             if key.startswith(prefix):
@@ -64,7 +64,7 @@ class Controller:
         return result
 
     @staticmethod
-    def _parse_property(name, spec):
+    def _parse_property(name: str, spec: dict) -> Property:
         """
         Parse a NodePropertyDefinition spec into a Property object.
         
@@ -92,20 +92,21 @@ class Controller:
         return Property(name, levels)
 
     @staticmethod
-    def _parse_node(name, labels):
+    def _parse_node(name: str, labels: dict, config: Config) -> Node:
         """
         Parse node labels into a Node object with attributes.
         Args:
             name: Node name.
             labels: Node labels.
+            config: Configuration object containing the attribute and property prefixes.
 
         Returns:
             A Node object with extracted attributes.
         """
         return Node(
             name = name,
-            attributes = Controller._extract_node_attributes(labels),
-            properties = Controller._extract_node_properties(labels),
+            attributes = Controller._extract_node_attributes(labels, config),
+            properties = Controller._extract_node_properties(labels, config),
         )
 
     def _patch_node_label(self, node_name, label_key, value, logger):
@@ -124,8 +125,8 @@ class Controller:
         action = "removed" if value is None else f"set to: {value}"
         logger.info(f"Node {node_name!r} label {label_key!r} {action}")
 
-    @synchronized_with_attr("_lock")
-    def on_property_created_or_updated(self, name, spec, logger):
+    @_synchronized
+    def on_property_created_or_updated(self, name: str, spec: dict, logger):
         """
         Handle creation or update of a NodePropertyDefinition by parsing the spec,
         storing it in the controller's state, and relabeling all nodes accordingly.
@@ -145,13 +146,13 @@ class Controller:
         logger.info(f"Property {name!r} loaded with {len(property.levels)} levels, relabeling nodes")
 
         # Relabel all nodes for the updated property
-        label_key = f"{PROPERTY_PREFIX}/{property.name}"
+        label_key = f"{self._config.property_prefix}/{property.name}"
         for node_name, node in self._nodes.items():
             level = node.evaluate_property(property)
             self._patch_node_label(node_name, label_key, level, logger)
 
-    @synchronized_with_attr("_lock")
-    def on_property_deleted(self, name, logger):
+    @_synchronized
+    def on_property_deleted(self, name: str, logger):
         """
         Handle deletion of a NodePropertyDefinition by removing it from the controller's state
         and cleaning up the corresponding labels from all nodes.
@@ -164,13 +165,13 @@ class Controller:
         logger.info(f"Property {name!r} removed, cleaning up node labels")
 
         # Remove the property label from all nodes
-        label_key = f"{PROPERTY_PREFIX}/{name}"
+        label_key = f"{self._config.property_prefix}/{name}"
         for node_name, node in self._nodes.items():
             node.delete_property(name)
             self._patch_node_label(node_name, label_key, None, logger)
 
-    @synchronized_with_attr("_lock")
-    def on_node_created_or_updated(self, name, labels, logger):
+    @_synchronized
+    def on_node_created_or_updated(self, name: str, labels: dict, logger):
         """
         Handle creation or update of a Node by parsing its labels, storing it in the controller's state,
         and relabeling it according to all defined properties.
@@ -180,7 +181,7 @@ class Controller:
             labels: Node labels.
             logger: Logger object.
         """
-        node = self._parse_node(name, labels)
+        node = self._parse_node(name, labels, self._config)
 
         existing = self._nodes.get(node.name)
         if existing is not None and existing.attributes == node.attributes:
@@ -191,7 +192,7 @@ class Controller:
         logger.info(f"Node {name!r} loaded, evaluating properties")
 
         # Remove stale property labels that no longer apply
-        property_prefix = f"{PROPERTY_PREFIX}/"
+        property_prefix = f"{self._config.property_prefix}/"
         stale = [
             key for key in labels
             if key.startswith(property_prefix)
@@ -205,12 +206,12 @@ class Controller:
 
             # Relabel the node for all properties
         for property in self._properties.values():
-            label_key = f"{PROPERTY_PREFIX}/{property.name}"
+            label_key = f"{self._config.property_prefix}/{property.name}"
             level = node.evaluate_property(property)
             self._patch_node_label(node.name, label_key, level, logger)
 
-    @synchronized_with_attr("_lock")
-    def on_node_deleted(self, name, logger):
+    @_synchronized
+    def on_node_deleted(self, name: str, logger):
         """
         Handle deletion of a Node by removing it from the controller's state.
 

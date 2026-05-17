@@ -16,11 +16,11 @@ echo
 
 # Install the NodePropertyDefinition CRD
 echo "Installing NodePropertyDefinition CRD..."
-kubectl apply -f k8s/node-property/node-property-definitions-crd.yaml
+kubectl apply -f node-property/node-property-definitions-crd.yaml
 echo
 
 # Install the node properties
 echo "Installing node properties..."
-kubectl apply -f k8s/node-property/security-node-property.yaml
-kubectl apply -f k8s/node-property/computation-node-property.yaml
+kubectl apply -f node-property/security-node-property.yaml
+kubectl apply -f node-property/computation-node-property.yaml
 echo
