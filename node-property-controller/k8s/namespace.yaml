@@ -2,3 +2,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: node-property-operator
+  labels:
+    # Enforce the "restricted" Pod Security Standard:
+    # all pods must be non-root, drop all capabilities, use seccomp, etc.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest

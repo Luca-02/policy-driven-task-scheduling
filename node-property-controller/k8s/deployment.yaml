@@ -21,10 +21,34 @@ spec:
         app.kubernetes.io/name: node-property-operator
     spec:
       serviceAccountName: node-property-operator
+      terminationGracePeriodSeconds: 30
+      # Run the operator as non-root for security best practices, use the same 
+      # UID and GID of the user in the builder image to avoid permission issues
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      # Volumes for the operator since read-only root filesystem is enabled
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
       containers:
         - name: operator
           image: node-property-operator:latest
           imagePullPolicy: IfNotPresent
+          # Set security context for the container 
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: GROUP
               value: thesis.io
@@ -47,6 +71,7 @@ spec:
               path: /healthz
               port: health
             initialDelaySeconds: 15
+            timeoutSeconds: 2
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
@@ -54,8 +79,15 @@ spec:
               path: /healthz
               port: health
             initialDelaySeconds: 5
+            timeoutSeconds: 2
             periodSeconds: 10
             failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            failureThreshold: 30
+            periodSeconds: 5
           resources:
             requests:
               cpu: 50m
@@ -63,4 +95,13 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
-      terminationGracePeriodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      # Schedule the operator on control-plane nodes to ensure it runs even in tainted environments
+      # nodeSelector:
+      #   node-role.kubernetes.io/control-plane: ""
+      # tolerations:
+      #   - key: node-role.kubernetes.io/control-plane
+      #     operator: Exists
+      #     effect: NoSchedule

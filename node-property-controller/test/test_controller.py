@@ -388,9 +388,9 @@ class TestOnPropertyCreatedOrUpdated(unittest.TestCase):
         labels = patched_labels(self.ctrl)
         self.assertEqual(labels["n1"][prop_label("security", self.config)], "1")
         self.assertEqual(labels["n5"][prop_label("security", self.config)], "1")
-        self.assertEqual(labels["n2"][prop_label("security", self.config)], "0")
-        self.assertEqual(labels["n3"][prop_label("security", self.config)], "0")
-        self.assertEqual(labels["n4"][prop_label("security", self.config)], "0")
+        self.assertIsNone(labels["n2"].get(prop_label("security", self.config)))
+        self.assertIsNone(labels["n3"].get(prop_label("security", self.config)))
+        self.assertIsNone(labels["n4"].get(prop_label("security", self.config)))
 
     def test_update_syncs_node_properties_dict(self):
         load_nodes(self.ctrl, self.config)
@@ -576,7 +576,7 @@ class TestOnNodeCreatedOrUpdated(unittest.TestCase):
         self.ctrl.on_node_created_or_updated("nx", {}, make_logger())
 
         labels = patched_labels(self.ctrl)
-        self.assertEqual(labels["nx"][prop_label("security", self.config)], "0")
+        self.assertIsNone(labels["nx"].get(prop_label("security", self.config)))
         self.assertEqual(self.ctrl._nodes["nx"].properties["security"], 0)
 
     def test_stale_property_labels_removed(self):

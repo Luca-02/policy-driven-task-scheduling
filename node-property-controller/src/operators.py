@@ -81,7 +81,7 @@ class GtOperator(NumericOperator):
     name = "Gt"
 
     def evaluate(self, node_values, values):
-        if node_values is None:
+        if node_values is None or values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int > cmp_int
@@ -91,7 +91,7 @@ class LtOperator(NumericOperator):
     name = "Lt"
 
     def evaluate(self, node_values, values):
-        if node_values is None:
+        if node_values is None or values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int < cmp_int
@@ -101,7 +101,7 @@ class GteOperator(NumericOperator):
     name = "Gte"
 
     def evaluate(self, node_values, values):
-        if node_values is None:
+        if node_values is None or values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int >= cmp_int
@@ -111,7 +111,7 @@ class LteOperator(NumericOperator):
     name = "Lte"
 
     def evaluate(self, node_values, values):
-        if node_values is None:
+        if node_values is None or values is None:
             return False
         node_int, cmp_int = self._parse(node_values, values)
         return node_int <= cmp_int

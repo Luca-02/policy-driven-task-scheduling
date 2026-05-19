@@ -110,21 +110,25 @@ class Controller:
             properties=Controller._extract_node_properties(labels, config),
         )
 
-    def _patch_node_label(self, node_name, label_key, value, logger):
+    def _patch_node_level(
+        self, node_name: str, label_key: str, level: int | None, logger
+    ):
         """
-        Patch a node's label to set or remove a property level.
+        Patch a node's level to set or remove a property level.
 
         Args:
             node_name: Name of the node to patch.
             label_key: The label key to set or remove.
-            value: The value to set the label to, or None to remove it.
+            level: The level to set the label to, or None to remove it.
             logger: Logger object.
         """
-        value = str(value) if value is not None else None
-        body = {"metadata": {"labels": {label_key: value}}}
-        self._v1.patch_node(node_name, body, async_req=True)
-        action = "removed" if value is None else f"set to: {value}"
-        logger.info(f"Node {node_name!r} label {label_key!r} {action}")
+        # If level is None or not a positive integer, remove the label by setting it to None
+        level = str(level) if level is not None and level > 0 else None
+        body = {"metadata": {"labels": {label_key: level}}}
+
+        self._v1.patch_node(node_name, body)
+        action = "removed" if level is None else f"set to: {level}"
+        logger.info(f"Node {node_name!r} level {label_key!r} {action}")
 
     @_synchronized
     def on_property_created_or_updated(self, name: str, spec: dict, logger):
@@ -152,7 +156,7 @@ class Controller:
         label_key = f"{self._config.property_prefix}/{prop.name}"
         for node_name, node in self._nodes.items():
             level = node.evaluate_property(prop)
-            self._patch_node_label(node_name, label_key, level, logger)
+            self._patch_node_level(node_name, label_key, level, logger)
 
     @_synchronized
     def on_property_deleted(self, name: str, logger):
@@ -171,7 +175,7 @@ class Controller:
         label_key = f"{self._config.property_prefix}/{name}"
         for node_name, node in self._nodes.items():
             node.delete_property(name)
-            self._patch_node_label(node_name, label_key, None, logger)
+            self._patch_node_level(node_name, label_key, None, logger)
 
     @_synchronized
     def on_node_created_or_updated(self, name: str, labels: dict, logger):
@@ -206,13 +210,13 @@ class Controller:
             prop_name = label_key[len(property_prefix) :]
             node.delete_property(prop_name)
             logger.info(f"Node {name!r}: removing stale property label {label_key!r}")
-            self._patch_node_label(name, label_key, None, logger)
+            self._patch_node_level(name, label_key, None, logger)
 
             # Relabel the node for all properties
         for prop in self._properties.values():
             label_key = f"{self._config.property_prefix}/{prop.name}"
             level = node.evaluate_property(prop)
-            self._patch_node_label(node.name, label_key, level, logger)
+            self._patch_node_level(node.name, label_key, level, logger)
 
     @_synchronized
     def on_node_deleted(self, name: str, logger):

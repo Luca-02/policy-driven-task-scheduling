@@ -7,6 +7,11 @@ from src.controller import Controller
 cfg: Config = Config.from_env()
 ctrl: Controller | None = None
 
+CONTROL_PLANE_LABELS = {
+    "node-role.kubernetes.io/control-plane",
+    "node-role.kubernetes.io/master",  # Legacy label
+}
+
 
 @kopf.on.startup()
 def startup(settings: kopf.OperatorSettings, logger, **kwargs):
@@ -45,6 +50,7 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 def on_property_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     spec = body.get("spec", {})
+
     if reason == "resume":
         logger.info(f"🔵 NodePropertyDefinition {name!r} resumed with spec: {spec}")
     elif reason == "create":
@@ -76,6 +82,12 @@ def on_property_deleted(body, logger, **kwargs):
 def on_node_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     labels = body["metadata"].get("labels") or {}
+
+    # Skip control plane
+    if any(l in labels for l in CONTROL_PLANE_LABELS):
+        logger.info(f"Skipping control-plane node {name}")
+        return
+
     if reason == "resume":
         logger.info(f"🔵 Node {name!r} resumed with labels: {labels}")
     elif reason == "create":

@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: node-property-operator
+  namespace: node-property-operator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: node-property-operator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow kubelet health-check probes (liveness/readiness/startup) from cluster nodes
+    - ports:
+        - port: 9090
+          protocol: TCP
+  # Allow egress to kube-dns and Kubernetes API server for operator functionality
+  egress:
+    # DNS resolution via kube-dns
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Kubernetes API server (HTTPS)
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 6443
+          protocol: TCP
+# ---
+# apiVersion: v1
+# kind: ResourceQuota
+# metadata:
+#   name: node-property-operator
+#   namespace: node-property-operator
+# spec:
+#   hard:
+#     # At most 1 pod (single-replica operator)
+#     pods: "2"
+#     requests.cpu: "100m"
+#     requests.memory: "128Mi"
+#     limits.cpu: "400m"
+#     limits.memory: "512Mi"
+#     # Disallow privileged pods via quota on PriorityClass
+#     count/serviceaccounts: "1"

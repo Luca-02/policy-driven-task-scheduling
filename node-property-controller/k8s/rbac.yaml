@@ -24,7 +24,7 @@ rules:
   # Kopf posts events about its activity
   - apiGroups: [""]
     resources: [events]
-    verbs: [create, patch]
+    verbs: [create]
   # Kopf uses leases for peer-detection / leader election
   - apiGroups: [coordination.k8s.io]
     resources: [leases]

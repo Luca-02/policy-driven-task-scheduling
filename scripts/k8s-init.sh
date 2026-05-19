@@ -58,6 +58,7 @@ echo
 echo "=== Deploying node-property-controller into cluster ==="
 # Apply namespace and RBAC first
 kubectl apply -f node-property-controller/k8s/namespace.yaml
+kubectl apply -f node-property-controller/k8s/network-policy.yaml
 kubectl apply -f node-property-controller/k8s/rbac.yaml
 
 # If a local image named 'node-property-operator:latest' exists, load it into kind so pods can use it
