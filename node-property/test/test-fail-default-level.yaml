@@ -1,4 +1,4 @@
-apiVersion: thesis.io/v1alpha1
+apiVersion: nodeclass.io/v1alpha1
 kind: NodePropertyDefinition
 metadata:
   name: test-fail-default-level

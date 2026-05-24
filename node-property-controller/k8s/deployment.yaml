@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-property-operator
-  namespace: node-property-operator
+  name: node-property-controller
+  namespace: node-property-controller
   labels:
-    app.kubernetes.io/name: node-property-operator
+    app.kubernetes.io/name: node-property-controller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: node-property-operator
+      app.kubernetes.io/name: node-property-controller
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,9 +18,9 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: node-property-operator
+        app.kubernetes.io/name: node-property-controller
     spec:
-      serviceAccountName: node-property-operator
+      serviceAccountName: node-property-controller-service-account
       terminationGracePeriodSeconds: 30
       # Run the operator as non-root for security best practices, use the same 
       # UID and GID of the user in the builder image to avoid permission issues
@@ -39,7 +39,7 @@ spec:
             sizeLimit: 32Mi
       containers:
         - name: operator
-          image: node-property-operator:latest
+          image: node-property-controller:latest
           imagePullPolicy: IfNotPresent
           # Set security context for the container 
           securityContext:
@@ -51,15 +51,15 @@ spec:
                 - ALL
           env:
             - name: GROUP
-              value: thesis.io
+              value: nodeclass.io
             - name: VERSION
               value: v1alpha1
             - name: PLURAL
               value: node-property-definitions
             - name: ATTRIBUTE_PREFIX
-              value: attribute.node.thesis.io
+              value: attribute.node.nodeclass.io
             - name: PROPERTY_PREFIX
-              value: property.node.thesis.io
+              value: property.node.nodeclass.io
             - name: LOG_LEVEL
               value: INFO
           ports:
@@ -99,9 +99,9 @@ spec:
             - name: tmp
               mountPath: /tmp
       # Schedule the operator on control-plane nodes to ensure it runs even in tainted environments
-      # nodeSelector:
-      #   node-role.kubernetes.io/control-plane: ""
-      # tolerations:
-      #   - key: node-role.kubernetes.io/control-plane
-      #     operator: Exists
-      #     effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule

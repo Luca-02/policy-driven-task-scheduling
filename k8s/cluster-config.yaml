@@ -1,33 +1,32 @@
 apiVersion: kind.x-k8s.io/v1alpha4
 kind: Cluster
-name: thesis
 nodes:
   - role: control-plane
   - role: worker
     labels:
-      attribute.node.thesis.io/cert: certA
-      attribute.node.thesis.io/isolation: strict
-      attribute.node.thesis.io/gpu: a100
-      attribute.node.thesis.io/cpu: 16
+      attribute.node.nodeclass.io/cert: certA
+      attribute.node.nodeclass.io/isolation: strict
+      attribute.node.nodeclass.io/gpu: a100
+      attribute.node.nodeclass.io/cpu: 16
   - role: worker
     labels:
-      attribute.node.thesis.io/cert: certB
-      attribute.node.thesis.io/isolation: standard
-      attribute.node.thesis.io/gpu: t4
-      attribute.node.thesis.io/cpu: 8
+      attribute.node.nodeclass.io/cert: certB
+      attribute.node.nodeclass.io/isolation: standard
+      attribute.node.nodeclass.io/gpu: t4
+      attribute.node.nodeclass.io/cpu: 8
   - role: worker
     labels:
-      attribute.node.thesis.io/cert: certC
-      attribute.node.thesis.io/isolation: standard
-      attribute.node.thesis.io/cpu: 4
+      attribute.node.nodeclass.io/cert: certC
+      attribute.node.nodeclass.io/isolation: standard
+      attribute.node.nodeclass.io/cpu: 4
   - role: worker
     labels:
-      attribute.node.thesis.io/cert: certC
-      attribute.node.thesis.io/isolation: strict
-      attribute.node.thesis.io/gpu: a100
-      attribute.node.thesis.io/cpu: 24
+      attribute.node.nodeclass.io/cert: certC
+      attribute.node.nodeclass.io/isolation: strict
+      attribute.node.nodeclass.io/gpu: a100
+      attribute.node.nodeclass.io/cpu: 24
   - role: worker
     labels:
-      attribute.node.thesis.io/cert: certA
-      attribute.node.thesis.io/isolation: strict
-      attribute.node.thesis.io/cpu: 4
+      attribute.node.nodeclass.io/cert: certA
+      attribute.node.nodeclass.io/isolation: strict
+      attribute.node.nodeclass.io/cpu: 4

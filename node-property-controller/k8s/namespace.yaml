@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: node-property-operator
+  name: node-property-controller
   labels:
     # Enforce the "restricted" Pod Security Standard:
     # all pods must be non-root, drop all capabilities, use seccomp, etc.

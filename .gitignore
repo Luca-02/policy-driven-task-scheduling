@@ -442,7 +442,7 @@ pyrightconfig.json
 .history
 .ionide
 
+# End of https://www.toptal.com/developers/gitignore/api/jetbrains+all,go,goland+all,python,visualstudiocode,pycharm
+
 ### Other ###
 .claude
-
-# End of https://www.toptal.com/developers/gitignore/api/jetbrains+all,go,goland+all,python,visualstudiocode,pycharm

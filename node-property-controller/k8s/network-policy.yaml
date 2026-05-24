@@ -1,12 +1,12 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: node-property-operator
-  namespace: node-property-operator
+  name: node-property-controller-network-policy
+  namespace: node-property-controller
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: node-property-operator
+      app.kubernetes.io/name: node-property-controller
   policyTypes:
     - Ingress
     - Egress
@@ -33,8 +33,8 @@ spec:
 # apiVersion: v1
 # kind: ResourceQuota
 # metadata:
-#   name: node-property-operator
-#   namespace: node-property-operator
+#   name: node-property-controller
+#   namespace: node-property-controller
 # spec:
 #   hard:
 #     # At most 1 pod (single-replica operator)

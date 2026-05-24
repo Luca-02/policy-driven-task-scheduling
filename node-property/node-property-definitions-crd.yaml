@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: node-property-definitions.thesis.io
+  name: node-property-definitions.nodeclass.io
 spec:
-  group: thesis.io
+  group: nodeclass.io
   names:
     kind: NodePropertyDefinition
     listKind: NodePropertyDefinitionList
