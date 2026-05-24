@@ -63,11 +63,8 @@ kubectl apply -f node-property-controller/k8s/rbac.yaml
 
 # If a local image named 'node-property-operator:latest' exists, load it into kind so pods can use it
 if cmd_exists docker && docker image inspect node-property-operator:latest >/dev/null 2>&1; then
-	echo "Local Docker image 'node-property-operator:latest' found: loading into kind nodes..."
-	# load into all clusters (no-op if already present)
-	for c in $(kind get clusters); do
-		kind load docker-image node-property-operator:latest --name "$c" || true
-	done
+	echo "Local Docker image 'node-property-operator:latest' found: loading into kind cluster..."
+	kind load docker-image node-property-operator:latest --name thesis
 fi
 
 # Apply deployment
