@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
+	nodepropertyv1alpha1 "github.com/policy-driven-task-scheduling/node-property-controller/internal/api/v1alpha1"
 	"github.com/policy-driven-task-scheduling/node-property-controller/internal/config"
 	"github.com/policy-driven-task-scheduling/node-property-controller/internal/domain"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -41,9 +41,7 @@ var controlPlaneLabels = []string{
 type Reconciler struct {
 	cfg config.Config
 
-	kubeClient kubernetes.Interface
-	gvr        schema.GroupVersionResource
-
+	kubeClient       kubernetes.Interface
 	nodeInformer     cache.SharedIndexInformer
 	propertyInformer cache.SharedIndexInformer
 	queue            workqueue.TypedRateLimitingInterface[string]
@@ -53,16 +51,14 @@ type Reconciler struct {
 }
 
 func NewReconciler(cfg config.Config, kubeClient kubernetes.Interface, dynamicClient dynamic.Interface) *Reconciler {
-	gvr := schema.GroupVersionResource{Group: cfg.Group, Version: cfg.Version, Resource: cfg.Plural}
 	coreFactory := informers.NewSharedInformerFactory(kubeClient, cfg.ResyncPeriod)
 	dynamicFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient, cfg.ResyncPeriod, metav1.NamespaceAll, nil)
 
 	reconciler := &Reconciler{
 		cfg:              cfg,
 		kubeClient:       kubeClient,
-		gvr:              gvr,
 		nodeInformer:     coreFactory.Core().V1().Nodes().Informer(),
-		propertyInformer: dynamicFactory.ForResource(gvr).Informer(),
+		propertyInformer: dynamicFactory.ForResource(nodepropertyv1alpha1.GroupVersionResource).Informer(),
 		queue:            workqueue.NewTypedRateLimitingQueue(workqueue.DefaultTypedControllerRateLimiter[string]()),
 		properties:       map[string]domain.Property{},
 	}
@@ -75,7 +71,7 @@ func (r *Reconciler) Run(ctx context.Context) error {
 	defer runtime.HandleCrash()
 	defer r.queue.ShutDown()
 
-	klog.Infof("starting informers for %s/%s/%s and nodes", r.cfg.Group, r.cfg.Version, r.cfg.Plural)
+	klog.Infof("starting informers for %s and nodes", nodepropertyv1alpha1.GroupVersionResource.String())
 	go r.nodeInformer.Run(ctx.Done())
 	go r.propertyInformer.Run(ctx.Done())
 
@@ -162,7 +158,7 @@ func (r *Reconciler) reconcileNode(ctx context.Context, name string) error {
 		return nil
 	}
 
-	parsedNode := ParseNode(node.Name, node.Labels, r.cfg)
+	parsedNode := ParseNode(node.Name, node.Labels, r.attributeLabelPrefix(), r.propertyLabelPrefix())
 	currentLabels := node.Labels
 	r.propertiesMu.RLock()
 	properties := make(map[string]domain.Property, len(r.properties))
@@ -172,8 +168,8 @@ func (r *Reconciler) reconcileNode(ctx context.Context, name string) error {
 	r.propertiesMu.RUnlock()
 
 	for labelKey := range currentLabels {
-		if strings.HasPrefix(labelKey, r.cfg.PropertyPrefix+"/") {
-			propertyName := strings.TrimPrefix(labelKey, r.cfg.PropertyPrefix+"/")
+		if strings.HasPrefix(labelKey, r.propertyLabelPrefix()+"/") {
+			propertyName := strings.TrimPrefix(labelKey, r.propertyLabelPrefix()+"/")
 			if _, known := properties[propertyName]; !known {
 				if err := r.patchNodeLevel(ctx, node.Name, labelKey, nil, currentLabels[labelKey], true); err != nil {
 					return err
@@ -188,7 +184,7 @@ func (r *Reconciler) reconcileNode(ctx context.Context, name string) error {
 			klog.Errorf("node %q property %q evaluation failed: %v", node.Name, property.Name, err)
 			continue
 		}
-		labelKey := r.cfg.PropertyPrefix + "/" + property.Name
+		labelKey := r.propertyLabelPrefix() + "/" + property.Name
 		current, exists := currentLabels[labelKey]
 		if err := r.patchNodeLevel(ctx, node.Name, labelKey, &level, current, exists); err != nil {
 			return err
@@ -224,7 +220,7 @@ func (r *Reconciler) reconcilePropertyDeleted(ctx context.Context, name string) 
 	r.propertiesMu.Lock()
 	delete(r.properties, name)
 	r.propertiesMu.Unlock()
-	labelKey := r.cfg.PropertyPrefix + "/" + name
+	labelKey := r.propertyLabelPrefix() + "/" + name
 	klog.Infof("property %q removed, cleaning node label %q", name, labelKey)
 
 	for _, obj := range r.nodeInformer.GetStore().List() {
@@ -241,13 +237,13 @@ func (r *Reconciler) reconcilePropertyDeleted(ctx context.Context, name string) 
 }
 
 func (r *Reconciler) evaluatePropertyForAllNodes(ctx context.Context, property domain.Property) error {
-	labelKey := r.cfg.PropertyPrefix + "/" + property.Name
+	labelKey := r.propertyLabelPrefix() + "/" + property.Name
 	for _, obj := range r.nodeInformer.GetStore().List() {
 		node := obj.(*corev1.Node)
 		if isControlPlaneNode(node.Labels) {
 			continue
 		}
-		parsedNode := ParseNode(node.Name, node.Labels, r.cfg)
+		parsedNode := ParseNode(node.Name, node.Labels, r.attributeLabelPrefix(), r.propertyLabelPrefix())
 		level, err := parsedNode.EvaluateProperty(property)
 		if err != nil {
 			klog.Errorf("node %q property %q evaluation failed: %v", node.Name, property.Name, err)
@@ -360,6 +356,14 @@ func (r *Reconciler) enqueuePropertyDeleted(obj interface{}) {
 		return
 	}
 	r.queue.Add(kindDeleted + "/" + property.GetName())
+}
+
+func (r *Reconciler) attributeLabelPrefix() string {
+	return r.cfg.AttributePrefix + "." + nodepropertyv1alpha1.GroupName
+}
+
+func (r *Reconciler) propertyLabelPrefix() string {
+	return r.cfg.PropertyPrefix + "." + nodepropertyv1alpha1.GroupName
 }
 
 func isControlPlaneNode(labels map[string]string) bool {

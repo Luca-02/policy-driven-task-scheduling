@@ -22,8 +22,7 @@ spec:
     spec:
       serviceAccountName: node-property-controller-service-account
       terminationGracePeriodSeconds: 30
-      # Run the operator as non-root for security best practices, use the same 
-      # UID and GID of the user in the builder image to avoid permission issues
+      # Run the operator as the distroless nonroot user for security best practices
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
@@ -50,16 +49,10 @@ spec:
               drop:
                 - ALL
           env:
-            - name: GROUP
-              value: policydriven.unimi.it
-            - name: VERSION
-              value: v1alpha1
-            - name: PLURAL
-              value: nodeproperties
             - name: ATTRIBUTE_PREFIX
-              value: attribute.node.policydriven.unimi.it
+              value: attribute.node
             - name: PROPERTY_PREFIX
-              value: property.node.policydriven.unimi.it
+              value: property.node
             - name: LOG_LEVEL
               value: INFO
             - name: LEADER_ELECTION

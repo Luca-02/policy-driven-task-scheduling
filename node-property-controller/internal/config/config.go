@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
+const (
+	DefaultAttributePrefix = "attribute.node"
+	DefaultPropertyPrefix  = "property.node"
+)
+
 type Config struct {
-	Group             string
-	Version           string
-	Plural            string
 	AttributePrefix   string
 	PropertyPrefix    string
 	LogLevel          string
@@ -23,11 +25,8 @@ type Config struct {
 
 func FromEnv() Config {
 	return Config{
-		Group:             getenv("GROUP", "policydriven.unimi.it"),
-		Version:           getenv("VERSION", "v1alpha1"),
-		Plural:            getenv("PLURAL", "nodeproperties"),
-		AttributePrefix:   getenv("ATTRIBUTE_PREFIX", "attribute.node.policydriven.unimi.it"),
-		PropertyPrefix:    getenv("PROPERTY_PREFIX", "property.node.policydriven.unimi.it"),
+		AttributePrefix:   getenv("ATTRIBUTE_PREFIX", DefaultAttributePrefix),
+		PropertyPrefix:    getenv("PROPERTY_PREFIX", DefaultPropertyPrefix),
 		LogLevel:          getenv("LOG_LEVEL", "INFO"),
 		HealthAddr:        getenv("HEALTH_ADDR", ":9090"),
 		LeaderElection:    getenvBool("LEADER_ELECTION", true),

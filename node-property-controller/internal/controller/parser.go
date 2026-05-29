@@ -5,17 +5,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/policy-driven-task-scheduling/node-property-controller/internal/config"
 	"github.com/policy-driven-task-scheduling/node-property-controller/internal/domain"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func ExtractNodeAttributes(labels map[string]string, cfg config.Config) map[string]string {
-	return extractLabels(labels, cfg.AttributePrefix)
+func ExtractNodeAttributes(labels map[string]string, attributeLabelPrefix string) map[string]string {
+	return extractLabels(labels, attributeLabelPrefix)
 }
 
-func ExtractNodeProperties(labels map[string]string, cfg config.Config) map[string]int {
-	prefix := cfg.PropertyPrefix + "/"
+func ExtractNodeProperties(labels map[string]string, propertyLabelPrefix string) map[string]int {
+	prefix := propertyLabelPrefix + "/"
 	properties := map[string]int{}
 	for key, value := range labels {
 		if strings.HasPrefix(key, prefix) {
@@ -28,11 +27,11 @@ func ExtractNodeProperties(labels map[string]string, cfg config.Config) map[stri
 	return properties
 }
 
-func ParseNode(name string, labels map[string]string, cfg config.Config) domain.Node {
+func ParseNode(name string, labels map[string]string, attributeLabelPrefix, propertyLabelPrefix string) domain.Node {
 	return domain.Node{
 		Name:       name,
-		Attributes: ExtractNodeAttributes(labels, cfg),
-		Properties: ExtractNodeProperties(labels, cfg),
+		Attributes: ExtractNodeAttributes(labels, attributeLabelPrefix),
+		Properties: ExtractNodeProperties(labels, propertyLabelPrefix),
 	}
 }
 

@@ -20,19 +20,18 @@ The controller is implemented in Go with native Kubernetes libraries:
 - the core client patches node labels only when the desired value differs from the current cached value;
 - leader election uses a `coordination.k8s.io/Lease`, so multiple replicas can run for HA while only the leader patches nodes.
 
-See [GO_CONTROLLER_DESIGN.md](GO_CONTROLLER_DESIGN.md) for implementation details and differences from the previous Python/Kopf version.
+See [GO_CONTROLLER_DESIGN.md](GO_CONTROLLER_DESIGN.md) for implementation details and differences from the previous Python/Kopf version. See [FILE_GUIDE.md](FILE_GUIDE.md) for a detailed file-by-file walkthrough.
 
 ## Configuration
 
-All options are configurable through environment variables:
+CRD API identity is not configured through environment variables. It is defined once in `internal/api/v1alpha1` as the standard Kubernetes API group/version/resource: `policydriven.unimi.it/v1alpha1`, resource `nodeproperties`.
+
+Runtime options are configurable through environment variables:
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `GROUP` | `policydriven.unimi.it` | CRD API group. |
-| `VERSION` | `v1alpha1` | CRD API version. |
-| `PLURAL` | `nodeproperties` | CRD plural resource name. |
-| `ATTRIBUTE_PREFIX` | `attribute.node.policydriven.unimi.it` | Prefix for input node attribute labels. |
-| `PROPERTY_PREFIX` | `property.node.policydriven.unimi.it` | Prefix for computed property labels. |
+| `ATTRIBUTE_PREFIX` | `attribute.node` | Base prefix for input node attribute labels. The controller appends `.policydriven.unimi.it`, so the default full prefix is `attribute.node.policydriven.unimi.it`. |
+| `PROPERTY_PREFIX` | `property.node` | Base prefix for computed property labels. The controller appends `.policydriven.unimi.it`, so the default full prefix is `property.node.policydriven.unimi.it`. |
 | `LOG_LEVEL` | `INFO` | Reserved for logging configuration. |
 | `HEALTH_ADDR` | `:9090` | HTTP health endpoint bind address. |
 | `LEADER_ELECTION` | `true` | Enable Kubernetes Lease-based leader election. |

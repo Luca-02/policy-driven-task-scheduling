@@ -9,8 +9,8 @@ The functional model is unchanged:
 - A `NodeProperty` custom resource defines ordered property levels.
 - Every level contains a DNF expression: a disjunction of clauses, where every clause is a conjunction of atomic conditions.
 - Supported operators remain extensible and keep the same names: `Exists`, `NotExists`, `Eq`, `NotEq`, `In`, `NotIn`, `Gt`, `Lt`, `Gte`, `Lte`.
-- Node input attributes are read from labels with the `ATTRIBUTE_PREFIX` prefix.
-- Computed property levels are written as labels with the `PROPERTY_PREFIX` prefix.
+- Node input attributes are read from labels under `ATTRIBUTE_PREFIX + "." + GroupName`; by default this is `attribute.node.policydriven.unimi.it`.
+- Computed property levels are written under `PROPERTY_PREFIX + "." + GroupName`; by default this is `property.node.policydriven.unimi.it`.
 - Level `0` remains implicit: if no positive level is satisfied, the output label is removed.
 - Control-plane nodes are skipped by default.
 
@@ -45,7 +45,7 @@ Before patching a node, the controller compares the desired label value with the
 
 ### Dynamic client for the CRD
 
-The controller uses the dynamic client and `unstructured.Unstructured` for `NodeProperty` resources. That keeps the Go code independent from generated CRD clients and is convenient while the CRD schema is still evolving. If the API stabilizes, the next improvement would be generating typed clients/informers with `code-generator` or `controller-tools`.
+The CRD identity is defined in `internal/api/v1alpha1` with Kubernetes-style API constants (`GroupName`, `Version`, `Resource`, `GroupVersionResource`) and structs that mirror the CRD schema. The watch path still uses the dynamic client because no generated clientset is committed in this repository; if the API stabilizes further, the next step is generating typed clients/informers with `code-generator` or `controller-tools`.
 
 ## State model
 
@@ -59,10 +59,10 @@ The controller does not need an external database. If the process restarts, a ne
 
 ## Extending operators
 
-Operators are implemented behind a small Go interface in `internal/domain/operators.go`. To add a new operator:
+Operators are intentionally simple: `internal/domain/operators.go` defines string constants and a switch-based `EvaluateOperator` function. To add a new operator:
 
-1. add a new entry to the `Operators` map;
-2. implement its predicate logic as an `OperatorFunc` or a dedicated type;
+1. add a new operator constant and include it in `KnownOperators`;
+2. add a case to `EvaluateOperator`;
 3. update the CRD validation enum and any value-shape validation rules;
 4. add unit tests for true/false and invalid-input cases.
 

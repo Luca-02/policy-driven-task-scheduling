@@ -14,7 +14,7 @@ Highlights:
 - deployment configured with three replicas where only the leader patches node labels;
 - local execution with `go run main.go --local`.
 
-See [`node-property-controller/README.md`](node-property-controller/README.md) for build, local test and deployment commands, and [`node-property-controller/GO_CONTROLLER_DESIGN.md`](node-property-controller/GO_CONTROLLER_DESIGN.md) for design details and rationale.
+See [`node-property-controller/README.md`](node-property-controller/README.md) for build, local test and deployment commands, [`node-property-controller/GO_CONTROLLER_DESIGN.md`](node-property-controller/GO_CONTROLLER_DESIGN.md) for design rationale, and [`node-property-controller/FILE_GUIDE.md`](node-property-controller/FILE_GUIDE.md) for a file-by-file explanation.
 
 ## Quick local controller commands
 
