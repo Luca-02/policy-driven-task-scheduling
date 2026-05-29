@@ -51,15 +51,15 @@ spec:
                 - ALL
           env:
             - name: GROUP
-              value: nodeclass.io
+              value: policydriven.unimi.it
             - name: VERSION
               value: v1alpha1
             - name: PLURAL
-              value: node-property-definitions
+              value: nodeproperties
             - name: ATTRIBUTE_PREFIX
-              value: attribute.node.nodeclass.io
+              value: attribute.node.policydriven.unimi.it
             - name: PROPERTY_PREFIX
-              value: property.node.nodeclass.io
+              value: property.node.policydriven.unimi.it
             - name: LOG_LEVEL
               value: INFO
           ports:

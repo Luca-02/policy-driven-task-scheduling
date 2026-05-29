@@ -9,23 +9,23 @@ kind: ClusterRole
 metadata:
   name: node-property-controller-cluster-role
 rules:
-  # Read and patch nodes (the heart of the controller)
+  # Read and patch nodes 
   - apiGroups: [""]
     resources: [nodes]
     verbs: [get, list, watch, patch]
-  # Watch NodePropertyDefinition CRs
-  - apiGroups: [nodeclass.io]
-    resources: [node-property-definitions]
+  # Watch NodeProperty CRs
+  - apiGroups: [policydriven.unimi.it]
+    resources: [nodeproperties]
     verbs: [get, list, watch, patch, update]
   # Kopf finalizers and progress annotations require updating the CR
-  - apiGroups: [nodeclass.io]
-    resources: [node-property-definitions/status]
+  - apiGroups: [policydriven.unimi.it]
+    resources: [nodeproperties/status]
     verbs: [get, patch, update]
   # Kopf posts events about its activity
   - apiGroups: [""]
     resources: [events]
     verbs: [create]
-  # Kopf uses leases for peer-detection / leader election
+  # Kopf uses leases for peer-detection and leader election
   - apiGroups: [coordination.k8s.io]
     resources: [leases]
     verbs: [get, list, watch, create, update, patch, delete]

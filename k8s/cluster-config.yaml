@@ -4,29 +4,29 @@ nodes:
   - role: control-plane
   - role: worker
     labels:
-      attribute.node.nodeclass.io/cert: certA
-      attribute.node.nodeclass.io/isolation: strict
-      attribute.node.nodeclass.io/gpu: a100
-      attribute.node.nodeclass.io/cpu: 16
+      attribute.node.policydriven.unimi.it/cert: certA
+      attribute.node.policydriven.unimi.it/isolation: strict
+      attribute.node.policydriven.unimi.it/gpu: a100
+      attribute.node.policydriven.unimi.it/cpu: 16
   - role: worker
     labels:
-      attribute.node.nodeclass.io/cert: certB
-      attribute.node.nodeclass.io/isolation: standard
-      attribute.node.nodeclass.io/gpu: t4
-      attribute.node.nodeclass.io/cpu: 8
+      attribute.node.policydriven.unimi.it/cert: certB
+      attribute.node.policydriven.unimi.it/isolation: standard
+      attribute.node.policydriven.unimi.it/gpu: t4
+      attribute.node.policydriven.unimi.it/cpu: 8
   - role: worker
     labels:
-      attribute.node.nodeclass.io/cert: certC
-      attribute.node.nodeclass.io/isolation: standard
-      attribute.node.nodeclass.io/cpu: 4
+      attribute.node.policydriven.unimi.it/cert: certC
+      attribute.node.policydriven.unimi.it/isolation: standard
+      attribute.node.policydriven.unimi.it/cpu: 4
   - role: worker
     labels:
-      attribute.node.nodeclass.io/cert: certC
-      attribute.node.nodeclass.io/isolation: strict
-      attribute.node.nodeclass.io/gpu: a100
-      attribute.node.nodeclass.io/cpu: 24
+      attribute.node.policydriven.unimi.it/cert: certC
+      attribute.node.policydriven.unimi.it/isolation: strict
+      attribute.node.policydriven.unimi.it/gpu: a100
+      attribute.node.policydriven.unimi.it/cpu: 24
   - role: worker
     labels:
-      attribute.node.nodeclass.io/cert: certA
-      attribute.node.nodeclass.io/isolation: strict
-      attribute.node.nodeclass.io/cpu: 4
+      attribute.node.policydriven.unimi.it/cert: certA
+      attribute.node.policydriven.unimi.it/isolation: strict
+      attribute.node.policydriven.unimi.it/cpu: 4

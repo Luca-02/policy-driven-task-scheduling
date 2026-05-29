@@ -1,0 +1,10 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: t2
+spec:
+  requirements:
+    fail: 1
+  datasets:
+    - d1
+    - d2

@@ -1,11 +1,11 @@
-# Node Property Operator
+# Node Property Controller
 
-Kubernetes operator that classifies cluster nodes against property definitions (`NodePropertyDefinition` CRD) and writes the resulting levels as node labels.
+Kubernetes controller that classifies cluster nodes against property definitions (`NodePropertyDefinition` CRD) and writes the resulting levels as node labels.
 
-For each node `n` and each property `p`, the operator computes the highest level whose DNF expression is satisfied by the node's attribute labels, then labels the node with:
+For each node `n` and each property `p`, the controller computes the highest level whose DNF expression is satisfied by the node's attribute labels, then labels the node with:
 
 ```
-property.node.thesis.io/<p> = <level>
+property.node.policydriven.unimi.it/<p> = <level>
 ```
 
 ---
@@ -14,7 +14,7 @@ property.node.thesis.io/<p> = <level>
 
 The controller watches two kinds of objects:
 
-- `NodePropertyDefinition` CRDs (group `thesis.io`)
+- `NodePropertyDefinition` CRDs (group `policydriven.unimi.it`)
 - `Node` resources
 
 Whenever either changes, the affected nodes are re-evaluated and their property labels updated.
@@ -25,15 +25,14 @@ Whenever either changes, the affected nodes are re-evaluated and their property 
 
 All configurable via environment variables (with defaults):
 
-| Variable            | Default                       | Description                        |
-| ------------------- | ----------------------------- | ---------------------------------- |
-| `GROUP`             | `thesis.io`                   | CRD API group                      |
-| `VERSION`           | `v1alpha1`                    | CRD API version                    |
-| `PLURAL`            | `node-property-definitions`   | CRD plural name                    |
-| `ATTRIBUTE_PREFIX`  | `attribute.node.thesis.io`    | Prefix for input attribute labels  |
-| `PROPERTY_PREFIX`   | `property.node.thesis.io`     | Prefix for output property labels  |
-| `LOG_LEVEL`         | `INFO`                        | One of DEBUG, INFO, WARNING, ERROR |
-| `LIVENESS_ENDPOINT` | `http://0.0.0.0:9090/healthz` | Liveness endpoint URL              |
+| Variable           | Default                                | Description                        |
+| ------------------ | -------------------------------------- | ---------------------------------- |
+| `GROUP`            | `policydriven.unimi.it`                | CRD API group                      |
+| `VERSION`          | `v1alpha1`                             | CRD API version                    |
+| `PLURAL`           | `node-properties`                      | CRD plural name                    |
+| `ATTRIBUTE_PREFIX` | `attribute.node.policydriven.unimi.it` | Prefix for input attribute labels  |
+| `PROPERTY_PREFIX`  | `property.node.policydriven.unimi.it`  | Prefix for output property labels  |
+| `LOG_LEVEL`        | `INFO`                                 | One of DEBUG, INFO, WARNING, ERROR |
 
 ---
 
@@ -55,8 +54,8 @@ kopf run main.py
 For `kind`:
 
 ```bash
-docker build -t node-property-operator:latest .
-kind load docker-image node-property-operator:latest --name <cluster-name>
+docker build -t node-property-controller:latest .
+kind load docker-image node-property-controller:latest --name <cluster-name>
 ```
 
 ### Apply manifests
@@ -64,14 +63,15 @@ kind load docker-image node-property-operator:latest --name <cluster-name>
 ```bash
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/rbac.yaml
+kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
 ```
 
 ### Verify
 
 ```bash
-kubectl -n node-property-operator get pods
-kubectl -n node-property-operator logs -l app.kubernetes.io/name=node-property-operator -f
+kubectl -n node-property-controller get pods
+kubectl -n node-property-controller logs -l app.kubernetes.io/name=node-property-controller -f
 kubectl get nodes --show-labels
 ```
 

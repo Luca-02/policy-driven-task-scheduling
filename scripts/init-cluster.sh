@@ -2,30 +2,7 @@
 
 set -euo pipefail
 
-#######################################
-# Configuration
-#######################################
-
-readonly CLUSTER_NAME="thesis"
-readonly CLUSTER_CONFIG_FILE="k8s/cluster-config.yaml"
-
-readonly HEADLAMP_MANIFEST_URL="https://raw.githubusercontent.com/kinvolk/headlamp/main/kubernetes-headlamp.yaml"
-
-readonly NODE_PROPERTY_CONTROLLER_PATH="node-property-controller"
-readonly NODE_PROPERTY_CONTROLLER_IMAGE="node-property-controller:latest"
-
-readonly NODE_PROPERTY_CONTROLLER_NAMESPACE_FILE="node-property-controller/k8s/namespace.yaml"
-readonly NODE_PROPERTY_CONTROLLER_NETWORK_POLICY_FILE="node-property-controller/k8s/network-policy.yaml"
-readonly NODE_PROPERTY_CONTROLLER_RBAC_FILE="node-property-controller/k8s/rbac.yaml"
-readonly NODE_PROPERTY_CONTROLLER_DEPLOYMENT_FILE="node-property-controller/k8s/deployment.yaml"
-
-readonly NODE_PROPERTY_CONTROLLER_NAMESPACE="node-property-controller"
-readonly NODE_PROPERTY_CONTROLLER_DEPLOYMENT="node-property-controller"
-
-readonly NODE_PROPERTY_FILES=(
-    "node-property/security-node-property.yaml"
-    "node-property/computation-node-property.yaml"
-)
+readonly CLUSTER_NAME="${CLUSTER_NAME:-kind}"
 
 #######################################
 # Logging
@@ -91,6 +68,8 @@ require_cmd kubectl
 # Create cluster
 #######################################
 
+readonly CLUSTER_CONFIG_FILE="k8s/cluster-config.yaml"
+
 if kind get clusters | grep -qx "$CLUSTER_NAME"; then
     log "Kind cluster '$CLUSTER_NAME' already exists"
 else
@@ -115,18 +94,16 @@ if [[ "$CURRENT_CONTEXT" != "$EXPECTED_CONTEXT" ]]; then
 fi
 
 #######################################
-# Install Headlamp
+# Dashboard and tools
 #######################################
 
-log "Installing Headlamp dashboard"
+readonly HEADLAMP_MANIFEST_URL="https://raw.githubusercontent.com/kinvolk/headlamp/main/kubernetes-headlamp.yaml"
+
+log "Installing Headlamp"
 
 if ! kubectl apply -f "$HEADLAMP_MANIFEST_URL"; then
     warn "Failed to apply Headlamp manifest"
 fi
-
-#######################################
-# Headlamp RBAC
-#######################################
 
 log "Ensuring Headlamp admin service account"
 
@@ -149,18 +126,102 @@ else
 fi
 
 #######################################
+# Namespaces
+#######################################
+
+readonly NAMESPACE_FILES=(
+    "k8s/namespace/compute-namespace.yaml"
+)
+
+log "Applying all namespaces"
+
+for namespace_file in "${NAMESPACE_FILES[@]}"; do
+    if [[ -f "$namespace_file" ]]; then
+        kubectl apply -f "$namespace_file"
+    else
+        warn "Namespace file not found: $namespace_file"
+    fi
+done
+
+#######################################
 # CRDs
 #######################################
 
-readonly NODE_PROPERTY_DEFINITIONS_CRD_FILE="node-property/node-property-definitions-crd.yaml"
+readonly CRD_FILES=(
+    "k8s/crd/node-property-crd.yaml"
+    "k8s/crd/task-request-crd.yaml"
+)
 
-log "Installing NodePropertyDefinition CRD"
+log "Applying all CRDs"
 
-kubectl apply -f "$NODE_PROPERTY_DEFINITIONS_CRD_FILE"
+for crd_file in "${CRD_FILES[@]}"; do
+    if [[ -f "$crd_file" ]]; then
+        kubectl apply -f "$crd_file"
+    else
+        warn "CRD file not found: $crd_file"
+    fi
+done
 
 #######################################
-# Load local Docker image into kind
+# Gatekeeper
 #######################################
+
+readonly GATEKEEPER_CONFIG_FILE="k8s/gatekeeper-config.yaml"
+readonly TEMPLATE_FILES=(
+    "k8s/policy/validate-task-request-template.yaml"
+)
+readonly CONSTRAINT_FILES=(
+    "k8s/policy/validate-task-request-constraint.yaml"
+)
+
+log "Installing Gatekeeper"
+kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.22.2/deploy/gatekeeper.yaml
+
+log "Waiting for Gatekeeper to be ready..."
+kubectl wait --for=condition=Available deployment/gatekeeper-controller-manager -n gatekeeper-system --timeout=120s
+kubectl wait --for=condition=Available deployment/gatekeeper-audit -n gatekeeper-system --timeout=120s
+
+# Apply Gatekeeper configuration with retry logic in case the webhook is not ready yet
+until kubectl apply -f "$GATEKEEPER_CONFIG_FILE"; do
+    log "Webhook not ready yet, retrying in 3 seconds..."
+    sleep 3
+done
+
+log "Applying ConstraintTemplates..."
+for template_file in "${TEMPLATE_FILES[@]}"; do
+    if [[ -f "$template_file" ]]; then
+        kubectl apply -f "$template_file"
+    else
+        warn "Template file not found: $template_file"
+    fi
+done
+
+log "Waiting for all Gatekeeper Constraint CRDs to be established..."
+kubectl wait --for=condition=Established crd -l gatekeeper.sh/constraint=yes --timeout=60s
+
+log "Applying Constraints..."
+for constraint_file in "${CONSTRAINT_FILES[@]}"; do
+    if [[ -f "$constraint_file" ]]; then
+        kubectl apply -f "$constraint_file"
+    else
+        warn "Constraint file not found: $constraint_file"
+    fi
+done
+
+#######################################
+# Node-property-controller 
+#######################################
+
+readonly NODE_PROPERTY_CONTROLLER_PATH="node-property-controller"
+readonly NODE_PROPERTY_CONTROLLER_IMAGE="node-property-controller:latest"
+readonly NODE_PROPERTY_CONTROLLER_FILES=(
+    "node-property-controller/k8s/namespace.yaml"
+    "node-property-controller/k8s/network-policy.yaml"
+    "node-property-controller/k8s/rbac.yaml"
+    "node-property-controller/k8s/deployment.yaml"
+)
+readonly NODE_PROPERTY_CONTROLLER_NAMESPACE="node-property-controller"
+readonly NODE_PROPERTY_CONTROLLER_DEPLOYMENT="node-property-controller"
 
 if cmd_exists docker; then
     if docker image inspect "$NODE_PROPERTY_CONTROLLER_IMAGE" >/dev/null 2>&1; then
@@ -185,20 +246,15 @@ else
     warn "Docker not available, skipping build and load"
 fi
 
-#######################################
-# Controller deployment
-#######################################
-
 log "Deploying node-property-controller"
 
-kubectl apply -f "$NODE_PROPERTY_CONTROLLER_NAMESPACE_FILE"
-kubectl apply -f "$NODE_PROPERTY_CONTROLLER_NETWORK_POLICY_FILE"
-kubectl apply -f "$NODE_PROPERTY_CONTROLLER_RBAC_FILE"
-kubectl apply -f "$NODE_PROPERTY_CONTROLLER_DEPLOYMENT_FILE"
-
-#######################################
-# Wait for rollout
-#######################################
+for node_property_file in "${NODE_PROPERTY_CONTROLLER_FILES[@]}"; do
+    if [[ -f "$node_property_file" ]]; then
+        kubectl apply -f "$node_property_file"
+    else
+        warn "File not found: $node_property_file"
+    fi
+done
 
 log "Waiting for deployment rollout"
 
@@ -218,27 +274,10 @@ if ! kubectl -n "$NODE_PROPERTY_CONTROLLER_NAMESPACE" \
 fi
 
 #######################################
-# Apply node properties
-#######################################
-
-log "Applying concrete node properties"
-
-for property_file in "${NODE_PROPERTY_FILES[@]}"; do
-    log "Applying node property: $property_file"
-
-    kubectl apply -f "$property_file"
-done
-
-#######################################
 # Summary
 #######################################
 
 log "Cluster information"
-
 kubectl get nodes -o wide
-
-log "Installed namespaces"
-
-kubectl get ns
 
 log "k8s-init: completed successfully!"

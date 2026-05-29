@@ -1,0 +1,53 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: taskrequests.policydriven.unimi.it
+spec:
+  group: policydriven.unimi.it
+  names:
+    kind: TaskRequest
+    listKind: TaskRequestList
+    plural: taskrequests
+    singular: taskrequest
+    shortNames:
+      - treq
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            spec:
+              type: object
+              properties:
+                # β(t): minimum property levels required by the task.
+                # Keys are NodePropertyDefinition names.
+                # Omitted properties default to level 0 (no requirement).
+                requirements:
+                  type: object
+                  description: >
+                    Minimum property levels required by the task (β(t)).
+                    Keys must match existing NodePropertyDefinition names.
+                  additionalProperties:
+                    type: integer
+                    minimum: 0
+                # req(t): datasets required for task execution.
+                # Each entry references a dataset by name in the external
+                # dataset catalog (mock dataset service).
+                datasets:
+                  type: array
+                  description: >
+                    Dataset names required for task execution (req(t)).
+                    Each name is resolved against the external dataset service.
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 254

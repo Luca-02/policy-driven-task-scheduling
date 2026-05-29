@@ -1,5 +1,5 @@
-apiVersion: nodeclass.io/v1alpha1
-kind: NodePropertyDefinition
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: NodeProperty
 metadata:
   name: test-fail-exists-value
 spec:
