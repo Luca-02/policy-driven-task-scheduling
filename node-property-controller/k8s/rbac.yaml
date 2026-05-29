@@ -9,30 +9,18 @@ kind: ClusterRole
 metadata:
   name: node-property-controller-cluster-role
 rules:
-  # Read and patch nodes 
+  # Read node state through informer caches and patch computed property labels.
   - apiGroups: [""]
     resources: [nodes]
     verbs: [get, list, watch, patch]
-  # Watch NodeProperty CRs
+  # Watch cluster-scoped NodeProperty resources with a dynamic informer.
   - apiGroups: [policydriven.unimi.it]
     resources: [nodeproperties]
-    verbs: [get, list, watch, patch, update]
-  # Kopf finalizers and progress annotations require updating the CR
-  - apiGroups: [policydriven.unimi.it]
-    resources: [nodeproperties/status]
-    verbs: [get, patch, update]
-  # Kopf posts events about its activity
-  - apiGroups: [""]
-    resources: [events]
-    verbs: [create]
-  # Kopf uses leases for peer-detection and leader election
+    verbs: [get, list, watch]
+  # Client-go leader election stores the HA lock in a coordination.k8s.io Lease.
   - apiGroups: [coordination.k8s.io]
     resources: [leases]
     verbs: [get, list, watch, create, update, patch, delete]
-  # Read CRD definitions to check if the CRD is present before starting the operator
-  - apiGroups: [apiextensions.k8s.io]
-    resources: [customresourcedefinitions]
-    verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

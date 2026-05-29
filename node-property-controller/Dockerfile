@@ -1,20 +1,14 @@
-FROM python:3.12-slim
+FROM golang:1.23-alpine AS builder
 
-RUN groupadd -g 1000 app && useradd -u 1000 -g app -m -s /bin/bash app
+WORKDIR /src
+COPY go.mod go.sum* ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/node-property-controller ./main.go
 
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY src/ ./src/
-
-COPY main.py .
-
-RUN chown -R app:app /app
-
-USER 1000
-
+FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /
+COPY --from=builder /out/node-property-controller /node-property-controller
+USER 65532:65532
 EXPOSE 9090
-
-ENTRYPOINT ["kopf", "run", "main.py", "--all-namespaces", "--standalone", "--liveness=http://0.0.0.0:9090/healthz"]
+ENTRYPOINT ["/node-property-controller"]

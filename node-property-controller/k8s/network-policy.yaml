@@ -37,8 +37,8 @@ spec:
 #   namespace: node-property-controller
 # spec:
 #   hard:
-#     # At most 1 pod (single-replica operator)
-#     pods: "2"
+#     # Three HA replicas plus one rolling-update surge pod.
+#     pods: "4"
 #     requests.cpu: "100m"
 #     requests.memory: "128Mi"
 #     limits.cpu: "400m"

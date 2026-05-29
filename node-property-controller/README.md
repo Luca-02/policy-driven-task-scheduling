@@ -1,51 +1,68 @@
 # Node Property Controller
 
-Kubernetes controller that classifies cluster nodes against property definitions (`NodePropertyDefinition` CRD) and writes the resulting levels as node labels.
+Kubernetes controller that classifies cluster nodes against `NodeProperty` custom resources and writes the resulting levels as node labels.
 
 For each node `n` and each property `p`, the controller computes the highest level whose DNF expression is satisfied by the node's attribute labels, then labels the node with:
 
-```
+```text
 property.node.policydriven.unimi.it/<p> = <level>
 ```
 
----
+If no positive level is satisfied, level `0` is implicit and the property label is removed.
 
 ## Architecture
 
-The controller watches two kinds of objects:
+The controller is implemented in Go with native Kubernetes libraries:
 
-- `NodePropertyDefinition` CRDs (group `policydriven.unimi.it`)
-- `Node` resources
+- `client-go` shared informers watch `Node` and `NodeProperty` resources and maintain local caches;
+- a rate-limited workqueue reconciles node and property events;
+- the dynamic client watches the CRD without generated clients;
+- the core client patches node labels only when the desired value differs from the current cached value;
+- leader election uses a `coordination.k8s.io/Lease`, so multiple replicas can run for HA while only the leader patches nodes.
 
-Whenever either changes, the affected nodes are re-evaluated and their property labels updated.
-
----
+See [GO_CONTROLLER_DESIGN.md](GO_CONTROLLER_DESIGN.md) for implementation details and differences from the previous Python/Kopf version.
 
 ## Configuration
 
-All configurable via environment variables (with defaults):
+All options are configurable through environment variables:
 
-| Variable           | Default                                | Description                        |
-| ------------------ | -------------------------------------- | ---------------------------------- |
-| `GROUP`            | `policydriven.unimi.it`                | CRD API group                      |
-| `VERSION`          | `v1alpha1`                             | CRD API version                    |
-| `PLURAL`           | `node-properties`                      | CRD plural name                    |
-| `ATTRIBUTE_PREFIX` | `attribute.node.policydriven.unimi.it` | Prefix for input attribute labels  |
-| `PROPERTY_PREFIX`  | `property.node.policydriven.unimi.it`  | Prefix for output property labels  |
-| `LOG_LEVEL`        | `INFO`                                 | One of DEBUG, INFO, WARNING, ERROR |
-
----
+| Variable | Default | Description |
+| --- | --- | --- |
+| `GROUP` | `policydriven.unimi.it` | CRD API group. |
+| `VERSION` | `v1alpha1` | CRD API version. |
+| `PLURAL` | `nodeproperties` | CRD plural resource name. |
+| `ATTRIBUTE_PREFIX` | `attribute.node.policydriven.unimi.it` | Prefix for input node attribute labels. |
+| `PROPERTY_PREFIX` | `property.node.policydriven.unimi.it` | Prefix for computed property labels. |
+| `LOG_LEVEL` | `INFO` | Reserved for logging configuration. |
+| `HEALTH_ADDR` | `:9090` | HTTP health endpoint bind address. |
+| `LEADER_ELECTION` | `true` | Enable Kubernetes Lease-based leader election. |
+| `LEADER_ELECTION_ID` | `node-property-controller` | Lease name used for leader election. |
+| `LEADER_ELECTION_NAMESPACE` | `node-property-controller` | Namespace where the Lease is stored. |
+| `RESYNC_PERIOD` | `10h` | Informer resync period. |
+| `CONCURRENT_WORKERS` | `2` | Number of reconciliation workers. |
 
 ## Running locally
 
-Requires Python 3.12+, a working `kubectl` context and the CRD already applied.
+Unit tests that do not need a Kubernetes cluster:
 
 ```bash
-pip install -r requirements.txt
-kopf run main.py
+cd node-property-controller
+go test ./internal/domain ./internal/config
 ```
 
----
+Run the controller locally against your current kubeconfig with leader election disabled:
+
+```bash
+cd node-property-controller
+go run main.go --local
+```
+
+Run locally with an explicit kubeconfig:
+
+```bash
+cd node-property-controller
+go run main.go --local --kubeconfig ~/.kube/config
+```
 
 ## Deploying to Kubernetes
 
@@ -54,6 +71,7 @@ kopf run main.py
 For `kind`:
 
 ```bash
+cd node-property-controller
 docker build -t node-property-controller:latest .
 kind load docker-image node-property-controller:latest --name <cluster-name>
 ```
@@ -61,24 +79,34 @@ kind load docker-image node-property-controller:latest --name <cluster-name>
 ### Apply manifests
 
 ```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/rbac.yaml
-kubectl apply -f k8s/network-policy.yaml
-kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/crd/node-property-crd.yaml
+kubectl apply -f node-property-controller/k8s/namespace.yaml
+kubectl apply -f node-property-controller/k8s/rbac.yaml
+kubectl apply -f node-property-controller/k8s/network-policy.yaml
+kubectl apply -f node-property-controller/k8s/deployment.yaml
 ```
+
+The deployment runs three replicas. Only the current leader patches node labels; standby replicas take over if the leader exits.
 
 ### Verify
 
 ```bash
 kubectl -n node-property-controller get pods
+kubectl -n node-property-controller get lease node-property-controller -o wide
 kubectl -n node-property-controller logs -l app.kubernetes.io/name=node-property-controller -f
 kubectl get nodes --show-labels
 ```
 
----
-
 ## Testing
 
 ```bash
-pytest -v
+cd node-property-controller
+go test ./...
+```
+
+If you only want to validate logic without downloading Kubernetes dependencies or reaching a cluster, run:
+
+```bash
+cd node-property-controller
+go test ./internal/domain ./internal/config
 ```
