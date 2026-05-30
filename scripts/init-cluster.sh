@@ -168,10 +168,12 @@ done
 
 readonly GATEKEEPER_CONFIG_FILE="k8s/gatekeeper-config.yaml"
 readonly TEMPLATE_FILES=(
-    "k8s/policy/validate-task-request-template.yaml"
+    "k8s/policy/validate-task-request-namespace-template.yaml"
+    "k8s/policy/validate-task-request-properties-template.yaml"
 )
 readonly CONSTRAINT_FILES=(
-    "k8s/policy/validate-task-request-constraint.yaml"
+    "k8s/policy/validate-task-request-namespace-constraint.yaml"
+    "k8s/policy/validate-task-request-properties-constraint.yaml"
 )
 
 log "Installing Gatekeeper"

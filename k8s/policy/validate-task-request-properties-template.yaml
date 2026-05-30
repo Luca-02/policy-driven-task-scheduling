@@ -1,0 +1,49 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8svalidatetaskrequestproperties
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sValidateTaskRequestProperties
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8svalidatetaskrequestproperties
+        
+        # ---------------------------------------------------------------------
+        # Violation:
+        # - Property does not exist
+        # - Requested level is not valid for that property
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          requirements := input.review.object.spec.requirements
+          requirements != null
+
+          some prop_name
+          req_level = requirements[prop_name]
+
+          req_level > 0
+
+          not valid_property_level(prop_name, req_level)
+
+          not data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["NodeProperty"][prop_name]
+          
+          msg := sprintf(
+            "Property '%v' with level '%v' is invalid: either the property does not exist or the requested level exceeds the maximum defined for that property.", 
+            [prop_name, req_level]
+          )
+        }
+
+        # ---------------------------------------------------------------------------
+        # Helper function to check if the requested level is valid for the property.
+        # Uses the inventory data to retrieve the property definition and checks if 
+        # the requested level is among the defined levels for that property.
+        # ---------------------------------------------------------------------------
+        valid_property_level(prop_name, req_level) {
+          prop := data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["NodeProperty"][prop_name]
+          
+          some i
+          prop.spec.levels[i].level == req_level
+        }

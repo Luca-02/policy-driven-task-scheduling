@@ -26,7 +26,7 @@ class Config:
         return Config(
             group=os.getenv("GROUP", "policydriven.unimi.it"),
             version=os.getenv("VERSION", "v1alpha1"),
-            plural=os.getenv("PLURAL", "node-properties"),
+            plural=os.getenv("PLURAL", "nodeproperties"),
             attribute_prefix=os.getenv("ATTRIBUTE_PREFIX", "attribute.node.policydriven.unimi.it"),
             property_prefix=os.getenv("PROPERTY_PREFIX", "property.node.policydriven.unimi.it"),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),

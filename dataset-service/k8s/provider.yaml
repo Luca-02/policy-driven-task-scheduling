@@ -1,0 +1,11 @@
+# Registers the dataset-service as a Gatekeeper External Data Provider.
+# The caBundle must be the base64-encoded CA that signed the service TLS cert
+# (printed by scripts/gen-certs.sh). Replace the placeholder before applying.
+apiVersion: externaldata.gatekeeper.sh/v1beta1
+kind: Provider
+metadata:
+  name: dataset-service
+spec:
+  url: https://dataset-service.dataset-service.svc:8443/validate
+  timeout: 5
+  caBundle: <BASE64_CA_BUNDLE>

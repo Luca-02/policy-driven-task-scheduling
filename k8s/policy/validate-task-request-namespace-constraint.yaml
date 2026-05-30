@@ -1,0 +1,10 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sValidateTaskRequestNamespace
+metadata:
+  name: validate-task-request-namespace
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["policydriven.unimi.it"]
+        kinds: ["TaskRequest"]

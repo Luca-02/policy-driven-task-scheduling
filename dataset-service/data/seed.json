@@ -1,0 +1,16 @@
+{
+  "datasets": [
+    {
+      "name": "d1",
+      "requirements": { "security": 2, "computation": 1 },
+      "sizeMB": 1024,
+      "nodes": ["kind-worker2", "kind-worker4", "kind-worker5"]
+    },
+    {
+      "name": "d2",
+      "requirements": { "security": 1, "computation": 3 },
+      "sizeMB": 2048,
+      "nodes": ["kind-worker1", "kind-worker4"]
+    }
+  ]
+}

@@ -9,11 +9,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 COPY main.py .
+COPY data/seed.json ./data/
 
 RUN chown -R app:app /app
 
 USER 1000
 
-EXPOSE 9090
+EXPOSE 8443
 
-ENTRYPOINT ["kopf", "run", "main.py", "--all-namespaces", "--standalone", "--liveness=http://0.0.0.0:9090/healthz"]
+ENTRYPOINT ["python", "-m", "main"]

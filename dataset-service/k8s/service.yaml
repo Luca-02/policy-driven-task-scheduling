@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataset-service
+  namespace: dataset-service
+  labels:
+    app.kubernetes.io/name: dataset-service
+spec:
+  selector:
+    app.kubernetes.io/name: dataset-service
+  ports:
+    - name: https
+      port: 8443
+      targetPort: https
+      protocol: TCP
