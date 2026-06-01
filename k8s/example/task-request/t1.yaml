@@ -4,7 +4,7 @@ metadata:
   name: t1
   namespace: compute
 spec:
-  # β(t1) = {security: 1, computation: 2}
+  # beta(t1) = {security: 1, computation: 2}
   requirements:
     security: 1
     computation: 2

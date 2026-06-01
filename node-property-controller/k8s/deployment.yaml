@@ -38,7 +38,7 @@ spec:
             medium: Memory
             sizeLimit: 32Mi
       containers:
-        - name: operator
+        - name: node-property-controller
           image: node-property-controller:latest
           imagePullPolicy: IfNotPresent
           # Set security context for the container 
@@ -51,17 +51,17 @@ spec:
                 - ALL
           env:
             - name: GROUP
-              value: policydriven.unimi.it
+              value: "policydriven.unimi.it"
             - name: VERSION
-              value: v1alpha1
+              value: "v1alpha1"
             - name: PLURAL
-              value: nodeproperties
+              value: "nodeproperties"
             - name: ATTRIBUTE_PREFIX
-              value: attribute.node.policydriven.unimi.it
+              value: "attribute.node.policydriven.unimi.it"
             - name: PROPERTY_PREFIX
-              value: property.node.policydriven.unimi.it
+              value: "property.node.policydriven.unimi.it"
             - name: LOG_LEVEL
-              value: INFO
+              value: "INFO"
           ports:
             - name: health
               containerPort: 9090

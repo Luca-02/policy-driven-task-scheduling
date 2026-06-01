@@ -1,8 +1,12 @@
 import kopf
+
+from dotenv import load_dotenv
 from kubernetes import client, config
 
 from src.config import Config
 from src.controller import Controller
+
+load_dotenv()
 
 cfg: Config = Config.from_env()
 ctrl: Controller | None = None

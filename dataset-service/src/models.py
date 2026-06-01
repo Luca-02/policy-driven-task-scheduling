@@ -1,6 +1,6 @@
 from typing import Any, Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.config import DEFAULT_GATEKEEPER_API_VERSION
 
@@ -16,7 +16,7 @@ class DatasetBase(BaseModel):
     """Base dataset metadata, used for both creation and update."""
 
     requirements: dict[str, Level] = Field(default_factory=dict)
-    sizeMB: int = Field(ge=0)
+    size_mb: int = Field(ge=0, default=0)
     nodes: list[str] = Field(default_factory=list)
 
 
@@ -24,6 +24,8 @@ class Dataset(DatasetBase):
     """Full dataset as stored and returned by the API."""
 
     name: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # -----------------------------------------------------------------------------

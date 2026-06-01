@@ -1,16 +1,15 @@
-from functools import lru_cache
+from fastapi import Depends, Request
+from sqlalchemy.orm import Session
 
-from fastapi import Depends
-
-from src.config import Config
 from src.database import DatasetRepository
 
 
-@lru_cache
-def get_config() -> Config:
-    return Config.from_env()
+def get_session(req: Request):
+    """Yields a managed SQLAlchemy session."""
+    session_factory = req.app.state.session_factory
+    with session_factory() as db:
+        yield db
 
 
-@lru_cache
-def get_repository(cfg: Config = Depends(get_config)) -> DatasetRepository:
-    return DatasetRepository(cfg.db_path)
+def get_repository(db: Session = Depends(get_session)) -> DatasetRepository:
+    return DatasetRepository(db)

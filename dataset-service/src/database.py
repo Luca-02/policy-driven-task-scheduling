@@ -1,65 +1,70 @@
-import json
-import os
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
 
-from tinydb import Query, TinyDB
+from src.orm import DatasetORM
+from src.models import Dataset, DatasetBase
+
+
+def create_engine_factory(db_url: str) -> Engine:
+    """
+    Create a SQLAlchemy engine.
+    - PostgreSQL for production: connection pooling with pre-ping to handle disconnects.
+    - SQLite (tests): in-memory, shared across sessions via StaticPool.
+    """
+    if db_url.startswith("sqlite"):
+        return create_engine(
+            db_url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    return create_engine(db_url, pool_pre_ping=True)
 
 
 class DatasetRepository:
-    """
-    Persistence layer backed by TinyDB.
+    """Persistence layer over a SQLAlchemy session."""
 
-    TinyDB stores all data in a single JSON file, which is human-readable
-    and trivially editable for tests and demos.
-    CRUD operations are persisted on write; the file can also be
-    inspected/edited directly.
-    """
+    def __init__(self, db: Session):
+        self._db: Session = db
 
-    def __init__(self, db_path: str):
-        directory = os.path.dirname(db_path)
-        if directory:
-            os.makedirs(directory, exist_ok=True)
-        self._db = TinyDB(db_path)
-        self._table = self._db.table("datasets")
-        self._q = Query()
+    def list(self) -> list[Dataset]:
+        rows = self._db.query(DatasetORM).all()
+        return [Dataset.model_validate(row) for row in rows]
 
-    def list(self) -> list[dict]:
-        return self._table.all()
-
-    def get(self, name: str) -> dict | None:
-        return self._table.get(self._q.name == name)
+    def get(self, name: str) -> Dataset | None:
+        row = self._db.get(DatasetORM, name)
+        return Dataset.model_validate(row) if row is not None else None
 
     def exists(self, name: str) -> bool:
-        return self._table.contains(self._q.name == name)
+        return self.get(name) is not None
 
-    def create(self, dataset: dict) -> dict:
-        self._table.insert(dataset)
-        return dataset
-
-    def update(self, name: str, data: dict) -> dict | None:
-        """Full replace of the metadata. Returns None if absent."""
-        if not self.exists(name):
+    def create(self, dataset: Dataset):
+        if self.exists(dataset.name):
             return None
-        record = {**data, "name": name}
-        self._table.update(record, self._q.name == name)
-        return self.get(name)
+
+        row = DatasetORM(**dataset.model_dump())
+        self._db.add(row)
+        self._db.commit()
+        self._db.refresh(row)
+        return Dataset.model_validate(row)
+
+    def update(self, name: str, update: DatasetBase) -> Dataset | None:
+        row = self._db.get(DatasetORM, name)
+        if row is None:
+            return None
+
+        for key, value in update.model_dump(exclude_unset=True).items():
+            setattr(row, key, value)
+
+        self._db.commit()
+        self._db.refresh(row)
+        return Dataset.model_validate(row)
 
     def delete(self, name: str) -> bool:
-        if not self.exists(name):
+        row = self._db.get(DatasetORM, name)
+        if row is None:
             return False
-        self._table.remove(self._q.name == name)
-        return True
 
-    def seed_if_empty(self, seed_path: str, logger=None):
-        """Load seed data only when the table is empty and the seed file exists."""
-        if len(self._table) > 0:
-            return
-        if not seed_path or not os.path.exists(seed_path):
-            return
-        with open(seed_path) as f:
-            data = json.load(f)
-        for dataset in data.get("datasets", []):
-            self._table.insert(dataset)
-        if logger:
-            logger.info(
-                f"Seeded {len(data.get('datasets', []))} datasets from {seed_path}"
-            )
+        self._db.delete(row)
+        self._db.commit()
+        return True

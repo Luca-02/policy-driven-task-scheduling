@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+#
+# Initializes the kind cluster:
+# - Creates the cluster if it doesn't exist
+# - Sets up kubectl context
+# - Installs the Headlamp dashboard and creates an admin service account
+# - Creates namespaces
+# - Applies CRDs
+# - Installs Gatekeeper and applies policy templates and constraints
+# - Deploys the node-property-controller
 
 set -euo pipefail
 

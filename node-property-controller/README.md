@@ -8,8 +8,6 @@ For each node `n` and each property `p`, the controller computes the highest lev
 property.node.policydriven.unimi.it/<p> = <level>
 ```
 
----
-
 ## Architecture
 
 The controller watches two kinds of objects:
@@ -18,8 +16,6 @@ The controller watches two kinds of objects:
 - `Node` resources
 
 Whenever either changes, the affected nodes are re-evaluated and their property labels updated.
-
----
 
 ## Configuration
 
@@ -34,8 +30,6 @@ All configurable via environment variables (with defaults):
 | `PROPERTY_PREFIX`  | `property.node.policydriven.unimi.it`  | Prefix for output property labels  |
 | `LOG_LEVEL`        | `INFO`                                 | One of DEBUG, INFO, WARNING, ERROR |
 
----
-
 ## Running locally
 
 Requires Python 3.12+, a working `kubectl` context and the CRD already applied.
@@ -45,40 +39,29 @@ pip install -r requirements.txt
 kopf run main.py
 ```
 
----
-
 ## Deploying to Kubernetes
-
-### Build and load the image
 
 For `kind`:
 
 ```bash
+# build the image and load it into the cluster 
 docker build -t node-property-controller:latest .
 kind load docker-image node-property-controller:latest --name <cluster-name>
-```
 
-### Apply manifests
-
-```bash
+# namespace, RBAC, network policy, deployment
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/rbac.yaml
 kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
-```
 
-### Verify
-
-```bash
+# verify it's running
 kubectl -n node-property-controller get pods
 kubectl -n node-property-controller logs -l app.kubernetes.io/name=node-property-controller -f
-kubectl get nodes --show-labels
 ```
-
----
 
 ## Testing
 
 ```bash
+pip install pytest
 pytest -v
 ```

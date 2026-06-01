@@ -1,0 +1,30 @@
+# Highly-available PostgreSQL via the CloudNativePG operator.
+#
+# Prereq (once per cluster): install the operator, e.g.
+#   kubectl apply --server-side -f \
+#     https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.29/releases/cnpg-1.29.1.yaml
+#
+# This Cluster runs 1 primary + 2 replicas with automatic failover. CNPG creates:
+#   - dataset-db-rw -> always points to the current primary (read/write)
+#   - dataset-db-ro -> load-balances over replicas (read-only)
+#   - secret dataset-db-app -> app credentials, including a ready-to-use "uri"
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: dataset-db
+  namespace: dataset-service
+spec:
+  instances: 3
+  storage:
+    size: 1Gi
+  bootstrap:
+    initdb:
+      database: dataset_catalog
+      owner: dataset_catalog
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi

@@ -445,4 +445,5 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/jetbrains+all,go,goland+all,python,visualstudiocode,pycharm
 
 ### Other ###
-.claude
+.claude/
+.certs/

@@ -10,6 +10,6 @@ spec:
     app.kubernetes.io/name: dataset-service
   ports:
     - name: https
-      port: 8443
+      port: 443
       targetPort: https
       protocol: TCP

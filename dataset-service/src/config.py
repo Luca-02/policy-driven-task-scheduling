@@ -8,29 +8,34 @@ class Config:
 
     def __init__(
         self,
-        database_path: str,
-        seed_path: str,
+        db_url: str,
         host: str,
         port: int,
+        tls_cert_file: str | None,
+        tls_key_file: str | None,
         gatekeeper_api_version: str,
         log_level: str,
     ):
-        self.database_path = database_path
-        self.seed_path = seed_path
+        self.db_url = db_url
         self.host = host
         self.port = port
+        self.tls_cert_file = tls_cert_file
+        self.tls_key_file = tls_key_file
         self.gatekeeper_api_version = gatekeeper_api_version
         self.log_level = log_level
+
+    @property
+    def tls_enabled(self) -> bool:
+        return bool(self.tls_cert_file and self.tls_key_file)
 
     @staticmethod
     def from_env() -> "Config":
         return Config(
-            # TinyDB stores everything in this single, human-readable JSON file.
-            # In the cluster it lives on a writable volume (emptyDir/PVC).
-            database_path=os.getenv("DB_PATH", "/data/datasets.json"),
-            seed_path=os.getenv("SEED_PATH", "/data/seed.json"),
+            db_url=os.getenv("DB_URL", "sqlite://"),
             host=os.getenv("HOST", "0.0.0.0"),
             port=int(os.getenv("PORT", "8443")),
+            tls_cert_file=os.getenv("TLS_CERT_FILE"),
+            tls_key_file=os.getenv("TLS_KEY_FILE"),
             gatekeeper_api_version=os.getenv(
                 "GATEKEEPER_API_VERSION", DEFAULT_GATEKEEPER_API_VERSION
             ),
