@@ -47,8 +47,7 @@ spec:
             readOnlyRootFilesystem: true
             privileged: false
             capabilities:
-              drop:
-                - ALL
+              drop: ["ALL"]
           env:
             - name: GROUP
               value: "policydriven.unimi.it"
