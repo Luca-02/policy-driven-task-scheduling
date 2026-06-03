@@ -50,22 +50,21 @@ For `kind`:
 
 ```bash
 # install the CloudNativePG operator
-kubectl apply --server-side -f \
-  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.29/releases/cnpg-1.29.1.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.29/releases/cnpg-1.29.1.yaml
 
-# enable external data in Gatekeeper (controller-manager + audit)
-kubectl -n gatekeeper-system patch deployment gatekeeper-controller-manager \
-  --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-external-data=true"}]'
+# # enable external data in Gatekeeper (controller-manager + audit)
+# kubectl -n gatekeeper-system patch deployment gatekeeper-controller-manager \
+#   --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-external-data=true"}]'
 
 # build + load image
 docker build -t dataset-service:latest .
 kind load docker-image dataset-service:latest --name <cluster-name>
 
-# namespace, DB, TLS, service
-kubectl apply -f k8s/namespace.yaml
+# deploy the postgres cluster
 kubectl apply -f k8s/postgres-cluster.yaml  # wait until the Cluster is ready
 
-bash gen-certs.sh  # creates TLS secret, prints CA bundle
+# generate TLS certs for the service
+bash gen-certs.sh
 
 # paste the CA bundle into k8s/provider.yaml (spec.caBundle)
 kubectl apply -f k8s/service.yaml
@@ -77,8 +76,8 @@ kubectl apply -f k8s/deployment.yaml
 ## Testing
 
 ```bash
-pip install pytest
-pytest -v
+pip install pytest pytest-cov
+pytest -v --cov=src
 ```
 
 Tests need **no external services**: the repository is exercised on in-memory SQLite.

@@ -1,8 +1,0 @@
-apiVersion: externaldata.gatekeeper.sh/v1beta1
-kind: Provider
-metadata:
-  name: dataset-service
-spec:
-  url: https://dataset-service.dataset-service.svc.cluster.local/validate
-  timeout: 5
-  caBundle: <BASE64_CA_BUNDLE>

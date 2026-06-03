@@ -23,9 +23,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       volumes:
-        - name: data
-          emptyDir:
-            sizeLimit: 32Mi
         - name: tmp
           emptyDir:
             medium: Memory
@@ -91,8 +88,6 @@ spec:
               cpu: 200m
               memory: 256Mi
           volumeMounts:
-            - name: data
-              mountPath: /data
             - name: tmp
               mountPath: /tmp
             - name: tls

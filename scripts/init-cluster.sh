@@ -47,21 +47,21 @@ trap cleanup EXIT
 # Utilities
 #######################################
 
-cmd_exists() {
+command_exist() {
     command -v "$1" >/dev/null 2>&1
-}
-
-require_cmd() {
-    local cmd="$1"
-
-    if ! cmd_exists "$cmd"; then
-        error "'$cmd' is not installed or not in PATH."
-        exit 1
-    fi
 }
 
 resource_exists() {
     kubectl "$@" >/dev/null 2>&1
+}
+
+require_command() {
+    local command="$1"
+
+    if ! command_exist "$command"; then
+        error "'$command' is not installed or not in PATH."
+        exit 1
+    fi
 }
 
 #######################################
@@ -70,8 +70,8 @@ resource_exists() {
 
 log "k8s-init: starting cluster setup"
 
-require_cmd kind
-require_cmd kubectl
+require_command kind
+require_command kubectl
 
 #######################################
 # Create cluster
@@ -79,6 +79,7 @@ require_cmd kubectl
 
 readonly CLUSTER_CONFIG_FILE="k8s/cluster-config.yaml"
 
+log "Checking for existing kind cluster '$CLUSTER_NAME'"
 if kind get clusters | grep -qx "$CLUSTER_NAME"; then
     log "Kind cluster '$CLUSTER_NAME' already exists"
 else
@@ -109,13 +110,11 @@ fi
 readonly HEADLAMP_MANIFEST_URL="https://raw.githubusercontent.com/kinvolk/headlamp/main/kubernetes-headlamp.yaml"
 
 log "Installing Headlamp"
-
 if ! kubectl apply -f "$HEADLAMP_MANIFEST_URL"; then
     warn "Failed to apply Headlamp manifest"
 fi
 
 log "Ensuring Headlamp admin service account"
-
 if ! resource_exists -n kube-system get serviceaccount headlamp-admin; then
     kubectl -n kube-system create serviceaccount headlamp-admin
 
@@ -124,6 +123,7 @@ else
     log "ServiceAccount already exists"
 fi
 
+log "Ensuring ClusterRoleBinding for Headlamp admin"
 if ! resource_exists get clusterrolebinding headlamp-admin; then
     kubectl create clusterrolebinding headlamp-admin \
         --serviceaccount=kube-system:headlamp-admin \
@@ -138,17 +138,14 @@ fi
 # Namespaces
 #######################################
 
-readonly NAMESPACE_FILES=(
-    "k8s/namespace/compute-namespace.yaml"
-)
+readonly NAMESPACE_DIR="k8s/namespaces"
 
 log "Applying all namespaces"
-
-for namespace_file in "${NAMESPACE_FILES[@]}"; do
-    if [[ -f "$namespace_file" ]]; then
-        kubectl apply -f "$namespace_file"
+for ns_file in "$NAMESPACE_DIR"/*.yaml; do
+    if [[ -f "$ns_file" ]]; then
+        kubectl apply -f "$ns_file"
     else
-        warn "Namespace file not found: $namespace_file"
+        warn "Namespace file not found: $ns_file"
     fi
 done
 
@@ -156,14 +153,10 @@ done
 # CRDs
 #######################################
 
-readonly CRD_FILES=(
-    "k8s/crd/node-property-crd.yaml"
-    "k8s/crd/task-request-crd.yaml"
-)
+readonly CRD_DIR="k8s/crds"
 
 log "Applying all CRDs"
-
-for crd_file in "${CRD_FILES[@]}"; do
+for crd_file in "$CRD_DIR"/*.yaml; do
     if [[ -f "$crd_file" ]]; then
         kubectl apply -f "$crd_file"
     else
@@ -175,43 +168,59 @@ done
 # Gatekeeper
 #######################################
 
+readonly GATEKEEPER_VERSION="v3.22.2"
+readonly GATEKEEPER_NAMESPACE="gatekeeper-system"
+readonly GATEKEEPER_MANIFEST_URL="https://raw.githubusercontent.com/open-policy-agent/gatekeeper/${GATEKEEPER_VERSION}/deploy/gatekeeper.yaml"
+
 readonly GATEKEEPER_CONFIG_FILE="k8s/gatekeeper-config.yaml"
-readonly TEMPLATE_FILES=(
-    "k8s/policy/validate-task-request-namespace-template.yaml"
-    "k8s/policy/validate-task-request-properties-template.yaml"
-)
-readonly CONSTRAINT_FILES=(
-    "k8s/policy/validate-task-request-namespace-constraint.yaml"
-    "k8s/policy/validate-task-request-properties-constraint.yaml"
+
+readonly TEMPLATE_CONSTRAINT_DIRS=(
+    "k8s/policy/validate-task-request-datasets-error"
+    "k8s/policy/validate-task-request-datasets-properties"
+    "k8s/policy/validate-task-request-namespace"
+    "k8s/policy/validate-task-request-properties"
 )
 
 log "Installing Gatekeeper"
-kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.22.2/deploy/gatekeeper.yaml
+kubectl apply -f "$GATEKEEPER_MANIFEST_URL"
 
 log "Waiting for Gatekeeper to be ready..."
-kubectl wait --for=condition=Available deployment/gatekeeper-controller-manager -n gatekeeper-system --timeout=120s
-kubectl wait --for=condition=Available deployment/gatekeeper-audit -n gatekeeper-system --timeout=120s
+kubectl wait --for=condition=Available deployment/gatekeeper-controller-manager -n "$GATEKEEPER_NAMESPACE" --timeout=120s
+kubectl wait --for=condition=Available deployment/gatekeeper-audit -n "$GATEKEEPER_NAMESPACE" --timeout=120s
 
-# Apply Gatekeeper configuration with retry logic in case the webhook is not ready yet
-until kubectl apply -f "$GATEKEEPER_CONFIG_FILE"; do
-    log "Webhook not ready yet, retrying in 3 seconds..."
+log "Applying Gatekeeper configuration"
+for attempt in {1..10}; do
+    if kubectl apply -f "$GATEKEEPER_CONFIG_FILE"; then
+        break
+    fi
+
+    if [[ $attempt -eq 10 ]]; then
+        error "Unable to apply Gatekeeper configuration after retries"
+        exit 1
+    fi
+
+    warn "Gatekeeper webhook not ready, retrying ($attempt/10)..."
     sleep 3
 done
 
 log "Applying ConstraintTemplates..."
-for template_file in "${TEMPLATE_FILES[@]}"; do
+for template_dir in "${TEMPLATE_CONSTRAINT_DIRS[@]}"; do
+    template_file="$template_dir/template.yaml"
+
     if [[ -f "$template_file" ]]; then
         kubectl apply -f "$template_file"
     else
-        warn "Template file not found: $template_file"
+        warn "ConstraintTemplate file not found: $template_file"
     fi
 done
 
 log "Waiting for all Gatekeeper Constraint CRDs to be established..."
-kubectl wait --for=condition=Established crd -l gatekeeper.sh/constraint=yes --timeout=60s
+kubectl wait --for=condition=Established crd -l gatekeeper.sh/constraint=yes --timeout=120s
 
 log "Applying Constraints..."
-for constraint_file in "${CONSTRAINT_FILES[@]}"; do
+for constraint_dir in "${TEMPLATE_CONSTRAINT_DIRS[@]}"; do
+    constraint_file="$constraint_dir/constraint.yaml"
+
     if [[ -f "$constraint_file" ]]; then
         kubectl apply -f "$constraint_file"
     else
@@ -234,7 +243,8 @@ readonly NODE_PROPERTY_CONTROLLER_FILES=(
 readonly NODE_PROPERTY_CONTROLLER_NAMESPACE="node-property-controller"
 readonly NODE_PROPERTY_CONTROLLER_DEPLOYMENT="node-property-controller"
 
-if cmd_exists docker; then
+log "Setting up node-property-controller"
+if command_exist docker; then
     if docker image inspect "$NODE_PROPERTY_CONTROLLER_IMAGE" >/dev/null 2>&1; then
         log "Docker image '$NODE_PROPERTY_CONTROLLER_IMAGE' already exists"
     else
@@ -258,7 +268,6 @@ else
 fi
 
 log "Deploying node-property-controller"
-
 for node_property_file in "${NODE_PROPERTY_CONTROLLER_FILES[@]}"; do
     if [[ -f "$node_property_file" ]]; then
         kubectl apply -f "$node_property_file"
@@ -268,7 +277,6 @@ for node_property_file in "${NODE_PROPERTY_CONTROLLER_FILES[@]}"; do
 done
 
 log "Waiting for deployment rollout"
-
 if ! kubectl -n "$NODE_PROPERTY_CONTROLLER_NAMESPACE" \
     rollout status deployment/"$NODE_PROPERTY_CONTROLLER_DEPLOYMENT" \
     --timeout=180s; then
@@ -289,6 +297,7 @@ fi
 #######################################
 
 log "Cluster information"
+
 kubectl get nodes -o wide
 
 log "k8s-init: completed successfully!"

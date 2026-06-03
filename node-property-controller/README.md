@@ -62,6 +62,6 @@ kubectl -n node-property-controller logs -l app.kubernetes.io/name=node-property
 ## Testing
 
 ```bash
-pip install pytest
-pytest -v
+pip install pytest pytest-cov
+pytest -v --cov=src
 ```

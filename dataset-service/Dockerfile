@@ -8,7 +8,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
-COPY data/ ./data/
 COPY main.py .
 
 RUN chown -R app:app /app
