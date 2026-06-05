@@ -6,34 +6,36 @@ The service is intentionally a thin demo component, not a production system: no 
 
 ## Architecture choices
 
-- **PostgreSQL in HA via CloudNativePG**: a `Cluster` of 1 primary + 2 replicas with automatic failover. The service connects to the `-rw` service, so writes always reach the current primary; on failover SQLAlchemy reconnects via `pool_pre_ping`.
-- **Replicable service**: state lives only in PostgreSQL, so the Deployment runs multiple replicas without coordination.
+- **PostgreSQL in HA via CloudNativePG**: PostgreSQL `Cluster`. The service connects to the `-rw` service, so writes always reach the current primary.
+- **Replicable service**: state lives only in PostgreSQL, so the Deployment could runs multiple replicas without coordination.
 
 ## Endpoints
 
-| Method | Path               | Description                      |
-| ------ | ------------------ | -------------------------------- |
-| GET    | `/healthz`         | liveness/readiness               |
-| POST   | `/validate`        | Gatekeeper EDP: resolve metadata |
-| GET    | `/datasets`        | list datasets                    |
-| GET    | `/datasets/{name}` | dataset detail                   |
-| POST   | `/datasets`        | create                           |
-| PUT    | `/datasets/{name}` | full replace                     |
-| DELETE | `/datasets/{name}` | delete                           |
+| Method | Path               | Description              |
+| ------ | ------------------ | ------------------------ |
+| GET    | `/healthz`         | liveness/readiness       |
+| POST   | `/validate`        | Gatekeeper EDP           |
+| GET    | `/datasets`        | list datasets            |
+| GET    | `/datasets/{name}` | dataset detail           |
+| POST   | `/datasets`        | create dataset           |
+| POST   | `/datasets/batch`  | create multiple datasets |
+| PUT    | `/datasets/{name}` | full replace dataset     |
+| DELETE | `/datasets/{name}` | delete dataset           |
+| DELETE | `/datasets/`       | delete all datasets      |
 
 ## Configuration (env vars)
 
 | Variable                 | Default                              | Description               |
 | ------------------------ | ------------------------------------ | ------------------------- |
 | `DB_URL`                 | `sqlite://`                          | SQLAlchemy connection URI |
-| `HOST`                   | `0.0.0.0`                            | listen host               |
+| `HOST`                   | `127.0.0.1`                          | listen host               |
 | `PORT`                   | `8443`                               | listen port               |
 | `TLS_CERT_FILE`          | (unset)                              | server cert (enables TLS) |
 | `TLS_KEY_FILE`           | (unset)                              | server key (enables TLS)  |
 | `GATEKEEPER_API_VERSION` | `externaldata.gatekeeper.sh/v1beta1` | API version for EDP       |
 | `LOG_LEVEL`              | `INFO`                               | DEBUG/INFO/WARNING/ERROR  |
 
-When `TLS_CERT_FILE` / `TLS_KEY_FILE` are unset, the service runs in plain HTTP (used by tests). In the cluster both are set, so TLS is on.
+When `TLS_CERT_FILE` / `TLS_KEY_FILE` are unset, the service runs in plain HTTP (used by tests). 
 
 ## Running locally
 
@@ -46,32 +48,54 @@ python main.py
 
 ## Deploying to Kubernetes
 
-For `kind`:
+For `kind` environments, the entire deployment lifecycle is fully automated by the `init-cluster.sh` script. 
+
+To update the dataset-service manually:
+
+### 1. Database Prerequisites
+
+The service requires the CloudNativePG operator and a running PostgreSQL cluster.
 
 ```bash
-# install the CloudNativePG operator
+# Install the CloudNativePG operator
 kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.29/releases/cnpg-1.29.1.yaml
 
-# # enable external data in Gatekeeper (controller-manager + audit)
-# kubectl -n gatekeeper-system patch deployment gatekeeper-controller-manager \
-#   --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-external-data=true"}]'
+# Deploy the highly-available postgres cluster
+kubectl apply -f k8s/postgres-cluster.yaml
 
-# build + load image
+# Wait until the Cluster is ready to accept connections (can take a few times)
+kubectl wait -n dataset-service --for=condition=Ready cluster/dataset-db --timeout=600s
+```
+
+### 2. Certificates & App Deployment
+
+The `gen-certs.sh`, if executed with the env `TARGET_ENV=k8s`, automatically generates a self-signed CA, creates the server certificates, and automatically injects the base64 CA bundle into k8s/provider.yaml.
+```bash
+# Generate TLS certs and update provider.yaml
+TARGET_ENV="k8s" bash scripts/gen-certs.sh
+
+# Create the TLS Secret for the service
+kubectl create secret generic dataset-service-tls \
+    --from-file=ca.crt=".certs/k8s/ca.crt" \
+    --from-file=tls.crt=".certs/k8s/tls.crt" \
+    --from-file=tls.key=".certs/k8s/tls.key" \
+    -n dataset-service
+
+# Build and load the image into Kind
 docker build -t dataset-service:latest .
 kind load docker-image dataset-service:latest --name <cluster-name>
 
-# deploy the postgres cluster
-kubectl apply -f k8s/postgres-cluster.yaml  # wait until the Cluster is ready
-
-# generate TLS certs for the service
-bash gen-certs.sh
-
-# paste the CA bundle into k8s/provider.yaml (spec.caBundle)
+# Apply all service manifests
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/network-policy.yaml
-kubectl apply -f k8s/provider.yaml
 kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/provider.yaml
+
+# Wait for the service to be fully rolled out and ready
+kubectl -n dataset-service rollout status deployment/dataset-service --timeout=180s
 ```
+
+<!-- TODO: Add the seeding section procedure -->
 
 ## Testing
 

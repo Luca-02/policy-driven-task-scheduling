@@ -37,6 +37,22 @@ def create_dataset(
     return created
 
 
+@router.post("/batch", response_model=list[Dataset], status_code=201)
+def create_datasets(
+    datasets: list[Dataset],
+    repo: DatasetRepositoryDep,
+):
+    created = []
+    for dataset in datasets:
+        if repo.exists(dataset.name):
+            raise HTTPException(
+                status_code=409, detail=f"Dataset already exists: {dataset.name}"
+            )
+
+        created.append(repo.create(dataset))
+    return created
+
+
 @router.put("/{name}", response_model=Dataset)
 def update_dataset(
     name: str,
@@ -58,4 +74,14 @@ def delete_dataset(name: str, repo: DatasetRepositoryDep):
         raise HTTPException(
             status_code=404,
             detail=f"Dataset not found: {name}",
+        )
+
+
+@router.delete("", status_code=204)
+def delete_all_datasets(repo: DatasetRepositoryDep):
+    count = repo.delete_all()
+    if count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No datasets to delete",
         )

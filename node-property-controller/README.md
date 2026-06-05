@@ -41,22 +41,22 @@ kopf run main.py
 
 ## Deploying to Kubernetes
 
-For `kind`:
+For `kind` environments, the entire deployment lifecycle is fully automated by the `init-cluster.sh` script. 
+
+To update the node-property-controller manually:
 
 ```bash
-# build the image and load it into the cluster 
+# Build the image and load it into the cluster 
 docker build -t node-property-controller:latest .
 kind load docker-image node-property-controller:latest --name <cluster-name>
 
-# namespace, RBAC, network policy, deployment
-kubectl apply -f k8s/namespace.yaml
+# Namespace, RBAC, network policy, deployment
 kubectl apply -f k8s/rbac.yaml
 kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
 
-# verify it's running
-kubectl -n node-property-controller get pods
-kubectl -n node-property-controller logs -l app.kubernetes.io/name=node-property-controller -f
+# Wait for the service to be fully rolled out and ready
+kubectl -n node-property-controller rollout status deployment/node-property-controller --timeout=180s
 ```
 
 ## Testing

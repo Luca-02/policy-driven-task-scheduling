@@ -11,6 +11,18 @@
       "requirements": { "security": 1, "computation": 3 },
       "size_mb": 2048,
       "nodes": ["kind-worker1", "kind-worker4"]
+    },
+    {
+      "name": "dnotexistprop",
+      "requirements": { "propnotexist1": 1, "propnotexist2": 3 },
+      "size_mb": 512,
+      "nodes": ["kind-worker3", "kind-worker5"]
+    },
+    {
+      "name": "dnotexistlvl",
+      "requirements": { "security": 99 },
+      "size_mb": 1024,
+      "nodes": ["kind-worker2", "kind-worker4"]
     }
   ]
 }

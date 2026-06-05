@@ -1,0 +1,55 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8svalidatetaskrequestproperties
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sValidateTaskRequestProperties
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8svalidatetaskrequestproperties
+
+        requirements := input.review.object.spec.requirements
+        property_inventory := data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["NodeProperty"]
+
+        valid_property_level(prop_name, req_level) {
+          prop := property_inventory[prop_name]
+          some i
+          prop.spec.levels[i].level == req_level
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation 1: invalid requested property in the TaskRequest 
+        # requirements
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          requirements != null
+
+          some prop_name
+          _ := requirements[prop_name]
+
+          not property_inventory[prop_name]
+          
+          msg := sprintf("Property '%v' does not exist in the cluster",  [prop_name])
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation 2: invalid level for an existing property in the 
+        # TaskRequest requirements
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          requirements != null
+
+          some prop_name
+          req_level := requirements[prop_name]
+          req_level != 0
+
+          property_inventory[prop_name]
+
+          not valid_property_level(prop_name, req_level)
+          
+          msg := sprintf("Property '%v' exists, but requested level '%v' is not defined", [prop_name, req_level])
+        }

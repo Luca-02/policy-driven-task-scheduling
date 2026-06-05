@@ -1,10 +1,12 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
-  name: t2
+  name: t1
+  namespace: compute
 spec:
   requirements:
-    fail: 1
+    security: 1
+    computation: 2
   datasets:
     - d1
     - d2

@@ -8,3 +8,5 @@ spec:
     kinds:
       - apiGroups: ["policydriven.unimi.it"]
         kinds: ["TaskRequest"]
+  parameters:
+    allowedNamespaces: ["compute"]

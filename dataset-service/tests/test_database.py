@@ -81,3 +81,10 @@ class TestRepository(unittest.TestCase):
 
     def test_delete_missing_false(self):
         self.assertFalse(self.repo.delete("nope"))
+
+    def test_delete_all(self):
+        self.repo.create(self._d1())
+        self.repo.create(self._d2())
+        count = self.repo.delete_all()
+        self.assertEqual(count, 2)
+        self.assertEqual(len(self.repo.list()), 0)

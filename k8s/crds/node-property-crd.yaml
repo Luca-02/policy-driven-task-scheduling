@@ -36,8 +36,10 @@ spec:
                   x-kubernetes-list-type: map
                   x-kubernetes-list-map-keys: ["level"]
                   description: >
-                    List of levels for this property (level 0 = always true is implicit and must not be defined here). 
-                    Each level has an integer index and a DNF expression: a list of clauses, where each clause is a list of atomic conditions.
+                    List of levels for this property (level 0 = always true 
+                    is implicit and must not be defined here). Each level 
+                    has an integer index and a DNF expression: a list of 
+                    clauses, where each clause is a list of atomic conditions.
                   items:
                     type: object
                     required: ["level", "disjunction"]
@@ -51,7 +53,9 @@ spec:
                         minItems: 1
                         maxItems: 32
                         x-kubernetes-list-type: set
-                        description: List of clauses of the disjunction, where each clause is a list of atomic conditions.
+                        description: > 
+                          List of clauses of the disjunction, where 
+                          each clause is a list of atomic conditions.
                         items:
                           type: object
                           x-kubernetes-map-type: atomic
@@ -97,7 +101,7 @@ spec:
                                     type: string
                                     pattern: "^[a-zA-Z0-9._-]+$"
                                     minLength: 1
-                                    maxLength: 64
+                                    maxLength: 254
                                   operator:
                                     type: string
                                     enum:

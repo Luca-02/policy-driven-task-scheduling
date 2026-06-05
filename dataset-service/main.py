@@ -1,9 +1,10 @@
 import logging
+import json
 
 import uvicorn
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.concurrency import asynccontextmanager
 from sqlalchemy.orm import sessionmaker
 
@@ -47,11 +48,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app(custom_cfg: Config | None = None) -> FastAPI:
-    """
-    Application factory. Builds the session factory from config and wires the
-    routers. No seeding is performed here: datasets are loaded out-of-band by
-    scripts/seed.py through the public API.
-    """
+    """Factory function to create the FastAPI app instance."""
     custom_cfg = custom_cfg or cfg
 
     app = FastAPI(
@@ -67,6 +64,44 @@ def create_app(custom_cfg: Config | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(provider_router)
     app.include_router(datasets_router)
+
+    @app.middleware("http")
+    async def log_requests_and_responses(request: Request, call_next):
+        if logger.isEnabledFor(logging.DEBUG):
+            body = await request.body()
+            logger.debug(
+                f"Request: {request.method} {request.url.path} | {body.decode()}"
+            )
+
+            async def receive():
+                return {"type": "http.request", "body": body, "more_body": False}
+
+            request._receive = receive
+
+        response = await call_next(request)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            response_body = b""
+            async for chunk in response.body_iterator:
+                response_body += chunk
+
+            try:
+                pretty = json.dumps(
+                    json.loads(response_body), indent=2, ensure_ascii=False
+                )
+            except (json.JSONDecodeError, ValueError):
+                pretty = response_body.decode()
+
+            logger.debug(f"Response: {response.status_code} | {pretty}")
+
+            return Response(
+                content=response_body,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type=response.media_type,
+            )
+
+        return response
 
     return app
 

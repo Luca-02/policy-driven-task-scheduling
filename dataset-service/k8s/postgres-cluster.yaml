@@ -14,7 +14,9 @@ metadata:
   name: dataset-db
   namespace: dataset-service
 spec:
-  instances: 3
+  # Overkill for our use case
+  # instances: 3
+  instances: 1
   storage:
     size: 1Gi
   bootstrap:

@@ -1,0 +1,105 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8svalidatetaskrequestdatasets
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sValidateTaskRequestDatasets
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8svalidatetaskrequestdatasets
+
+        dataset_list := input.review.object.spec.datasets
+        property_inventory := data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["NodeProperty"]
+        response := external_data({
+          "provider": "dataset-service",
+          "keys": dataset_list
+        })
+
+        not_empty_dataset_list {
+          dataset_list != null
+          count(dataset_list) > 0
+        }
+
+        valid_property_level(prop_name, req_level) {
+          prop := property_inventory[prop_name]
+          some i
+          prop.spec.levels[i].level == req_level
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation 1: the provider reported a system-wide failure.
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_empty_dataset_list
+
+          response.system_error != ""
+
+          msg := sprintf("Dataset provider system error: %v", [response.system_error])
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation 2: the provider reported a failure for at least one 
+        # dataset.
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_empty_dataset_list
+
+          response.system_error == ""
+
+          some i
+          error := response.errors[i]
+          error != null
+
+          msg := sprintf("Dataset validation failed: [dataset: '%v', error: '%v']", [error[0], error[1]])
+        }
+
+        # ------------------------------------------------------------------
+        # Violation 3: invalid requested property in the TaskRequest 
+        # requirements of at least one dataset.
+        # ------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_empty_dataset_list
+
+          response.system_error == ""
+
+          some i
+          item := response.responses[i]
+          key := item[0]
+          value := item[1]
+
+          some prop_name
+          _ := requirements[prop_name]
+
+          not property_inventory[prop_name]
+
+          msg := sprintf("Dataset '%v' property '%v' does not exist in the cluster", [key, value])
+        }
+
+        # ------------------------------------------------------------------
+        # Violation 4: invalid level for an existing property in the
+        # TaskRequest requirements of at least one dataset.
+        # ------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_empty_dataset_list
+
+          response.system_error == ""
+
+          some i
+          item := response.responses[i]
+          key := item[0]
+          value := item[1]
+
+          some prop_name
+          req_level := value.requirements[prop_name]
+          req_level != 0
+
+          property_inventory[prop_name]
+
+          not valid_property_level(prop_name, req_level)
+          
+          msg := sprintf("Dataset '%v' property '%v' exists, but requested level '%v' is not defined", [key, prop_name, req_level])
+        }

@@ -1,4 +1,6 @@
-from sqlalchemy import Engine, create_engine
+from itertools import count
+
+from sqlalchemy import Engine, create_engine, select, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -28,7 +30,7 @@ class DatasetRepository:
         self._db: Session = db
 
     def list(self) -> list[Dataset]:
-        rows = self._db.query(DatasetORM).all()
+        rows = self._db.execute(select(DatasetORM)).scalars().all()
         return [Dataset.model_validate(row) for row in rows]
 
     def get(self, name: str) -> Dataset | None:
@@ -68,3 +70,9 @@ class DatasetRepository:
         self._db.delete(row)
         self._db.commit()
         return True
+    
+    def delete_all(self) -> int:
+        stmt = delete(DatasetORM)
+        result = self._db.execute(stmt)
+        self._db.commit()
+        return result.rowcount

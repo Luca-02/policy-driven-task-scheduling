@@ -32,7 +32,7 @@ class Config:
     def from_env() -> "Config":
         return Config(
             db_url=os.getenv("DB_URL", "sqlite://"),
-            host=os.getenv("HOST", "0.0.0.0"),
+            host=os.getenv("HOST", "127.0.0.1"),
             port=int(os.getenv("PORT", "8443")),
             tls_cert_file=os.getenv("TLS_CERT_FILE"),
             tls_key_file=os.getenv("TLS_KEY_FILE"),
