@@ -54,7 +54,7 @@ spec:
           error := response.errors[i]
           error != null
 
-          msg := sprintf("Dataset validation failed: [dataset: '%v', error: '%v']", [error[0], error[1]])
+          msg := sprintf("Dataset error: [dataset: '%v', error: '%v']", [error[0], error[1]])
         }
 
         # ------------------------------------------------------------------
@@ -72,11 +72,10 @@ spec:
           value := item[1]
 
           some prop_name
-          _ := requirements[prop_name]
+          value.requirements[prop_name]
 
           not property_inventory[prop_name]
-
-          msg := sprintf("Dataset '%v' property '%v' does not exist in the cluster", [key, value])
+          msg := sprintf("Dataset '%v': property '%v' does not exist in the cluster", [key, prop_name])
         }
 
         # ------------------------------------------------------------------
@@ -100,6 +99,5 @@ spec:
           property_inventory[prop_name]
 
           not valid_property_level(prop_name, req_level)
-          
-          msg := sprintf("Dataset '%v' property '%v' exists, but requested level '%v' is not defined", [key, prop_name, req_level])
+          msg := sprintf("Dataset '%v': property '%v' exists, but level '%v' is not defined", [key, prop_name, req_level])
         }

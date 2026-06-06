@@ -43,7 +43,7 @@ spec:
         violation[{"msg": msg}] {
           requirements != null
 
-          some prop_name
+          some prop_name 
           req_level := requirements[prop_name]
           req_level != 0
 

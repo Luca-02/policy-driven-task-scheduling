@@ -6,5 +6,5 @@ spec:
   enforcementAction: deny
   match:
     kinds:
-      - apiGroups: [policydriven.unimi.it]
-        kinds: [TaskRequest]
+      - apiGroups: ["policydriven.unimi.it"]
+        kinds: ["TaskRequest"]
