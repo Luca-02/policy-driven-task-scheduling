@@ -53,6 +53,8 @@ def create_datasets(
     return created
 
 
+# TODO: Add versioning suppoert for the assumption of immutability of metadata. 
+# This will mitigate the Time-of-check to Time-of-use race condition that can occur when updating metadata.
 @router.put("/{name}", response_model=Dataset)
 def update_dataset(
     name: str,

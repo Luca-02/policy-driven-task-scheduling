@@ -1,8 +1,8 @@
 # Dataset Service (mock data governator)
 
-Mock service simulating a data governator (à la Apache Atlas) for the policy-driven task scheduling system. Stores dataset **metadata** — the protection class `β(d)` (`requirements`), the size used for transfer cost (`sizeMB`) and the placement `λ(d)` (`nodes`) — and exposes them to OPA Gatekeeper via the **External Data Provider** protocol, plus a CRUD API.
+Mock service simulating a data governator (e.g. Apache Atlas) for the policy-driven task scheduling system. Stores dataset **metadata**, the protection class `β(d)` (`requirements`), the size used for transfer cost (`sizeMB`) and the placement `λ(d)` (`nodes`), and exposes them to OPA Gatekeeper via the **External Data Provider** protocol, plus a CRUD API to manage the datasets for the policy-driven task scheduling system.
 
-The service is intentionally a thin demo component, not a production system: no authentication is enforced. Isolation is provided by the ClusterIP scope and a `NetworkPolicy` that restricts ingress to the namespaces of Gatekeeper and the TaskRequest controller. TLS is kept because Gatekeeper External Data requires the provider to be served over TLS.
+The service is intentionally a thin demo component, not a production system: no authentication is enforced. Isolation is provided by the ClusterIP scope and a `NetworkPolicy` that restricts ingress to the namespaces of Gatekeeper, the TaskRequest controller and the Dataset Service namespace. TLS is kept because Gatekeeper External Data requires the provider to be served over TLS.
 
 ## Architecture choices
 
@@ -104,4 +104,4 @@ pip install pytest pytest-cov
 pytest -v --cov=src
 ```
 
-Tests need **no external services**: the repository is exercised on in-memory SQLite.
+Tests need **no external services**: the repository is tested on in-memory SQLite.

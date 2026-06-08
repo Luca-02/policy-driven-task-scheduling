@@ -1,10 +1,13 @@
 import os
 
-DEFAULT_GATEKEEPER_API_VERSION = "externaldata.gatekeeper.sh/v1beta1"
+DB_URL_DEFAULT = "sqlite://"
+HOST_DEFAULT = "127.0.0.1"
+PORT_DEFAULT = 8443
+GATEKEEPER_API_VERSION_DEFAULT = "externaldata.gatekeeper.sh/v1beta1"
 
 
 class Config:
-    """Service configuration, loaded from environment variables."""
+    """Service configuration loaded from environment variables."""
 
     def __init__(
         self,
@@ -31,13 +34,13 @@ class Config:
     @staticmethod
     def from_env() -> "Config":
         return Config(
-            db_url=os.getenv("DB_URL", "sqlite://"),
-            host=os.getenv("HOST", "127.0.0.1"),
-            port=int(os.getenv("PORT", "8443")),
+            db_url=os.getenv("DB_URL", DB_URL_DEFAULT),
+            host=os.getenv("HOST", HOST_DEFAULT),
+            port=int(os.getenv("PORT", PORT_DEFAULT)),
             tls_cert_file=os.getenv("TLS_CERT_FILE"),
             tls_key_file=os.getenv("TLS_KEY_FILE"),
             gatekeeper_api_version=os.getenv(
-                "GATEKEEPER_API_VERSION", DEFAULT_GATEKEEPER_API_VERSION
+                "GATEKEEPER_API_VERSION", GATEKEEPER_API_VERSION_DEFAULT
             ),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
         )

@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-property-controller
-  namespace: node-property-controller
+  name: taskrequest-controller
+  namespace: taskrequest-controller
   labels:
-    app.kubernetes.io/name: node-property-controller
+    app.kubernetes.io/name: taskrequest-controller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: node-property-controller
+      app.kubernetes.io/name: taskrequest-controller
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,12 +18,10 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: node-property-controller
+        app.kubernetes.io/name: taskrequest-controller
     spec:
-      serviceAccountName: node-property-controller-service-account
+      serviceAccountName: taskrequest-controller-service-account
       terminationGracePeriodSeconds: 30
-      # Run the operator as non-root for security best practices, use the same 
-      # UID and GID of the user in the builder image to avoid permission issues
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -31,17 +29,23 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
-      # Volumes for the operator since read-only root filesystem is enabled
       volumes:
         - name: tmp
           emptyDir:
             medium: Memory
             sizeLimit: 32Mi
+        # CA certificate of the dataset service, used to verify TLS.
+        # Reuses the same secret created during dataset-service setup.
+        - name: dataset-service-ca
+          secret:
+            secretName: dataset-service-tls
+            items:
+              - key: ca.crt
+                path: ca.crt
       containers:
-        - name: node-property-controller
-          image: node-property-controller:latest
+        - name: taskrequest-controller
+          image: taskrequest-controller:latest
           imagePullPolicy: IfNotPresent
-          # Set security context for the container 
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -54,16 +58,22 @@ spec:
             - name: VERSION
               value: "v1alpha1"
             - name: PLURAL
-              value: "nodeproperties"
-            - name: ATTRIBUTE_PREFIX
-              value: "attribute.node.policydriven.unimi.it"
+              value: "taskrequests"
+            - name: TASK_NAMESPACE
+              value: "compute"
             - name: PROPERTY_PREFIX
               value: "property.node.policydriven.unimi.it"
+            - name: DATASET_SERVICE_URL
+              value: "https://dataset-service.dataset-service.svc.cluster.local"
+            - name: CA_CERT_FILE
+              value: "/tls/ca.crt"
+            - name: TASK_IMAGE
+              value: "busybox:latest"
             - name: LOG_LEVEL
               value: "INFO"
           ports:
             - name: health
-              containerPort: 9090
+              containerPort: 9091
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -97,6 +107,9 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: dataset-service-ca
+              mountPath: /tls
+              readOnly: true
       # Schedule the controller on control-plane nodes
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""

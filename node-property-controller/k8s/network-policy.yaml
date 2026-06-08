@@ -11,11 +11,10 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow kubelet health-check probes (liveness/readiness/startup) from cluster nodes
+    # Allow kubelet health-check probes (liveness/readiness/startup) 
     - ports:
         - port: 9090
           protocol: TCP
-  # Allow egress to kube-dns and Kubernetes API server for operator functionality
   egress:
     # DNS resolution via kube-dns
     - ports:

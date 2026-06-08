@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: taskrequest-controller-service-account
+  namespace: taskrequest-controller
+---
+# ClusterRole: permissions needed by the controller across the cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: taskrequest-controller-cluster-role
+rules:
+  # Read and manage TaskRequests in any namespace
+  - apiGroups: [policydriven.unimi.it]
+    resources: [taskrequests]
+    verbs: [get, list, watch, patch]
+  # Update TaskRequest status exclusively via the /status subresource.
+  - apiGroups: [policydriven.unimi.it]
+    resources: [taskrequests/status]
+    verbs: [get, patch, update]
+  # Create and watch Jobs (in the compute namespace — enforced at deploy time
+  # via the namespace scope of the controller's logic, not here at RBAC level).
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [get, list, watch, create, delete]
+  # Kopf posts events about its activity
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [create]
+  # Kopf uses leases for peer-detection and leader election
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # Read CRD definitions to check if the CRD is present before starting the operator
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: taskrequest-controller-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: taskrequest-controller-service-account
+    namespace: taskrequest-controller
+roleRef:
+  kind: ClusterRole
+  name: taskrequest-controller-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Role scoped to the compute namespace: allows external users to submit
+# TaskRequests. Deliberately excludes create on Jobs and Pods — only the
+# controller's service account (via the ClusterRole above) can create Jobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: task-submitter
+  namespace: compute
+rules:
+  - apiGroups: [policydriven.unimi.it]
+    resources: [taskrequests]
+    verbs: [create, get, list, watch, delete]
+  # taskrequests/status is intentionally omitted: only the controller
+  # may write the status subresource.
+---
+# Example RoleBinding — bind to a specific user or group as needed.
+# Uncomment and set the subject to grant task-submission access.
+#
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: task-submitter-binding
+#   namespace: compute
+# subjects:
+#   - kind: User
+#     name: <username>
+#     apiGroup: rbac.authorization.k8s.io
+# roleRef:
+#   kind: Role
+#   name: task-submitter
+#   apiGroup: rbac.authorization.k8s.io

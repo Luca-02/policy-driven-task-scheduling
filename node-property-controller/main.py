@@ -1,4 +1,5 @@
 import kopf
+import random
 
 from dotenv import load_dotenv
 from kubernetes import client, config
@@ -26,25 +27,22 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
         config.load_kube_config()
         logger.info("Loaded local kubeconfig")
 
-    # # finalizer to ensure delete handlers run even if the CR is deleted concurrently
-    # settings.persistence.finalizer = f"{cfg.group}/finalizer"
-
-    # standard server-side progress storage in annotations
+    # Store kopf progress in annotations to avoid conflicts with our
+    # custom status subresource fields.
     settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(
         prefix=cfg.group
     )
+    settings.peering.priority = random.randint(0, 32767) 
 
-    # set a high priority for peering to ensure our handlers run before other controllers
-    # that might react to the same events
-    settings.peering.priority = 100
+    settings.peering.standalone = False
 
     global ctrl
     ctrl = Controller(v1=client.CoreV1Api(), config=cfg)
-    logger.info("🚀 NodePropertyDefinition Controller started!")
+    logger.info("🚀 NodeProperty Controller started!")
 
 
 # --------------------------------------------------
-# NodePropertyDefinition handlers
+# NodeProperty handlers
 # --------------------------------------------------
 
 
@@ -56,11 +54,11 @@ def on_property_created_or_updated(body, reason, logger, **kwargs):
     spec = body.get("spec", {})
 
     if reason == "resume":
-        logger.info(f"🔵 NodePropertyDefinition {name!r} resumed with spec: {spec}")
+        logger.info(f"🔵 NodeProperty {name!r} resumed with spec: {spec}")
     elif reason == "create":
-        logger.info(f"🟢 NodePropertyDefinition {name!r} created with spec: {spec}")
+        logger.info(f"🟢 NodeProperty {name!r} created with spec: {spec}")
     elif reason == "update":
-        logger.info(f"🟡 NodePropertyDefinition {name!r} updated with spec: {spec}")
+        logger.info(f"🟡 NodeProperty {name!r} updated with spec: {spec}")
 
     if ctrl is not None:
         ctrl.on_property_created_or_updated(name, spec, logger)
@@ -69,7 +67,7 @@ def on_property_created_or_updated(body, reason, logger, **kwargs):
 @kopf.on.delete(cfg.group, cfg.version, cfg.plural)
 def on_property_deleted(body, logger, **kwargs):
     name = body["metadata"]["name"]
-    logger.info(f"🔴 NodePropertyDefinition {name!r} deleted")
+    logger.info(f"🔴 NodeProperty {name!r} deleted")
 
     if ctrl is not None:
         ctrl.on_property_deleted(name, logger)

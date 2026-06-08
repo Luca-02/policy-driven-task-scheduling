@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: taskrequest-controller-network-policy
+  namespace: taskrequest-controller
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: taskrequest-controller
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow kubelet health-check probes (liveness/readiness/startup) 
+    - ports:
+        - port: 9091
+          protocol: TCP
+  egress:
+    # DNS resolution via kube-dns
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Kubernetes API server (HTTPS)
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 6443
+          protocol: TCP
+    # Dataset service (TLS on 443, which maps to container port 8443)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dataset-service
+      ports:
+        - port: 443
+          protocol: TCP

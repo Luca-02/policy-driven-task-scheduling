@@ -2,7 +2,7 @@ from typing import Any, Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.config import DEFAULT_GATEKEEPER_API_VERSION
+from src.config import GATEKEEPER_API_VERSION_DEFAULT
 
 # -----------------------------------------------------------------------------
 # Domain models
@@ -56,6 +56,6 @@ class ProviderResponseBody(BaseModel):
 
 
 class ProviderResponse(BaseModel):
-    apiVersion: str = DEFAULT_GATEKEEPER_API_VERSION
+    apiVersion: str = GATEKEEPER_API_VERSION_DEFAULT
     kind: str = "ProviderResponse"
     response: ProviderResponseBody
