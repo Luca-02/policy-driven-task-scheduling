@@ -16,7 +16,15 @@ spec:
     - name: v1alpha1
       served: true
       storage: true
+      subresources:
+        status: {}
       additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Job
+          type: string
+          jsonPath: .status.jobName
         - name: Age
           type: date
           jsonPath: .metadata.creationTimestamp
@@ -29,19 +37,17 @@ spec:
               type: object
               properties:
                 # β(t): minimum property levels required by the task.
-                # Keys are NodePropertyDefinition names.
+                # Keys are NodeProperty names.
                 # Omitted properties default to level 0 (no requirement).
                 requirements:
                   type: object
                   description: >
                     Minimum property levels required by the task (β(t)).
-                    Keys must match existing NodePropertyDefinition names.
+                    Keys must match existing NodeProperty names.
                   additionalProperties:
                     type: integer
                     minimum: 0
                 # req(t): datasets required for task execution.
-                # Each entry references a dataset by name in the external
-                # dataset catalog (mock dataset service).
                 datasets:
                   type: array
                   description: >
@@ -51,3 +57,24 @@ spec:
                     type: string
                     minLength: 1
                     maxLength: 254
+            status:
+              type: object
+              # Status is managed exclusively by the TaskRequest controller
+              # via the /status subresource endpoint. Direct writes to the
+              # main resource endpoint do not update this field.
+              properties:
+                phase:
+                  type: string
+                  description: >
+                    Current phase of the TaskRequest lifecycle.
+                    Pending: accepted, awaiting Job creation.
+                    Scheduled: Job created and submitted to the scheduler.
+                    Succeeded: Job completed successfully.
+                    Failed: terminal failure (dataset error, Job failure, etc.).
+                  enum: ["Pending", "Scheduled", "Succeeded", "Failed"]
+                job:
+                  type: string
+                  description: Name of the Job related to this TaskRequest.
+                message:
+                  type: string
+                  description: Message describing the current status or failure reason.

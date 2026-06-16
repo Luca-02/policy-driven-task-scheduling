@@ -1,13 +1,15 @@
 import json
 import unittest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 from kubernetes.client.exceptions import ApiException
 
 from src.config import Config
 from src.controller import Controller, TASK_REQUEST_LABEL, BETA_STAR_ANNOTATION
-from src.dataset_client import DatasetClient, DatasetNotFoundError, DatasetServiceError
-
+from src.dataset_service import (
+    DatasetNotFoundError,
+    DatasetServiceError,
+)
 
 # ------------------------------------------------------------------
 # Helpers
@@ -18,11 +20,12 @@ def make_config() -> Config:
     return Config(
         group="policydriven.unimi.it",
         version="v1alpha1",
-        plural="taskrequests",
+        task_requests_plural="taskrequests",
         task_namespace="compute",
         dataset_service_url="https://dataset-service.svc",
         ca_cert_file=None,
-        task_image="busybox:latest",
+        job_label_prefix="scheduling.task.policydriven.unimi.it",
+        job_annotation_prefix="scheduling.task.policydriven.unimi.it",
         log_level="WARNING",
     )
 
@@ -33,16 +36,16 @@ def make_logger() -> MagicMock:
     return log
 
 
-def make_ctrl(dataset_client=None) -> tuple[Controller, MagicMock, MagicMock]:
+def make_ctrl(dataset_service=None) -> tuple[Controller, MagicMock, MagicMock]:
     batch_v1 = MagicMock()
     custom_api = MagicMock()
-    if dataset_client is None:
-        dataset_client = MagicMock()
+    if dataset_service is None:
+        dataset_service = MagicMock()
     ctrl = Controller(
         batch_v1=batch_v1,
         custom_api=custom_api,
         config=make_config(),
-        dataset_client=dataset_client,
+        dataset_service=dataset_service,
     )
     return ctrl, batch_v1, custom_api
 
@@ -62,57 +65,6 @@ def make_body(name="t1", uid="uid-abc", phase=None, requirements=None, datasets=
 
 
 # ------------------------------------------------------------------
-# DatasetClient tests
-# ------------------------------------------------------------------
-
-
-class TestDatasetClient(unittest.TestCase):
-    def _make_client(self) -> DatasetClient:
-        return DatasetClient(base_url="http://dataset-service", ca_cert_file=None)
-
-    def _mock_response(self, data: dict, status: int = 200):
-        resp = MagicMock()
-        resp.read.return_value = json.dumps(data).encode()
-        resp.__enter__ = lambda s: s
-        resp.__exit__ = MagicMock(return_value=False)
-        return resp
-
-    def test_get_dataset_success(self):
-        client = self._make_client()
-        payload = {"name": "d1", "requirements": {"security": 2}, "size_mb": 1024, "nodes": []}
-        mock_resp = self._mock_response(payload)
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
-            result = client.get_dataset("d1")
-
-        self.assertEqual(result, payload)
-
-    def test_get_dataset_not_found(self):
-        from urllib.error import HTTPError
-        client = self._make_client()
-
-        with patch("urllib.request.urlopen", side_effect=HTTPError(None, 404, "Not Found", {}, None)):
-            with self.assertRaises(DatasetNotFoundError):
-                client.get_dataset("missing")
-
-    def test_get_dataset_server_error(self):
-        from urllib.error import HTTPError
-        client = self._make_client()
-
-        with patch("urllib.request.urlopen", side_effect=HTTPError(None, 500, "Internal Error", {}, None)):
-            with self.assertRaises(DatasetServiceError):
-                client.get_dataset("d1")
-
-    def test_get_dataset_connection_error(self):
-        from urllib.error import URLError
-        client = self._make_client()
-
-        with patch("urllib.request.urlopen", side_effect=URLError("connection refused")):
-            with self.assertRaises(DatasetServiceError):
-                client.get_dataset("d1")
-
-
-# ------------------------------------------------------------------
 # Controller._compute_beta_star tests
 # ------------------------------------------------------------------
 
@@ -127,7 +79,6 @@ class TestComputeBetaStar(unittest.TestCase):
         self.assertEqual(result, {"security": 2, "computation": 1})
 
     def test_dataset_raises_existing_requirement(self):
-        # β(t) = [security:1], β(d1) = [security:2] → β*(t) = [security:2]
         self.dataset_client.get_dataset.return_value = {
             "requirements": {"security": 2},
         }
@@ -135,7 +86,6 @@ class TestComputeBetaStar(unittest.TestCase):
         self.assertEqual(result, {"security": 2})
 
     def test_task_requirement_prevails(self):
-        # β(t) = [security:3], β(d1) = [security:1] → β*(t) = [security:3]
         self.dataset_client.get_dataset.return_value = {
             "requirements": {"security": 1},
         }
@@ -143,7 +93,6 @@ class TestComputeBetaStar(unittest.TestCase):
         self.assertEqual(result, {"security": 3})
 
     def test_dataset_adds_new_property(self):
-        # β(t) = [security:1], β(d1) = [computation:3] → β*(t) = [security:1, computation:3]
         self.dataset_client.get_dataset.return_value = {
             "requirements": {"computation": 3},
         }
@@ -151,10 +100,6 @@ class TestComputeBetaStar(unittest.TestCase):
         self.assertEqual(result, {"security": 1, "computation": 3})
 
     def test_multiple_datasets_lub(self):
-        # β(t) = [security:1, computation:2]
-        # β(d1) = [security:2, computation:1]
-        # β(d2) = [security:1, computation:3]
-        # β*(t) = [security:2, computation:3]
         self.dataset_client.get_dataset.side_effect = [
             {"requirements": {"security": 2, "computation": 1}},
             {"requirements": {"security": 1, "computation": 3}},
@@ -206,40 +151,31 @@ class TestBuildJob(unittest.TestCase):
         self.assertEqual(annotation, beta_star)
 
     def test_node_affinity_gt_operator(self):
-        # security=2 → Gt 1 (i.e. ≥ 2)
         job = self._build({"security": 2})
-        exprs = (
-            job["spec"]["template"]["spec"]["affinity"]
-            ["nodeAffinity"]
-            ["requiredDuringSchedulingIgnoredDuringExecution"]
-            ["nodeSelectorTerms"][0]["matchExpressions"]
-        )
+        exprs = job["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"
+        ]["nodeSelectorTerms"][0]["matchExpressions"]
         self.assertEqual(len(exprs), 1)
-        self.assertEqual(exprs[0]["key"], "property.node.policydriven.unimi.it/security")
+        self.assertEqual(
+            exprs[0]["key"], "property.node.policydriven.unimi.it/security"
+        )
         self.assertEqual(exprs[0]["operator"], "Gt")
         self.assertEqual(exprs[0]["values"], ["1"])
 
     def test_node_affinity_multiple_properties(self):
         job = self._build({"security": 2, "computation": 3})
-        exprs = (
-            job["spec"]["template"]["spec"]["affinity"]
-            ["nodeAffinity"]
-            ["requiredDuringSchedulingIgnoredDuringExecution"]
-            ["nodeSelectorTerms"][0]["matchExpressions"]
-        )
+        exprs = job["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"
+        ]["nodeSelectorTerms"][0]["matchExpressions"]
         keys = {e["key"] for e in exprs}
         self.assertIn("property.node.policydriven.unimi.it/security", keys)
         self.assertIn("property.node.policydriven.unimi.it/computation", keys)
 
     def test_zero_level_excluded_from_affinity(self):
-        # security=0 means no requirement → must not appear in matchExpressions
         job = self._build({"security": 0, "computation": 2})
-        exprs = (
-            job["spec"]["template"]["spec"]["affinity"]
-            ["nodeAffinity"]
-            ["requiredDuringSchedulingIgnoredDuringExecution"]
-            ["nodeSelectorTerms"][0]["matchExpressions"]
-        )
+        exprs = job["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"
+        ]["nodeSelectorTerms"][0]["matchExpressions"]
         keys = [e["key"] for e in exprs]
         self.assertNotIn("property.node.policydriven.unimi.it/security", keys)
 
@@ -316,7 +252,9 @@ class TestReconcile(unittest.TestCase):
 
     def test_dataset_not_found_sets_failed(self):
         body = make_body(datasets=["missing"])
-        self.dataset_client.get_dataset.side_effect = DatasetNotFoundError("Dataset not found: 'missing'")
+        self.dataset_client.get_dataset.side_effect = DatasetNotFoundError(
+            "Dataset not found: 'missing'"
+        )
 
         self.ctrl.reconcile("t1", "compute", body, self.logger)
 
@@ -327,6 +265,7 @@ class TestReconcile(unittest.TestCase):
 
     def test_dataset_service_error_raises_temporary(self):
         import kopf
+
         body = make_body(datasets=["d1"])
         self.dataset_client.get_dataset.side_effect = DatasetServiceError("unreachable")
 
@@ -352,8 +291,9 @@ class TestReconcile(unittest.TestCase):
         self.ctrl.reconcile("t1", "compute", body, self.logger)
 
         job_arg = self.batch_v1.create_namespaced_job.call_args[0][1]
-        annotation = json.loads(job_arg["metadata"]["annotations"][BETA_STAR_ANNOTATION])
-        # β*(t) = max(β(t)=1, β(d1)=2) = 2
+        annotation = json.loads(
+            job_arg["metadata"]["annotations"][BETA_STAR_ANNOTATION]
+        )
         self.assertEqual(annotation["security"], 2)
 
 
@@ -372,14 +312,18 @@ class TestSyncJobStatus(unittest.TestCase):
         self.ctrl.sync_job_status("t1", "compute", status, self.logger)
 
     def _patched_phase(self):
-        return self.custom_api.patch_namespaced_custom_object_status.call_args[1]["body"]["status"]["phase"]
+        return self.custom_api.patch_namespaced_custom_object_status.call_args[1][
+            "body"
+        ]["status"]["phase"]
 
     def test_job_complete_sets_succeeded(self):
         self._call_sync([{"type": "Complete", "status": "True"}])
         self.assertEqual(self._patched_phase(), "Succeeded")
 
     def test_job_failed_sets_failed(self):
-        self._call_sync([{"type": "Failed", "status": "True", "message": "BackoffLimitExceeded"}])
+        self._call_sync(
+            [{"type": "Failed", "status": "True", "message": "BackoffLimitExceeded"}]
+        )
         self.assertEqual(self._patched_phase(), "Failed")
 
     def test_job_running_no_update(self):
@@ -395,7 +339,6 @@ class TestSyncJobStatus(unittest.TestCase):
         self.custom_api.patch_namespaced_custom_object_status.assert_not_called()
 
     def test_v1_job_status_object_complete(self):
-        # Simulate a V1JobStatus object (from read_namespaced_job)
         mock_status = MagicMock()
         mock_cond = MagicMock()
         mock_cond.type = "Complete"

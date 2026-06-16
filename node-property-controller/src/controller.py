@@ -110,26 +110,6 @@ class Controller:
             properties=Controller._extract_node_properties(labels, config),
         )
 
-    def _patch_node_level(
-        self, node_name: str, label_key: str, level: int | None, logger
-    ):
-        """
-        Patch a node's level to set or remove a property level.
-
-        Args:
-            node_name: Name of the node to patch.
-            label_key: The label key to set or remove.
-            level: The level to set the label to, or None to remove it.
-            logger: Logger object.
-        """
-        # If level is None or not a positive integer, remove the label by setting it to None
-        level = str(level) if level is not None and level > 0 else None
-        body = {"metadata": {"labels": {label_key: level}}}
-
-        self._v1.patch_node(node_name, body)
-        action = "removed" if level is None else f"set to: {level}"
-        logger.info(f"Node {node_name!r} level {label_key!r} {action}")
-
     @_synchronized
     def on_property_created_or_updated(self, name: str, spec: dict, logger):
         """
@@ -229,3 +209,23 @@ class Controller:
         """
         self._nodes.pop(name, None)
         logger.info(f"Node {name!r} removed from state")
+
+    def _patch_node_level(
+        self, node_name: str, label_key: str, level: int | None, logger
+    ):
+        """
+        Patch a node's level to set or remove a property level.
+
+        Args:
+            node_name: Name of the node to patch.
+            label_key: The label key to set or remove.
+            level: The level to set the label to, or None to remove it.
+            logger: Logger object.
+        """
+        # If level is None or not a positive integer, remove the label by setting it to None
+        level = str(level) if level is not None and level > 0 else None
+        body = {"metadata": {"labels": {label_key: level}}}
+
+        self._v1.patch_node(node_name, body)
+        action = "removed" if level is None else f"set to: {level}"
+        logger.info(f"Node {node_name!r} level {label_key!r} {action}")

@@ -16,4 +16,4 @@ USER 1000
 
 EXPOSE 9090
 
-ENTRYPOINT ["kopf", "run", "main.py", "--all-namespaces", "--standalone", "--liveness=http://0.0.0.0:9090/healthz"]
+ENTRYPOINT ["kopf", "run", "main.py", "--all-namespaces", "--liveness=http://0.0.0.0:9090/healthz"]

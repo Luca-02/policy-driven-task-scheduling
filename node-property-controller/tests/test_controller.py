@@ -13,7 +13,7 @@ def make_config():
     return Config(
         group="node.thesis.io",
         version="v1",
-        plural="nodes",
+        node_properties_plural="nodes",
         attribute_prefix="attribute.node.thesis.io",
         property_prefix="property.node.thesis.io",
         log_level="info",

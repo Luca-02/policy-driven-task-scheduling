@@ -35,7 +35,7 @@ SAN
 else
   echo "Setting SAN for Kubernetes cluster..."
   cat > "$TARGET_DIR/san.cnf" <<SAN
-subjectAltName=DNS:${SVC}.${NS}.svc,DNS:${SVC}.${NS}.svc.cluster.local
+subjectAltName=IP:127.0.0.1,DNS:${SVC}.${NS}.svc,DNS:${SVC}.${NS}.svc.cluster.local
 SAN
 fi
 

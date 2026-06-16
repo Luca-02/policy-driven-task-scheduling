@@ -1,12 +1,11 @@
 import kopf
-import random
 
 from dotenv import load_dotenv
 from kubernetes import client, config
 
 from src.config import Config
-from src.controller import Controller, TASK_REQUEST_LABEL
-from src.dataset_client import DatasetClient
+from src.controller import Controller
+from src.dataset_service import DatasetService
 
 load_dotenv()
 
@@ -28,15 +27,16 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(
         prefix=cfg.group
     )
-    settings.peering.priority = random.randint(0, 32767)
 
+    settings.peering.name = "task-request-controller"
     settings.peering.standalone = False
+    settings.peering.priority = 100
 
     global ctrl
     ctrl = Controller(
         batch_v1=client.BatchV1Api(),
         custom_api=client.CustomObjectsApi(),
-        dataset_client=DatasetClient(
+        dataset_service=DatasetService(
             base_url=cfg.dataset_service_url,
             ca_cert_file=cfg.ca_cert_file,
         ),
@@ -50,8 +50,8 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 # ------------------------------------------------------------------
 
 
-@kopf.on.resume(cfg.group, cfg.version, cfg.plural)
-@kopf.on.create(cfg.group, cfg.version, cfg.plural)
+@kopf.on.resume(cfg.group, cfg.version, cfg.task_requests_plural)
+@kopf.on.create(cfg.group, cfg.version, cfg.task_requests_plural)
 def on_task_request(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     namespace = body["metadata"]["namespace"]
@@ -84,19 +84,25 @@ def on_task_request(body, reason, logger, **kwargs):
 
 @kopf.on.resume("batch", "v1", "jobs")
 @kopf.on.field("batch", "v1", "jobs", field="status")
-def on_job_status_changed(body, reason, logger, **kwargs):
+def on_job_status_changed(body, logger, **kwargs):
     name = body["metadata"]["name"]
     namespace = body["metadata"]["namespace"]
     status = body.get("status", {})
 
     # Only care about Jobs in the task namespace that were created by this controller.
     if namespace != cfg.task_namespace:
+        logger.info(
+            f"Skipping Job {name!r}: namespace {namespace!r} is not {cfg.task_namespace!r}"
+        )
         return
 
     task_request_name = (body.get("metadata", {}).get("labels") or {}).get(
-        TASK_REQUEST_LABEL
+        f"{cfg.job_label_prefix}/task_request"
     )
     if not task_request_name:
+        logger.info(
+            f"Skipping Job {name!r}: missing label {cfg.job_label_prefix!r}"
+        )
         return
 
     logger.info(

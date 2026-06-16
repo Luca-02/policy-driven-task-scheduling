@@ -5,7 +5,16 @@ from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
 from src.config import Config
-from src.dataset_client import DatasetClient, DatasetNotFoundError, DatasetServiceError
+from src.dataset_service import (
+    DatasetService,
+    DatasetNotFoundError,
+    DatasetServiceError,
+)
+
+SUCCESS_PHASE = "Succeeded"
+FAILURE_PHASE = "Failed"
+SCHEDULED_PHASE = "Scheduled"
+PENDING_PHASE = "Pending"
 
 
 class Controller:
@@ -13,15 +22,15 @@ class Controller:
         self,
         batch_v1: client.BatchV1Api,
         custom_api: client.CustomObjectsApi,
-        dataset_client: DatasetClient,
+        dataset_service: DatasetService,
         config: Config,
     ):
         self._batch_v1 = batch_v1
         self._custom_api = custom_api
-        self._dataset_client = dataset_client
+        self._dataset_service = dataset_service
         self._config = config
 
-    def reconcile(self, name: str, namespace: str, body: dict, logger) -> None:
+    def reconcile(self, name: str, namespace: str, body: dict, logger):
         """
         Idempotent reconciliation for a TaskRequest.
 
@@ -33,87 +42,110 @@ class Controller:
         """
         phase = (body.get("status") or {}).get("phase")
 
-        if phase in ("Succeeded", "Failed"):
+        if phase in (SUCCESS_PHASE, FAILURE_PHASE):
             logger.info(
                 f"TaskRequest {name!r} is in terminal phase {phase!r}, skipping"
             )
             return
 
-        if phase == "Scheduled":
+        if phase == SCHEDULED_PHASE:
             logger.info(
                 f"TaskRequest {name!r} is already Scheduled, syncing Job status"
             )
             self._sync_from_job(name, namespace, logger)
             return
 
-        # Phase is None or Pending -> run full reconciliation.
+        # Phase is None or Pending, run full reconciliation.
         self._full_reconcile(name, namespace, body, logger)
 
     def sync_job_status(
         self, task_request_name: str, namespace: str, job_status, logger
-    ) -> None:
-        """
-        Propagate a Job status change to the owning TaskRequest.
-
-        Called by the kopf Job field-change handler. `job_status` may be
-        a dict (from kopf body) or a V1JobStatus object (from direct API call).
-        """
+    ):
+        """Propagate a Job status change to the realted TaskRequest."""
         conditions = self._extract_conditions(job_status)
         self._apply_conditions(task_request_name, namespace, conditions, logger)
 
-    def _full_reconcile(self, name: str, namespace: str, body: dict, logger) -> None:
-        """Fetch datasets, compute beta*(t), create Job, update status."""
+    def _full_reconcile(self, name: str, namespace: str, body: dict, logger):
+        """
+        Full reconciliation pipeline for a new or Pending TaskRequest:
+            1. Set phase to Pending.
+            3. Compute beta*(t) = LUB(beta(t), beta(d1), ...) delegated to DatasetService.
+            4. Create the Job with beta* and dataset annotations.
+            5. Set phase to Scheduled.
+        """
         self._set_status(
-            namespace, name, phase="Pending", message="", job_name="", logger=logger
+            namespace=namespace,
+            name=name,
+            phase=PENDING_PHASE,
+            message="",
+            job_name="",
+            logger=logger,
         )
 
         spec = body.get("spec") or {}
         requirements: dict = spec.get("requirements") or {}
         datasets: list = spec.get("datasets") or []
 
-        # Compute beta*(t) = LUB(beta(t), beta(d1), beta(d2), ...)
         try:
-            beta_star = self._compute_beta_star(requirements, datasets)
+            beta_star = self._dataset_service.compute_effective_beta(
+                beta_t=requirements, datasets=datasets
+            )
+            logger.info(f"TaskRequest {name!r}: beta*(t) = {beta_star}")
         except DatasetNotFoundError as e:
             logger.error(f"TaskRequest {name!r}: {e}")
             self._set_status(
-                namespace,
-                name,
-                phase="Failed",
+                namespace=namespace,
+                name=name,
+                phase=FAILURE_PHASE,
                 message=str(e),
                 job_name="",
                 logger=logger,
             )
             return
         except DatasetServiceError as e:
-            # Transient error: ask kopf to retry after a delay.
             logger.warning(
-                f"TaskRequest {name!r}: transient dataset service error — {e}"
+                f"TaskRequest {name!r} transient dataset service error: {e}"
             )
-            raise kopf.TemporaryError(str(e), delay=30)
-
-        logger.info(f"TaskRequest {name!r}: beta*(t) = {beta_star}")
-
-        # Create Job 
+            raise kopf.TemporaryError(str(e), delay=10)
+        
         owner_uid = body["metadata"]["uid"]
-        job_body = self._build_job(name, namespace, beta_star, owner_uid)
+        job_body = self._build_job(name, namespace, beta_star, datasets, owner_uid)
 
         try:
             self._batch_v1.create_namespaced_job(namespace, job_body)
             logger.info(f"TaskRequest {name!r}: Job {name!r} created in {namespace!r}")
         except ApiException as e:
             if e.status == 409:
-                # Job already exists (e.g. controller restarted mid-reconciliation).
-                logger.info(
+                # Job already exists
+                logger.warning(
                     f"TaskRequest {name!r}: Job already exists, skipping creation"
                 )
+            elif e.status == 422:
+                # Unprocessable Entity: the Job spec is invalid.
+                logger.error(
+                    f"TaskRequest {name!r}: Job spec rejected by API server (422): {e}"
+                )
+                self._set_status(
+                    namespace=namespace,
+                    name=name,
+                    phase=FAILURE_PHASE,
+                    message=f"Invalid Job spec: {e.reason}",
+                    job_name="",
+                    logger=logger,
+                )
+                return
             else:
                 raise kopf.TemporaryError(
-                    f"Failed to create Job for TaskRequest {name!r}: {e}", delay=15
+                    f"Failed to create Job for TaskRequest {name!r}: {e}", delay=10
                 )
 
         self._set_status(
-            namespace, name, phase="Scheduled", message="", job_name=name, logger=logger
+            namespace=namespace,
+            name=name,
+            phase=SCHEDULED_PHASE,
+            message="",
+            job_name=name,
+            logger=logger,
         )
 
     def _sync_from_job(self, name: str, namespace: str, logger) -> None:
@@ -122,76 +154,38 @@ class Controller:
             job = self._batch_v1.read_namespaced_job(name, namespace)
         except ApiException as e:
             if e.status == 404:
-                logger.warning(
-                    f"TaskRequest {name!r}: Job not found on resume, leaving status as-is"
-                )
+                logger.warning(f"TaskRequest {name!r}: Job not found on resume.")
             else:
-                logger.error(f"TaskRequest {name!r}: error reading Job — {e}")
+                logger.error(
+                    f"TaskRequest {name!r}: unexpected error reading Job "
+                    f"(HTTP {e.status}): {e.reason}"
+                )
             return
 
         conditions = self._extract_conditions(job.status)
         self._apply_conditions(name, namespace, conditions, logger)
 
-    def _compute_beta_star(self, requirements: dict, datasets: list[str]) -> dict:
-        """
-        Compute the effective property class beta*(t).
-
-        beta*(t) = LUB(beta(t), beta(d₁), beta(d₂), ...) computed component-wise as
-        the maximum level for each property p ∈ P across the task requirements
-        and all dataset requirements.
-        """
-        beta_star: dict[str, int] = dict(requirements)
-        for dataset_name in datasets:
-            dataset = self._dataset_client.get_dataset(dataset_name)
-            for prop, level in (dataset.get("requirements") or {}).items():
-                beta_star[prop] = max(beta_star.get(prop, 0), int(level))
-        return beta_star
-
     def _build_job(
-        self, name: str, namespace: str, beta_star: dict, owner_uid: str
+        self,
+        name: str,
+        namespace: str,
+        beta_star: dict,
+        datasets: list[str],
+        owner_uid: str,
     ) -> dict:
         """
-        Build a Job manifest that realises the scheduling constraints for a TaskRequest.
+        Build a Job manifest for a TaskRequest.
 
-        Pipeline position: this method is called by the controller after beta*(t) has
-        been computed. The resulting Job carries two scheduling artefacts:
+        The Job carries two scheduling annotations consumed by downstream
+        pipeline components:
+        - beta-star: serialised beta*(t).
+        - datasets: serialised list of required dataset names.
 
-        1. nodeAffinity (requiredDuringScheduling): translates c_prop into native
-           Kubernetes scheduling constraints. For each property p with beta*(t)[p] > 0,
-           the node label `property.node.policydriven.unimi.it/p` must satisfy
-           Gt beta*(t)[p]: 1, which is equivalent to ≥ beta*(t)[p] given that labels
-           carry integer values. This realises the filter step of the formal model.
-
-           An alternative pipeline design would have the controller emit the Job
-           with only the beta* annotation and delegate the nodeAffinity injection to a
-           Gatekeeper mutation webhook (Assign ConstraintTemplate). The two
-           approaches are functionally equivalent; the direct approach is used here
-           to keep the number of moving parts minimal.
-
-        2. beta* annotation: the serialised effective property class is stored on the
-           Job metadata so that the scheduler extender can read it during the
-           prioritisation phase (φ_prop scoring) without recomputing it.
+        nodeAffinity is intentionally omitted here. It is injected by a Gatekeeper
+        mutation webhook that reads the beta-star annotation and translates each
+        property level into a `requiredDuringScheduling` matchExpression, realising
+        the filter step `c_prop` of the formal model.
         """
-        match_expressions = [
-            {
-                "key": f"{self._config.property_prefix}/{prop}",
-                "operator": "Gt",
-                "values": [str(level - 1)],
-            }
-            for prop, level in beta_star.items()
-            if level > 0
-        ]
-
-        affinity = {}
-        if match_expressions:
-            affinity = {
-                "nodeAffinity": {
-                    "requiredDuringSchedulingIgnoredDuringExecution": {
-                        "nodeSelectorTerms": [{"matchExpressions": match_expressions}]
-                    }
-                }
-            }
-
         return {
             "apiVersion": "batch/v1",
             "kind": "Job",
@@ -199,11 +193,14 @@ class Controller:
                 "name": name,
                 "namespace": namespace,
                 "labels": {
-                    f"{self._config.task_request_ref_label_prefix}/task-request": name,
+                    f"{self._config.job_label_prefix}/task-request": name,
                 },
                 "annotations": {
-                    f"{self._config.beta_star_annotation_prefix}/beta-star": json.dumps(
+                    f"{self._config.job_annotation_prefix}/beta-star": json.dumps(
                         beta_star
+                    ),
+                    f"{self._config.job_annotation_prefix}/datasets": json.dumps(
+                        datasets
                     ),
                 },
                 "ownerReferences": [
@@ -222,7 +219,6 @@ class Controller:
                 "template": {
                     "spec": {
                         "restartPolicy": "Never",
-                        **({"affinity": affinity} if affinity else {}),
                         "containers": [
                             {
                                 "name": "task",
@@ -259,16 +255,19 @@ class Controller:
                 group=self._config.group,
                 version=self._config.version,
                 namespace=namespace,
-                plural=self._config.plural,
+                plural=self._config.task_requests_plural,
                 name=name,
-                body={
-                    "status": {"phase": phase, "message": message, "job": job_name}
-                },
+                body={"status": {"phase": phase, "message": message, "job": job_name}},
             )
         except ApiException as e:
             if e.status == 404:
                 logger.warning(
                     f"TaskRequest {name!r} not found when setting status to {phase!r}"
+                )
+            elif e.status == 422:
+                logger.error(
+                    f"TaskRequest {name!r} status patch rejected by API server, "
+                    f"status schema mismatch: {e.reason}"
                 )
             else:
                 raise
@@ -298,22 +297,22 @@ class Controller:
                 self._set_status(
                     namespace,
                     name,
-                    phase="Succeeded",
+                    phase=SUCCESS_PHASE,
                     message="",
                     job_name=name,
                     logger=logger,
                 )
-                logger.info(f"TaskRequest {name!r} → Succeeded")
+                logger.info(f"TaskRequest {name!r} Succeeded")
                 return
             if cond_type == "Failed" and cond_status == "True":
                 message = cond.get("message") or "Job failed"
                 self._set_status(
                     namespace,
                     name,
-                    phase="Failed",
+                    phase=FAILURE_PHASE,
                     message=message,
                     job_name=name,
                     logger=logger,
                 )
-                logger.info(f"TaskRequest {name!r} → Failed: {message}")
+                logger.info(f"TaskRequest {name!r} Failed: {message}")
                 return

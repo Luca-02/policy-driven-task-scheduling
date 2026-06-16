@@ -22,8 +22,6 @@ spec:
     spec:
       serviceAccountName: node-property-controller-service-account
       terminationGracePeriodSeconds: 30
-      # Run the operator as non-root for security best practices, use the same 
-      # UID and GID of the user in the builder image to avoid permission issues
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -31,7 +29,6 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
-      # Volumes for the operator since read-only root filesystem is enabled
       volumes:
         - name: tmp
           emptyDir:
@@ -41,7 +38,6 @@ spec:
         - name: node-property-controller
           image: node-property-controller:latest
           imagePullPolicy: IfNotPresent
-          # Set security context for the container 
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -53,7 +49,7 @@ spec:
               value: "policydriven.unimi.it"
             - name: VERSION
               value: "v1alpha1"
-            - name: PLURAL
+            - name: NODE_PROPERTIES_PLURAL
               value: "nodeproperties"
             - name: ATTRIBUTE_PREFIX
               value: "attribute.node.policydriven.unimi.it"

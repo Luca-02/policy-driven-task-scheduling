@@ -1,5 +1,4 @@
 import kopf
-import random
 
 from dotenv import load_dotenv
 from kubernetes import client, config
@@ -32,9 +31,10 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(
         prefix=cfg.group
     )
-    settings.peering.priority = random.randint(0, 32767) 
-
+    
+    settings.peering.name = "node-property-controller"
     settings.peering.standalone = False
+    settings.peering.priority = 100
 
     global ctrl
     ctrl = Controller(v1=client.CoreV1Api(), config=cfg)
@@ -46,9 +46,9 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 # --------------------------------------------------
 
 
-@kopf.on.resume(cfg.group, cfg.version, cfg.plural)
-@kopf.on.create(cfg.group, cfg.version, cfg.plural)
-@kopf.on.update(cfg.group, cfg.version, cfg.plural)
+@kopf.on.resume(cfg.group, cfg.version, cfg.node_properties_plural)
+@kopf.on.create(cfg.group, cfg.version, cfg.node_properties_plural)
+@kopf.on.update(cfg.group, cfg.version, cfg.node_properties_plural)
 def on_property_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     spec = body.get("spec", {})
@@ -64,7 +64,7 @@ def on_property_created_or_updated(body, reason, logger, **kwargs):
         ctrl.on_property_created_or_updated(name, spec, logger)
 
 
-@kopf.on.delete(cfg.group, cfg.version, cfg.plural)
+@kopf.on.delete(cfg.group, cfg.version, cfg.node_properties_plural)
 def on_property_deleted(body, logger, **kwargs):
     name = body["metadata"]["name"]
     logger.info(f"🔴 NodeProperty {name!r} deleted")

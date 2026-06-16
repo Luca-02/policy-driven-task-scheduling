@@ -21,14 +21,14 @@ Whenever either changes, the affected nodes are re-evaluated and their property 
 
 All configurable via environment variables (with defaults):
 
-| Variable           | Default                                | Description                        |
-| ------------------ | -------------------------------------- | ---------------------------------- |
-| `GROUP`            | `policydriven.unimi.it`                | CRD API group                      |
-| `VERSION`          | `v1alpha1`                             | CRD API version                    |
-| `PLURAL`           | `node-properties`                      | CRD plural name                    |
-| `ATTRIBUTE_PREFIX` | `attribute.node.policydriven.unimi.it` | Prefix for input attribute labels  |
-| `PROPERTY_PREFIX`  | `property.node.policydriven.unimi.it`  | Prefix for output property labels  |
-| `LOG_LEVEL`        | `INFO`                                 | One of DEBUG, INFO, WARNING, ERROR |
+| Variable                 | Default                                | Description                        |
+| ------------------------ | -------------------------------------- | ---------------------------------- |
+| `GROUP`                  | `policydriven.unimi.it`                | CRD API group                      |
+| `VERSION`                | `v1alpha1`                             | CRD API version                    |
+| `NODE_PROPERTIES_PLURAL` | `node-properties`                      | CRD NodeProperties plural name     |
+| `ATTRIBUTE_PREFIX`       | `attribute.node.policydriven.unimi.it` | Prefix for input attribute labels  |
+| `PROPERTY_PREFIX`        | `property.node.policydriven.unimi.it`  | Prefix for output property labels  |
+| `LOG_LEVEL`              | `INFO`                                 | One of DEBUG, INFO, WARNING, ERROR |
 
 ## Running locally
 

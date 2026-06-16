@@ -11,17 +11,17 @@ The service is intentionally a thin demo component, not a production system: no 
 
 ## Endpoints
 
-| Method | Path               | Description              |
-| ------ | ------------------ | ------------------------ |
-| GET    | `/healthz`         | liveness/readiness       |
-| POST   | `/validate`        | Gatekeeper EDP           |
-| GET    | `/datasets`        | list datasets            |
-| GET    | `/datasets/{name}` | dataset detail           |
-| POST   | `/datasets`        | create dataset           |
-| POST   | `/datasets/batch`  | create multiple datasets |
-| PUT    | `/datasets/{name}` | full replace dataset     |
-| DELETE | `/datasets/{name}` | delete dataset           |
-| DELETE | `/datasets/`       | delete all datasets      |
+| Method | Path               | Description                       |
+| ------ | ------------------ | --------------------------------- |
+| GET    | `/healthz`         | liveness/readiness                |
+| POST   | `/validate`        | Gatekeeper EDP                    |
+| GET    | `/datasets`        | list datasets                     |
+| GET    | `/datasets/{name}` | dataset detail                    |
+| POST   | `/datasets`        | create dataset                    |
+| POST   | `/datasets/batch`  | create multiple datasets          |
+| PUT    | `/datasets/{name}` | full replace dataset (debug only) |
+| DELETE | `/datasets/{name}` | delete dataset                    |
+| DELETE | `/datasets/`       | delete all datasets (debug only)  |
 
 ## Configuration (env vars)
 
