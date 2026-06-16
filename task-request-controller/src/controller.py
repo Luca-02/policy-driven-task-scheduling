@@ -1,20 +1,39 @@
 import json
 
+from functools import wraps
+from threading import Lock
+
 import kopf
+
 from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
-from src.config import Config
+from src.config import (
+    Config,
+    TASK_REQUEST_REF_LABEL_DEFAULT,
+    BETA_STAR_ANNOTATION_DEFAULT,
+    DATASETS_ANNOTATION_DEFAULT,
+    TASK_REQUEST_KIND_DEFAULT,
+)
 from src.dataset_service import (
     DatasetService,
     DatasetNotFoundError,
     DatasetServiceError,
 )
 
-SUCCESS_PHASE = "Succeeded"
+COMPLETE_PHASE = "Complete"
 FAILURE_PHASE = "Failed"
 SCHEDULED_PHASE = "Scheduled"
 PENDING_PHASE = "Pending"
+
+
+def _synchronized(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class Controller:
@@ -29,20 +48,22 @@ class Controller:
         self._custom_api = custom_api
         self._dataset_service = dataset_service
         self._config = config
+        self._lock = Lock()
 
+    @_synchronized
     def reconcile(self, name: str, namespace: str, body: dict, logger):
         """
         Idempotent reconciliation for a TaskRequest.
 
-        - If the TaskRequest is already in a terminal phase (Succeeded/Failed),
+        - If the TaskRequest is already in a terminal phase (Complete/Failed),
           it is a no-op.
         - If it is Scheduled (Job exists), its status is synced from the Job.
         - Otherwise (Pending or no status yet), the full reconciliation runs:
           fetch beta(d) per dataset, compute beta*(t), create the Job.
         """
-        phase = (body.get("status") or {}).get("phase")
+        phase = body.get("status", {}).get("phase")
 
-        if phase in (SUCCESS_PHASE, FAILURE_PHASE):
+        if phase in (COMPLETE_PHASE, FAILURE_PHASE):
             logger.info(
                 f"TaskRequest {name!r} is in terminal phase {phase!r}, skipping"
             )
@@ -58,8 +79,9 @@ class Controller:
         # Phase is None or Pending, run full reconciliation.
         self._full_reconcile(name, namespace, body, logger)
 
+    @_synchronized
     def sync_job_status(
-        self, task_request_name: str, namespace: str, job_status, logger
+        self, task_request_name: str, namespace: str, job_status: dict, logger
     ):
         """Propagate a Job status change to the realted TaskRequest."""
         conditions = self._extract_conditions(job_status)
@@ -69,10 +91,11 @@ class Controller:
         """
         Full reconciliation pipeline for a new or Pending TaskRequest:
             1. Set phase to Pending.
-            3. Compute beta*(t) = LUB(beta(t), beta(d1), ...) delegated to DatasetService.
-            4. Create the Job with beta* and dataset annotations.
-            5. Set phase to Scheduled.
+            2. Compute beta*(t) = LUB(beta(t), beta(d1), ...) delegated to DatasetService.
+            3. Create the Job with beta* and dataset annotations.
+            4. Set phase to Scheduled.
         """
+        # Set phase to Pending at the start of reconciliation
         self._set_status(
             namespace=namespace,
             name=name,
@@ -82,15 +105,15 @@ class Controller:
             logger=logger,
         )
 
-        spec = body.get("spec") or {}
-        requirements: dict = spec.get("requirements") or {}
-        datasets: list = spec.get("datasets") or []
+        spec = body.get("spec", {})
+        requirements: dict = spec.get("requirements", {})
+        datasets: list = spec.get("datasets", [])
 
         try:
             beta_star = self._dataset_service.compute_effective_beta(
                 beta_t=requirements, datasets=datasets
             )
-            logger.info(f"TaskRequest {name!r}: beta*(t) = {beta_star}")
+            logger.info(f"TaskRequest {name!r}: computed beta*(t) = {beta_star}")
         except DatasetNotFoundError as e:
             logger.error(f"TaskRequest {name!r}: {e}")
             self._set_status(
@@ -103,20 +126,18 @@ class Controller:
             )
             return
         except DatasetServiceError as e:
-            logger.warning(
-                f"TaskRequest {name!r} transient dataset service error: {e}"
-            )
+            logger.warning(f"TaskRequest {name!r} transient dataset service error: {e}")
             raise kopf.TemporaryError(str(e), delay=10)
-        
+
         owner_uid = body["metadata"]["uid"]
-        job_body = self._build_job(name, namespace, beta_star, datasets, owner_uid)
+        job = self._build_job(name, namespace, beta_star, datasets, owner_uid)
 
         try:
-            self._batch_v1.create_namespaced_job(namespace, job_body)
+            self._batch_v1.create_namespaced_job(namespace, job)
             logger.info(f"TaskRequest {name!r}: Job {name!r} created in {namespace!r}")
         except ApiException as e:
             if e.status == 409:
-                # Job already exists
+                # Job already exists.
                 logger.warning(
                     f"TaskRequest {name!r}: Job already exists, skipping creation"
                 )
@@ -139,6 +160,7 @@ class Controller:
                     f"Failed to create Job for TaskRequest {name!r}: {e}", delay=10
                 )
 
+        # Set status to Scheduled after Job creation
         self._set_status(
             namespace=namespace,
             name=name,
@@ -149,9 +171,9 @@ class Controller:
         )
 
     def _sync_from_job(self, name: str, namespace: str, logger) -> None:
-        """Sync TaskRequest status from an existing Job (used on resume)."""
+        """Sync TaskRequest status from an existing Job."""
         try:
-            job = self._batch_v1.read_namespaced_job(name, namespace)
+            job: client.V1Job = self._batch_v1.read_namespaced_job(name, namespace)
         except ApiException as e:
             if e.status == 404:
                 logger.warning(f"TaskRequest {name!r}: Job not found on resume.")
@@ -172,83 +194,105 @@ class Controller:
         beta_star: dict,
         datasets: list[str],
         owner_uid: str,
-    ) -> dict:
+    ) -> client.V1Job:
         """
-        Build a Job manifest for a TaskRequest.
+        Build a typed V1Job for a TaskRequest.
 
         The Job carries two scheduling annotations consumed by downstream
         pipeline components:
         - beta-star: serialised beta*(t).
         - datasets: serialised list of required dataset names.
 
-        nodeAffinity is intentionally omitted here. It is injected by a Gatekeeper
-        mutation webhook that reads the beta-star annotation and translates each
-        property level into a `requiredDuringScheduling` matchExpression, realising
-        the filter step `c_prop` of the formal model.
+        Setting the UID of the TaskRequest as an owner reference on the Job ensures that
+        the Job is automatically garbage collected when the TaskRequest is deleted.
+
+        Note that `nodeAffinity` is intentionally omitted here. It is injected by a
+        Gatekeeper mutation webhook that reads the beta-star annotation and translates
+        each property level into a requiredDuringScheduling matchExpression, realising
+        the filter step c_prop of the formal model.
+
+        Args:
+            name: the name of the Job, set to match the TaskRequest for easy correlation.
+            namespace: the Job namespace, same as the TaskRequest.
+            beta_star: the computed beta*(t) dict to be annotated on the Job.
+            datasets: the list of dataset names to be annotated on the Job.
+            owner_uid: the UID of the TaskRequest.
+
+        Returns:
+            A V1Job object ready to be created in the cluster.
         """
-        return {
-            "apiVersion": "batch/v1",
-            "kind": "Job",
-            "metadata": {
-                "name": name,
-                "namespace": namespace,
-                "labels": {
-                    f"{self._config.job_label_prefix}/task-request": name,
+        task_request_ref_key = (
+            f"{self._config.job_label_prefix}/{TASK_REQUEST_REF_LABEL_DEFAULT}"
+        )
+        beta_star_key = (
+            f"{self._config.job_annotation_prefix}/{BETA_STAR_ANNOTATION_DEFAULT}"
+        )
+        datasets_key = (
+            f"{self._config.job_annotation_prefix}/{DATASETS_ANNOTATION_DEFAULT}"
+        )
+
+        return client.V1Job(
+            api_version="batch/v1",
+            kind="Job",
+            metadata=client.V1ObjectMeta(
+                name=name,
+                namespace=namespace,
+                labels={task_request_ref_key: name},
+                annotations={
+                    beta_star_key: json.dumps(beta_star),
+                    datasets_key: json.dumps(datasets),
                 },
-                "annotations": {
-                    f"{self._config.job_annotation_prefix}/beta-star": json.dumps(
-                        beta_star
-                    ),
-                    f"{self._config.job_annotation_prefix}/datasets": json.dumps(
-                        datasets
-                    ),
-                },
-                "ownerReferences": [
-                    {
-                        "apiVersion": f"{self._config.group}/{self._config.version}",
-                        "kind": "TaskRequest",
-                        "name": name,
-                        "uid": owner_uid,
-                        "controller": True,
-                        "blockOwnerDeletion": True,
-                    }
+                owner_references=[
+                    client.V1OwnerReference(
+                        api_version=f"{self._config.group}/{self._config.version}",
+                        kind=TASK_REQUEST_KIND_DEFAULT,
+                        name=name,
+                        uid=owner_uid,
+                        controller=True,
+                        block_owner_deletion=True,
+                    )
                 ],
-            },
-            "spec": {
-                "backoffLimit": 0,
-                "template": {
-                    "spec": {
-                        "restartPolicy": "Never",
-                        "containers": [
-                            {
-                                "name": "task",
+            ),
+            spec=client.V1JobSpec(
+                backoff_limit=0,
+                template=client.V1PodTemplateSpec(
+                    spec=client.V1PodSpec(
+                        restart_policy="Never",
+                        containers=[
+                            client.V1Container(
+                                name="task",
                                 # Blackbox placeholder: in a real implementation the
                                 # task image would be supplied as metadata in the
                                 # TaskRequest spec and validated by a dedicated
                                 # image-service before the controller translates the
                                 # request into a Job.
-                                "image": "busybox:latest",
-                                "command": [
+                                image="busybox:latest",
+                                command=[
                                     "sh",
                                     "-c",
                                     'echo "Task executed successfully" && sleep 5',
                                 ],
-                            }
+                            )
                         ],
-                    }
-                },
-            },
-        }
+                    )
+                ),
+            ),
+        )
 
     def _set_status(
-        self, namespace: str, name: str, phase: str, message: str, job_name: str, logger
+        self,
+        namespace: str,
+        name: str,
+        phase: str,
+        message: str,
+        job_name: str,
+        logger,
     ) -> None:
         """
         Patch the TaskRequest status via the /status subresource endpoint.
 
         Using the dedicated subresource ensures that only holders of the
-        `taskrequests/status` RBAC verb can modify this field. Regular
-        kubectl apply on the main resource silently ignores status changes.
+        `taskrequests/status` RBAC verb can modify this field.
         """
         try:
             self._custom_api.patch_namespaced_custom_object_status(
@@ -272,40 +316,51 @@ class Controller:
             else:
                 raise
 
-    def _extract_conditions(self, job_status) -> list[dict]:
+    def _extract_conditions(
+        self, job_status: dict | client.V1JobStatus | None
+    ) -> list[client.V1JobCondition]:
         """
         Return a normalised list of condition dicts from either a kopf body
         status dict or a V1JobStatus kubernetes client object.
         """
         if job_status is None:
             return []
+
         if isinstance(job_status, dict):
-            return job_status.get("conditions") or []
+            return [
+                client.V1JobCondition(
+                    type=c.get("type"),
+                    status=c.get("status"),
+                    message=c.get("message"),
+                    reason=c.get("reason"),
+                    last_probe_time=c.get("lastProbeTime"),
+                    last_transition_time=c.get("lastTransitionTime"),
+                )
+                for c in job_status.get("conditions", [])
+            ]
+
         # V1JobStatus object from the kubernetes client
-        if not job_status.conditions:
-            return []
-        return [{"type": c.type, "status": c.status} for c in job_status.conditions]
+        return job_status.conditions or []
 
     def _apply_conditions(
-        self, name: str, namespace: str, conditions: list[dict], logger
+        self, name: str, namespace: str, conditions: list[client.V1JobCondition], logger
     ) -> None:
         """Translate Job conditions into a TaskRequest phase update."""
         for cond in conditions:
-            cond_type = cond.get("type")
-            cond_status = cond.get("status")
-            if cond_type == "Complete" and cond_status == "True":
+            if cond.type == COMPLETE_PHASE and cond.status == "True":
+                message = cond.message or "Job completed successfully"
                 self._set_status(
                     namespace,
                     name,
-                    phase=SUCCESS_PHASE,
-                    message="",
+                    phase=COMPLETE_PHASE,
+                    message=message,
                     job_name=name,
                     logger=logger,
                 )
-                logger.info(f"TaskRequest {name!r} Succeeded")
+                logger.info(f"TaskRequest {name!r} Complete: {message}")
                 return
-            if cond_type == "Failed" and cond_status == "True":
-                message = cond.get("message") or "Job failed"
+            if cond.type == FAILURE_PHASE and cond.status == "True":
+                message = cond.message or "Job failed"
                 self._set_status(
                     namespace,
                     name,

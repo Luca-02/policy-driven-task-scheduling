@@ -198,11 +198,26 @@ readonly TEMPLATE_CONSTRAINT_DIRS=(
 log "Installing Gatekeeper"
 kubectl apply -f "$GATEKEEPER_MANIFEST_URL"
 
+readonly GATEKEEPER_CACHE_TTL="1m"
+
+log "Patching Gatekeeper with external-data-provider-response-cache-ttl"
+kubectl patch deployment gatekeeper-controller-manager \
+  -n "$GATEKEEPER_NAMESPACE" \
+  --type=json \
+  -p="[
+    {
+      \"op\": \"add\",
+      \"path\": \"/spec/template/spec/containers/0/args/-\",
+      \"value\": \"--external-data-provider-response-cache-ttl=${GATEKEEPER_CACHE_TTL}\"
+    }
+  ]"
+
 wait_for_deployment "$GATEKEEPER_NAMESPACE" "gatekeeper-controller-manager"
 wait_for_deployment "$GATEKEEPER_NAMESPACE" "gatekeeper-audit"
 
-log "Applying Gatekeeper configuration"
 readonly MAX_RETRIES=10
+
+log "Applying Gatekeeper configuration"
 for attempt in {1..$MAX_RETRIES}; do
     if kubectl apply -f "$GATEKEEPER_CONFIG_FILE"; then
         break

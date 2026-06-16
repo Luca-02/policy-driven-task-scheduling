@@ -33,7 +33,6 @@ def make_cfg() -> Config:
         port=8443,
         tls_cert_file=None,
         tls_key_file=None,
-        gatekeeper_api_version="externaldata.gatekeeper.sh/v1beta1",
         log_level="WARNING",
     )
 

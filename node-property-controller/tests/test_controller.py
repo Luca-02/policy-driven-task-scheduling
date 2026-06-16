@@ -4,10 +4,6 @@ from unittest.mock import MagicMock
 from src.config import Config
 from src.controller import Controller
 
-# --------------------------------------------------
-# Helpers
-# --------------------------------------------------
-
 
 def make_config():
     return Config(
@@ -50,10 +46,6 @@ def patched_labels(ctrl):
         result.setdefault(node_name, {}).update(args[1]["metadata"]["labels"])
     return result
 
-
-# --------------------------------------------------
-# Thesis example data and expected results
-# --------------------------------------------------
 
 SECURITY_SPEC = {
     "levels": [
@@ -144,11 +136,6 @@ def load_properties(ctrl, logger=None):
     logger = logger or make_logger()
     ctrl.on_property_created_or_updated("security", SECURITY_SPEC, logger)
     ctrl.on_property_created_or_updated("computation", COMPUTATION_SPEC, logger)
-
-
-# --------------------------------------------------
-# Controller testing
-# --------------------------------------------------
 
 
 class TestExtractNodeAttributes(unittest.TestCase):

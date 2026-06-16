@@ -96,17 +96,16 @@ def on_job_status_changed(body, logger, **kwargs):
         )
         return
 
+    task_request_ref_label = f"{cfg.job_label_prefix}/{cfg.task_request_ref_label}"
     task_request_name = (body.get("metadata", {}).get("labels") or {}).get(
-        f"{cfg.job_label_prefix}/task_request"
+        task_request_ref_label
     )
     if not task_request_name:
-        logger.info(
-            f"Skipping Job {name!r}: missing label {cfg.job_label_prefix!r}"
-        )
+        logger.info(f"Skipping Job {name!r}: missing label {task_request_ref_label!r}")
         return
 
     logger.info(
-        f"🔄 Job {name!r} status changed, syncing TaskRequest {task_request_name!r}"
+        f"🔄 Job {name!r} status changed, syncing TaskRequest {task_request_name!r}: {status}"
     )
 
     if ctrl is not None:

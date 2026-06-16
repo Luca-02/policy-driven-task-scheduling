@@ -67,11 +67,11 @@ spec:
                   type: string
                   description: >
                     Current phase of the TaskRequest lifecycle.
-                    Pending: accepted, awaiting Job creation.
-                    Scheduled: Job created and submitted to the scheduler.
-                    Succeeded: Job completed successfully.
-                    Failed: terminal failure (dataset error, Job failure, etc.).
-                  enum: ["Pending", "Scheduled", "Succeeded", "Failed"]
+                    - Pending: accepted, awaiting Job creation.
+                    - Scheduled: Job created and submitted to the scheduler.
+                    - Complete: Job completed successfully.
+                    - Failed: terminal failure (dataset error, Job failure, etc.).
+                  enum: ["Pending", "Scheduled", "Complete", "Failed"]
                 job:
                   type: string
                   description: Name of the Job related to this TaskRequest.

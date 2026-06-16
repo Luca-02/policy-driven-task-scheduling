@@ -2,10 +2,6 @@ import unittest
 
 from src.models import Clause, Condition, Level, Node, Property
 
-# --------------------------------------------------
-# Thesis example testing
-# --------------------------------------------------
-
 THESIS_SECURITY = Property(
     name="security",
     levels=[
@@ -100,11 +96,6 @@ class TestThesisExample(unittest.TestCase):
 
     def test_n5(self):
         self._check("n5", 3, 1)
-
-
-# --------------------------------------------------
-# Models testing
-# --------------------------------------------------
 
 
 class TestCondition(unittest.TestCase):
@@ -240,7 +231,6 @@ class TestProperty(unittest.TestCase):
         self.assertEqual(prop.max_level({"cert": "certA"}), 0)
 
     def test_max_level_not_first_satisfied(self):
-        # n4: security should be 2, not 1
         security = THESIS_SECURITY
         attrs = {"cert": "certC", "isolation": "strict", "gpu": "a100", "cpu": "24"}
         self.assertEqual(security.max_level(attrs), 2)
