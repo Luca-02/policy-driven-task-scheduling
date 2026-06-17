@@ -20,10 +20,10 @@ class DatasetService:
     """
     Act as a client for the dataset service.
 
-    Fetches dataset metadata and encapsulates dataset-related logic such as the 
-    computation of the effective property class beta*(t).
+    Fetches dataset metadata and encapsulates dataset-related logic such as the
+    computation of the effective property class `beta*(t)`.
 
-    TLS verification uses the provided CA certificate. If no CA is given, the 
+    TLS verification uses the provided CA certificate. If no CA is given, the
     default system trust store is used.
     """
 
@@ -73,10 +73,10 @@ class DatasetService:
 
     def compute_effective_beta(self, beta_t: dict, datasets: list[str]) -> dict:
         """
-        Compute the effective property class beta*(t) for a given set of datasets and task beta values.
+        Compute the effective property class `beta*(t)` for a given set of datasets and task beta values.
 
-        This is defined as beta*(t) = LUB(beta(t), beta(d1), beta(d2), ...), where beta(t) is the
-        base task beta and beta(d) are fetched from the dataset service.
+        This is defined as `beta*(t) = LUB(beta(t), beta(d1), beta(d2), ...), where `beta(t)` is the
+        base task beta and `beta(d)` are fetched from the dataset service.
 
         Args:
             beta_t: A dictionary of task beta values.
@@ -92,8 +92,6 @@ class DatasetService:
         beta_star_t: dict[str, int] = dict(beta_t)
         for dataset_name in datasets:
             dataset = self._get_dataset(dataset_name)
-
             for prop, level in (dataset.get("requirements") or {}).items():
                 beta_star_t[prop] = max(beta_star_t.get(prop, 0), int(level))
-
         return beta_star_t

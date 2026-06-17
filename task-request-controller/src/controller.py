@@ -60,7 +60,13 @@ class Controller:
           it is a no-op.
         - If it is Scheduled (Job exists), its status is synced from the Job.
         - Otherwise (Pending or no status yet), the full reconciliation runs:
-          fetch beta(d) per dataset, compute beta*(t), create the Job.
+          fetch `beta(d)` per dataset, compute `beta*(t)`, create the Job.
+
+        Args:
+            name: The name of the TaskRequest.
+            namespace: The namespace of the TaskRequest.
+            body: The full body of the TaskRequest resource.
+            logger: Logger object.
         """
         phase = body.get("status", {}).get("phase")
 
@@ -84,7 +90,15 @@ class Controller:
     def sync_job_status(
         self, task_request_name: str, namespace: str, job_status: dict, logger
     ):
-        """Propagate a Job status change to the realted TaskRequest."""
+        """
+        Propagate a Job status change to the realted TaskRequest.
+
+        Args:
+            task_request_name: The name of the TaskRequest to update.
+            namespace: The namespace of the TaskRequest.
+            job_status: The status of the Job, either as a dict or a V1JobStatus object.
+            logger: Logger object.
+        """
         conditions = self._extract_conditions(job_status)
         self._apply_conditions(task_request_name, namespace, conditions, logger)
 
@@ -92,8 +106,8 @@ class Controller:
         """
         Full reconciliation pipeline for a new or Pending TaskRequest:
             1. Set phase to Pending.
-            2. Compute beta*(t) = LUB(beta(t), beta(d1), ...) delegated to DatasetService.
-            3. Create the Job with beta* and dataset annotations.
+            2. Compute `beta*(t) = LUB(beta(t), beta(d1), ...)` delegated to DatasetService.
+            3. Create the Job with `beta*` and dataset annotations.
             4. Set phase to Scheduled.
         """
         # Set phase to Pending at the start of reconciliation

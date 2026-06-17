@@ -120,8 +120,8 @@ class JobBuilder:
         """
         Build the spec for the Job, including the pod template with the appropriate affinity.
 
-        **Blackbox image placeholder**: in a real implementation the task image would be supplied as
-        metadata in the TaskRequest spec and validated by a dedicated image-service before the
+        **Blackbox image placeholder**: in a real implementation the task image would be supplied 
+        as metadata in the TaskRequest spec and validated by a dedicated image-service before the
         controller translates the request into a Job.
 
         Returns:
@@ -150,11 +150,10 @@ class JobBuilder:
 
     def _build_affinity(self) -> client.V1Affinity | None:
         """
-        Assemble nodeAffinity from all active scheduling policies.
+        Assemble nodeAffinity from all scheduling policies match expressions.
 
         Returns:
-            client.V1Affinity: The affinity object for the Job, or None if no
-                policies contribute any constraint.
+            client.V1Affinity: The affinity object for the Job, or None if no match expressions are generated.
         """
         match_expressions = [
             *self._property_expressions(),
