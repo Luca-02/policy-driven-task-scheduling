@@ -13,6 +13,7 @@ from src.config import (
     TASK_REQUEST_REF_LABEL_DEFAULT,
     BETA_STAR_ANNOTATION_DEFAULT,
     DATASETS_ANNOTATION_DEFAULT,
+    NODE_PROPERTY_PREFIX_DEFAULT,
 )
 from src.controller import (
     Controller,
@@ -38,6 +39,7 @@ def make_config() -> Config:
         task_request_ref_label=TASK_REQUEST_REF_LABEL_DEFAULT,
         beta_star_annotation=BETA_STAR_ANNOTATION_DEFAULT,
         datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
+        node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
         log_level="WARNING",
     )
 
@@ -99,45 +101,6 @@ class ControllerTestBase(unittest.TestCase):
     def job_annotation(self, key_suffix: str) -> str:
         key = f"{self.cfg.job_annotation_prefix}/{key_suffix}"
         return self.created_job().metadata.annotations[key]
-
-
-class TestBuildJob(ControllerTestBase):
-    def setUp(self):
-        super().setUp()
-        self.job = self.ctrl._build_job(
-            "t1", "compute", {"security": 2}, ["d1"], "uid-123"
-        )
-
-    def test_returns_v1job_with_correct_metadata(self):
-        self.assertIsInstance(self.job, client.V1Job)
-        self.assertEqual(self.job.metadata.name, "t1")
-        self.assertEqual(self.job.metadata.namespace, "compute")
-
-    def test_task_request_label_present(self):
-        key = f"{self.cfg.job_label_prefix}/{TASK_REQUEST_REF_LABEL_DEFAULT}"
-        self.assertEqual(self.job.metadata.labels[key], "t1")
-
-    def test_scheduling_annotations_present(self):
-        annotations = self.job.metadata.annotations
-        beta_key = f"{self.cfg.job_annotation_prefix}/{BETA_STAR_ANNOTATION_DEFAULT}"
-        datasets_key = f"{self.cfg.job_annotation_prefix}/{DATASETS_ANNOTATION_DEFAULT}"
-        self.assertEqual(json.loads(annotations[beta_key]), {"security": 2})
-        self.assertEqual(json.loads(annotations[datasets_key]), ["d1"])
-
-    def test_owner_reference(self):
-        ref = self.job.metadata.owner_references[0]
-        self.assertEqual(ref.kind, TASK_REQUEST_KIND_DEFAULT)
-        self.assertEqual(ref.uid, "uid-123")
-        self.assertTrue(ref.controller)
-        self.assertTrue(ref.block_owner_deletion)
-
-    def test_spec_constraints(self):
-        spec = self.job.spec
-        pod_spec = spec.template.spec
-        self.assertEqual(spec.backoff_limit, 0)
-        self.assertEqual(pod_spec.restart_policy, "Never")
-        self.assertEqual(len(pod_spec.containers), 1)
-        self.assertEqual(pod_spec.containers[0].name, "task")
 
 
 class TestReconcile(ControllerTestBase):

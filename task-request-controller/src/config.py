@@ -13,6 +13,7 @@ JOB_ANNOTATION_PREFIX_DEFAULT = f"scheduling.task.{GROUP_DEFAULT}"
 TASK_REQUEST_REF_LABEL_DEFAULT = "task-request"
 BETA_STAR_ANNOTATION_DEFAULT = "beta-star"
 DATASETS_ANNOTATION_DEFAULT = "datasets"
+NODE_PROPERTY_PREFIX_DEFAULT = f"property.node.{GROUP_DEFAULT}"
 
 
 class Config:
@@ -32,6 +33,7 @@ class Config:
         task_request_ref_label: str,
         beta_star_annotation: str,
         datasets_annotation: str,
+        node_property_prefix: str,
         log_level: str,
     ):
         self.group = group
@@ -46,6 +48,7 @@ class Config:
         self.task_request_ref_label = task_request_ref_label
         self.beta_star_annotation = beta_star_annotation
         self.datasets_annotation = datasets_annotation
+        self.node_property_prefix = node_property_prefix
         self.log_level = log_level
 
     @staticmethod
@@ -77,6 +80,9 @@ class Config:
             ),
             datasets_annotation=os.getenv(
                 "DATASETS_ANNOTATION", DATASETS_ANNOTATION_DEFAULT
+            ),
+            node_property_prefix=os.getenv(
+                "NODE_PROPERTY_PREFIX", NODE_PROPERTY_PREFIX_DEFAULT
             ),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
         )

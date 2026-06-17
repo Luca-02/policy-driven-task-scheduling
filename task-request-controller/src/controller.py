@@ -20,6 +20,7 @@ from src.dataset_service import (
     DatasetNotFoundError,
     DatasetServiceError,
 )
+from src.job_builder import JobBuilder
 
 COMPLETE_PHASE = "Complete"
 FAILURE_PHASE = "Failed"
@@ -130,7 +131,16 @@ class Controller:
             raise kopf.TemporaryError(str(e), delay=10)
 
         owner_uid = body["metadata"]["uid"]
-        job = self._build_job(name, namespace, beta_star, datasets, owner_uid)
+        # Build the Job
+        job = (
+            JobBuilder(config=self._config)
+            .set_name(name)
+            .set_namespace(namespace)
+            .set_beta_star(beta_star)
+            .set_datasets(datasets)
+            .set_owner(owner_uid)
+            .build()
+        )
 
         try:
             self._batch_v1.create_namespaced_job(namespace, job)
@@ -186,98 +196,6 @@ class Controller:
 
         conditions = self._extract_conditions(job.status)
         self._apply_conditions(name, namespace, conditions, logger)
-
-    def _build_job(
-        self,
-        name: str,
-        namespace: str,
-        beta_star: dict,
-        datasets: list[str],
-        owner_uid: str,
-    ) -> client.V1Job:
-        """
-        Build a typed V1Job for a TaskRequest.
-
-        The Job carries two scheduling annotations consumed by downstream
-        pipeline components:
-        - beta-star: serialised beta*(t).
-        - datasets: serialised list of required dataset names.
-
-        Setting the UID of the TaskRequest as an owner reference on the Job ensures that
-        the Job is automatically garbage collected when the TaskRequest is deleted.
-
-        Note that `nodeAffinity` is intentionally omitted here. It is injected by a
-        Gatekeeper mutation webhook that reads the beta-star annotation and translates
-        each property level into a requiredDuringScheduling matchExpression, realising
-        the filter step c_prop of the formal model.
-
-        Args:
-            name: the name of the Job, set to match the TaskRequest for easy correlation.
-            namespace: the Job namespace, same as the TaskRequest.
-            beta_star: the computed beta*(t) dict to be annotated on the Job.
-            datasets: the list of dataset names to be annotated on the Job.
-            owner_uid: the UID of the TaskRequest.
-
-        Returns:
-            A V1Job object ready to be created in the cluster.
-        """
-        task_request_ref_key = (
-            f"{self._config.job_label_prefix}/{TASK_REQUEST_REF_LABEL_DEFAULT}"
-        )
-        beta_star_key = (
-            f"{self._config.job_annotation_prefix}/{BETA_STAR_ANNOTATION_DEFAULT}"
-        )
-        datasets_key = (
-            f"{self._config.job_annotation_prefix}/{DATASETS_ANNOTATION_DEFAULT}"
-        )
-
-        return client.V1Job(
-            api_version="batch/v1",
-            kind="Job",
-            metadata=client.V1ObjectMeta(
-                name=name,
-                namespace=namespace,
-                labels={task_request_ref_key: name},
-                annotations={
-                    beta_star_key: json.dumps(beta_star),
-                    datasets_key: json.dumps(datasets),
-                },
-                owner_references=[
-                    client.V1OwnerReference(
-                        api_version=f"{self._config.group}/{self._config.version}",
-                        kind=TASK_REQUEST_KIND_DEFAULT,
-                        name=name,
-                        uid=owner_uid,
-                        controller=True,
-                        block_owner_deletion=True,
-                    )
-                ],
-            ),
-            spec=client.V1JobSpec(
-                backoff_limit=0,
-                template=client.V1PodTemplateSpec(
-                    spec=client.V1PodSpec(
-                        restart_policy="Never",
-                        containers=[
-                            client.V1Container(
-                                name="task",
-                                # Blackbox placeholder: in a real implementation the
-                                # task image would be supplied as metadata in the
-                                # TaskRequest spec and validated by a dedicated
-                                # image-service before the controller translates the
-                                # request into a Job.
-                                image="busybox:latest",
-                                command=[
-                                    "sh",
-                                    "-c",
-                                    'echo "Task executed successfully" && sleep 5',
-                                ],
-                            )
-                        ],
-                    )
-                ),
-            ),
-        )
 
     def _set_status(
         self,
