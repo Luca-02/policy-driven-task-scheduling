@@ -1,0 +1,10 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: GeographicalGroup
+metadata:
+  name: EU
+spec:
+  locations:
+    - eu-north
+    - eu-south
+    - eu-east
+    - eu-west

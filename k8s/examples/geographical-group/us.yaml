@@ -1,0 +1,10 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: GeographicalGroup
+metadata:
+  name: US
+spec:
+  locations:
+    - us-north
+    - us-south
+    - us-east
+    - us-west

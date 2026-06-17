@@ -57,6 +57,12 @@ spec:
                     type: string
                     minLength: 1
                     maxLength: 254
+                # geo(t): geographical group requested for task execution.
+                geographicalGroup:
+                  type: string
+                  description: >
+                    Geographical group requested for task execution (geo(t)).
+                    Used to determine node affinity based on location.
             status:
               type: object
               # Status is managed exclusively by the TaskRequest controller
