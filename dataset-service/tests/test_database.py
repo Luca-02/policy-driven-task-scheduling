@@ -13,7 +13,6 @@ class TestRepository(unittest.TestCase):
         self.factory = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self.db = self.factory()
         self.repo = DatasetRepository(self.db)
-
         Base.metadata.create_all(self.engine)
 
     def tearDown(self):
@@ -26,6 +25,7 @@ class TestRepository(unittest.TestCase):
             requirements={"security": 2, "computation": 1},
             sizeMB=1024,
             nodes=["kind-worker2"],
+            geo="us",
         )
 
     def _d2(self):
@@ -61,7 +61,7 @@ class TestRepository(unittest.TestCase):
 
     def test_update_replaces(self):
         dataset = self._d1()
-        update = DatasetBase(requirements={"security": 3}, sizeMB=0, nodes=[])
+        update = DatasetBase(requirements={"security": 3}, sizeMB=0, nodes=[], geo="AS")
         self.repo.create(dataset)
         self.repo.update(dataset.name, update)
         row = self.repo.get(dataset.name)
@@ -70,7 +70,9 @@ class TestRepository(unittest.TestCase):
 
     def test_update_missing_dataset(self):
         self.assertIsNone(
-            self.repo.update("nope", DatasetBase(requirements={}, sizeMB=0, nodes=[]))
+            self.repo.update(
+                "nope", DatasetBase(requirements={}, sizeMB=0, nodes=[], geo="AS")
+            )
         )
 
     def test_delete(self):

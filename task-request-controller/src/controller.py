@@ -1,5 +1,3 @@
-import json
-
 from functools import wraps
 from threading import Lock
 
@@ -8,18 +6,14 @@ import kopf
 from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
-from src.config import (
-    Config,
-    TASK_REQUEST_REF_LABEL_DEFAULT,
-    BETA_STAR_ANNOTATION_DEFAULT,
-    DATASETS_ANNOTATION_DEFAULT,
-    TASK_REQUEST_KIND_DEFAULT,
-)
+from src.config import Config
 from src.dataset_service import (
     DatasetService,
     DatasetNotFoundError,
     DatasetServiceError,
 )
+from src.geo import GeographicGroup
+from src.annotation import compute_effective_beta, compute_effective_geo
 from src.job_builder import JobBuilder
 
 COMPLETE_PHASE = "Complete"
@@ -49,6 +43,7 @@ class Controller:
         self._custom_api = custom_api
         self._dataset_service = dataset_service
         self._config = config
+        self._geo_groups: dict[str, GeographicGroup] = {}
         self._lock = Lock()
 
     @_synchronized
@@ -59,8 +54,7 @@ class Controller:
         - If the TaskRequest is already in a terminal phase (Complete/Failed),
           it is a no-op.
         - If it is Scheduled (Job exists), its status is synced from the Job.
-        - Otherwise (Pending or no status yet), the full reconciliation runs:
-          fetch `beta(d)` per dataset, compute `beta*(t)`, create the Job.
+        - Otherwise (Pending or no status yet), the full reconciliation runs.
 
         Args:
             name: The name of the TaskRequest.
@@ -90,25 +84,49 @@ class Controller:
     def sync_job_status(
         self, task_request_name: str, namespace: str, job_status: dict, logger
     ):
-        """
-        Propagate a Job status change to the realted TaskRequest.
-
-        Args:
-            task_request_name: The name of the TaskRequest to update.
-            namespace: The namespace of the TaskRequest.
-            job_status: The status of the Job, either as a dict or a V1JobStatus object.
-            logger: Logger object.
-        """
+        """Propagate a Job status change to the related TaskRequest."""
         conditions = self._extract_conditions(job_status)
         self._apply_conditions(task_request_name, namespace, conditions, logger)
+
+    @_synchronized
+    def on_geographical_group_created_or_updated(self, name: str, spec: dict, logger):
+        """
+        Handle creation or update of a GeographicalGroup by storing it in-memory registry.
+
+        Args:
+            name: GeographicalGroup name.
+            spec: GeographicalGroup spec, containing 'locations' and 'includes'.
+            logger: Logger object.
+        """
+        locations = spec.get("locations", []) or []
+        includes = spec.get("includes", []) or []
+        self._geo_groups[name] = GeographicGroup(name, locations, includes)
+        logger.info(
+            f"GeographicalGroup {name!r} loaded: {len(locations)} locations, "
+            f"{len(includes)} includes"
+        )
+
+    @_synchronized
+    def on_geographical_group_deleted(self, name: str, logger):
+        """
+        Handle deletion of a GeographicalGroup by removing it from the in-memory registry.
+
+        Args:
+            name: GeographicalGroup name.
+            logger: Logger object.
+        """
+        self._geo_groups.pop(name, None)
+        logger.info(f"GeographicalGroup {name!r} removed from registry")
 
     def _full_reconcile(self, name: str, namespace: str, body: dict, logger):
         """
         Full reconciliation pipeline for a new or Pending TaskRequest:
-            1. Set phase to Pending.
-            2. Compute `beta*(t) = LUB(beta(t), beta(d1), ...)` delegated to DatasetService.
-            3. Create the Job with `beta*` and dataset annotations.
-            4. Set phase to Scheduled.
+            1. Set phase to Pending
+            2. Fetch all required datasets in one pass
+            3. Compute `beta*(t)`
+            4. Compute `geo*(t)`, and if is empty (no node can satisfy it) fail
+            5. Create the Job with TaskRequest reference and dataset annotations
+            6. Set phase to Scheduled
         """
         # Set phase to Pending at the start of reconciliation
         self._set_status(
@@ -123,12 +141,10 @@ class Controller:
         spec = body.get("spec", {})
         requirements: dict = spec.get("requirements", {})
         datasets: list = spec.get("datasets", [])
+        geo: str | None = spec.get("geo")
 
         try:
-            beta_star = self._dataset_service.compute_effective_beta(
-                beta_t=requirements, datasets=datasets
-            )
-            logger.info(f"TaskRequest {name!r}: computed beta*(t) = {beta_star}")
+            datasets_data = self._dataset_service.get_all_datasets(datasets)
         except DatasetNotFoundError as e:
             logger.error(f"TaskRequest {name!r}: {e}")
             self._set_status(
@@ -144,13 +160,40 @@ class Controller:
             logger.warning(f"TaskRequest {name!r} transient dataset service error: {e}")
             raise kopf.TemporaryError(str(e), delay=10)
 
+        dataset_requirements = [d.get("requirements") for d in datasets_data]
+        beta_star = compute_effective_beta(requirements, dataset_requirements)
+        logger.info(f"TaskRequest {name!r}: computed beta*(t) = {beta_star}")
+
+        dataset_geos = [d.get("geo") for d in datasets_data]
+        geo_star = compute_effective_geo(geo, dataset_geos, self._geo_groups)
+        logger.info(f"TaskRequest {name!r}: computed geo*(t) = {geo_star}")
+
+        # If geo*(t) is empty, it means there is no intersection between the TaskRequest's geo(t)
+        # and the datasets geo(d), so we cannot schedule the Job. We log an error and set the
+        # TaskRequest phase to Failed.
+        if geo_star is not None and len(geo_star) == 0:
+            message = (
+                f"geo*(t) is empty: there are not an intersection of the geographic groups "
+                f"geo(t)={geo!r} and dataset geo(d)={dataset_geos!r}"
+            )
+            logger.error(f"TaskRequest {name!r}: {message}")
+            self._set_status(
+                namespace=namespace,
+                name=name,
+                phase=FAILURE_PHASE,
+                message=message,
+                job_name="",
+                logger=logger,
+            )
+            return
+
         owner_uid = body["metadata"]["uid"]
-        # Build the Job
         job = (
             JobBuilder(config=self._config)
             .set_name(name)
             .set_namespace(namespace)
             .set_beta_star(beta_star)
+            .set_geo_star(geo_star)
             .set_datasets(datasets)
             .set_owner(owner_uid)
             .build()
@@ -220,12 +263,7 @@ class Controller:
         job_name: str,
         logger,
     ) -> None:
-        """
-        Patch the TaskRequest status via the /status subresource endpoint.
-
-        Using the dedicated subresource ensures that only holders of the
-        `taskrequests/status` RBAC verb can modify this field.
-        """
+        """Patch the TaskRequest status via the /status subresource endpoint."""
         try:
             self._custom_api.patch_namespaced_custom_object_status(
                 group=self._config.group,
@@ -271,7 +309,6 @@ class Controller:
                 for c in job_status.get("conditions", [])
             ]
 
-        # V1JobStatus object from the kubernetes client
         return job_status.conditions or []
 
     def _apply_conditions(

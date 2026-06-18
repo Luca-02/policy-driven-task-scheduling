@@ -6,17 +6,19 @@ from src.database import DatasetRepository
 from src.dependencies import get_repository
 from src.models import Dataset, DatasetBase
 
+_RESPONSE_MODEL_KWARGS = {"response_model_exclude_none": True}
+
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
 DatasetRepositoryDep = Annotated[DatasetRepository, Depends(get_repository)]
 
 
-@router.get("", response_model=list[Dataset])
+@router.get("", response_model=list[Dataset], **_RESPONSE_MODEL_KWARGS)
 def list_datasets(repo: DatasetRepositoryDep):
     return repo.list()
 
 
-@router.get("/{name}", response_model=Dataset)
+@router.get("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
 def get_dataset(name: str, repo: DatasetRepositoryDep):
     dataset = repo.get(name)
     if dataset is None:
@@ -24,7 +26,7 @@ def get_dataset(name: str, repo: DatasetRepositoryDep):
     return dataset
 
 
-@router.post("", response_model=Dataset, status_code=201)
+@router.post("", response_model=Dataset, status_code=201, **_RESPONSE_MODEL_KWARGS)
 def create_dataset(
     dataset: Dataset,
     repo: DatasetRepositoryDep,
@@ -37,7 +39,7 @@ def create_dataset(
     return created
 
 
-@router.post("/batch", response_model=list[Dataset], status_code=201)
+@router.post("/batch", response_model=list[Dataset], status_code=201, **_RESPONSE_MODEL_KWARGS)
 def create_datasets(
     datasets: list[Dataset],
     repo: DatasetRepositoryDep,
@@ -53,9 +55,9 @@ def create_datasets(
     return created
 
 
-# TODO: Add versioning suppoert for the assumption of immutability of metadata. 
+# TODO: Add versioning suppoert for the assumption of immutability of metadata.
 # This will mitigate the Time-of-check to Time-of-use race condition that can occur when updating metadata.
-@router.put("/{name}", response_model=Dataset)
+@router.put("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
 def update_dataset(
     name: str,
     dataset: DatasetBase,

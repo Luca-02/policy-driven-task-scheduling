@@ -9,3 +9,7 @@ spec:
       - group: "policydriven.unimi.it"
         version: "v1alpha1"
         kind: "NodeProperty"
+      - group: "policydriven.unimi.it"
+        version: "v1alpha1"
+        kind: "GeographicalGroup"
+ 

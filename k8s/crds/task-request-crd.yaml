@@ -58,8 +58,10 @@ spec:
                     minLength: 1
                     maxLength: 254
                 # geo(t): geographical group requested for task execution.
-                geographicalGroup:
+                geo:
                   type: string
+                  minLength: 1
+                  maxLength: 254
                   description: >
                     Geographical group requested for task execution (geo(t)).
                     Used to determine node affinity based on location.

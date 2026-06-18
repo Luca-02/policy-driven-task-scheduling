@@ -9,21 +9,16 @@ class JobBuilder:
     """
     Builder for a typed V1Job manifest representing a scheduled TaskRequest.
 
-    Setting the UID of the TaskRequest as an owner reference on the Job ensures that
-    the Job is automatically garbage collected when the TaskRequest is deleted.
+    Setting the UID of the TaskRequest as an owner reference on the Job ensures
+    that the Job is automatically garbage collected when the TaskRequest is deleted.
 
     The resulting Job carries:
     - A label linking it back to the originating TaskRequest.
-    - A beta-star annotation with the serialised `beta*(t)`.
     - A datasets annotation with the serialised list of required dataset names.
-    - A nodeAffinity that realises the filter step `c_prop` of the formal model.
-
-    Parameters:
-        name: the name of the Job, set to match the TaskRequest for easy correlation.
-        namespace: the Job namespace, same as the TaskRequest.
-        beta_star: the computed `beta*(t)` dict to be annotated on the Job.
-        datasets: the list of dataset names to be annotated on the Job.
-        owner_uid: the UID of the TaskRequest.
+    - A beta-star annotation with the serialised `beta*(t)`.
+    - A geo-star annotation with the serialised `geo*(t)` (omitted if None -> `Omega`).
+    - A nodeAffinity realising filter steps `c_prop`.
+    - A nodeAffinity realising filter steps `c_geo`.
     """
 
     def __init__(self, config: Config):
@@ -31,6 +26,7 @@ class JobBuilder:
         self._name: str | None = None
         self._namespace: str | None = None
         self._beta_star: dict[str, int] = {}
+        self._geo_star: set[str] | None = None
         self._datasets: list[str] = []
         self._owner_uid: str | None = None
 
@@ -44,6 +40,10 @@ class JobBuilder:
 
     def set_beta_star(self, beta_star: dict[str, int]) -> "JobBuilder":
         self._beta_star = beta_star
+        return self
+
+    def set_geo_star(self, geo_star: set[str] | None) -> "JobBuilder":
+        self._geo_star = geo_star
         return self
 
     def set_datasets(self, datasets: list[str]) -> "JobBuilder":
@@ -78,19 +78,23 @@ class JobBuilder:
         task_request_ref_key = (
             f"{self._config.job_label_prefix}/{self._config.task_request_ref_label}"
         )
+        datasets_key = (
+            f"{self._config.job_annotation_prefix}/{self._config.datasets_annotation}"
+        )
         beta_star_key = (
             f"{self._config.job_annotation_prefix}/{self._config.beta_star_annotation}"
         )
-        datasets_key = (
-            f"{self._config.job_annotation_prefix}/{self._config.datasets_annotation}"
+        geo_star_key = (
+            f"{self._config.job_annotation_prefix}/{self._config.geo_star_annotation}"
         )
 
         labels = {task_request_ref_key: self._name}
 
         annotations = {}
         for key, value in (
-            (beta_star_key, self._beta_star),
             (datasets_key, self._datasets),
+            (beta_star_key, self._beta_star),
+            (geo_star_key, sorted(self._geo_star) if self._geo_star else None),
         ):
             if value:
                 annotations[key] = json.dumps(value)
@@ -118,14 +122,13 @@ class JobBuilder:
 
     def _build_spec(self) -> client.V1JobSpec:
         """
-        Build the spec for the Job, including the pod template with the appropriate affinity.
+        Build the spec for the Job, including the pod template with the
+        appropriate affinity.
 
-        **Blackbox image placeholder**: in a real implementation the task image would be supplied 
-        as metadata in the TaskRequest spec and validated by a dedicated image-service before the
-        controller translates the request into a Job.
-
-        Returns:
-            client.V1JobSpec: The spec object for the Job.
+        **Blackbox image placeholder**: in a real implementation the task
+        image would be supplied as metadata in the TaskRequest spec and
+        validated by a dedicated image-service before the controller
+        translates the request into a Job.
         """
         return client.V1JobSpec(
             backoff_limit=0,
@@ -153,10 +156,12 @@ class JobBuilder:
         Assemble nodeAffinity from all scheduling policies match expressions.
 
         Returns:
-            client.V1Affinity: The affinity object for the Job, or None if no match expressions are generated.
+            client.V1Affinity: The affinity object for the Job, or None if no 
+                match expressions are generated.
         """
         match_expressions = [
             *self._property_expressions(),
+            *self._geo_expressions(),
         ]
 
         if not match_expressions:
@@ -193,4 +198,22 @@ class JobBuilder:
             )
             for prop, level in self._beta_star.items()
             if level > 0
+        ]
+
+    def _geo_expressions(self) -> list[client.V1NodeSelectorRequirement]:
+        """
+        Translate `geo*(t)` into a match expression realising the filter step `c_geo`.
+
+        Returns a single-element list with operator In over the topology
+        location label, or an empty list if `geo*(t) = Omega` (no constraint).
+        """
+        if self._geo_star is None:
+            return []
+        
+        return [
+            client.V1NodeSelectorRequirement(
+                key=self._config.node_topology_location_label,
+                operator="In",
+                values=sorted(self._geo_star),
+            )
         ]

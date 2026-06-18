@@ -2,27 +2,63 @@
   "datasets": [
     {
       "name": "d1",
-      "requirements": { "security": 2, "computation": 1 },
+      "requirements": {
+        "security": 2,
+        "computation": 1
+      },
       "size_mb": 1024,
-      "nodes": ["kind-worker2", "kind-worker4", "kind-worker5"]
+      "nodes": [
+        "kind-worker2",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "oecd"
     },
     {
       "name": "d2",
-      "requirements": { "security": 1, "computation": 3 },
+      "requirements": {
+        "security": 1,
+        "computation": 3
+      },
       "size_mb": 2048,
-      "nodes": ["kind-worker1", "kind-worker4"]
+      "nodes": [
+        "kind-worker1",
+        "kind-worker4"
+      ]
     },
     {
       "name": "dnotexistprop",
-      "requirements": { "propnotexist1": 1, "propnotexist2": 3 },
+      "requirements": {
+        "propnotexist1": 1,
+        "propnotexist2": 3
+      },
       "size_mb": 512,
-      "nodes": ["kind-worker3", "kind-worker5"]
+      "nodes": [
+        "kind-worker3",
+        "kind-worker5"
+      ]
     },
     {
       "name": "dnotexistlvl",
-      "requirements": { "security": 99 },
+      "requirements": {
+        "security": 99
+      },
       "size_mb": 1024,
-      "nodes": ["kind-worker2", "kind-worker4"]
+      "nodes": [
+        "kind-worker2",
+        "kind-worker4"
+      ]
+    },
+    {
+      "name": "dnotexistgeo",
+      "requirements": {
+        "security": 1
+      },
+      "size_mb": 256,
+      "nodes": [
+        "kind-worker1"
+      ],
+      "geo": "doesnotexist"
     }
   ]
 }

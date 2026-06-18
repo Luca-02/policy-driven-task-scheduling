@@ -33,7 +33,7 @@ spec:
 
           not property_inventory[prop_name]
           
-          msg := sprintf("Property '%v' does not exist in the cluster",  [prop_name])
+          msg := sprintf("NodeProperty '%v' does not exist in the cluster",  [prop_name])
         }
 
         # ---------------------------------------------------------------------
@@ -51,5 +51,5 @@ spec:
 
           not valid_property_level(prop_name, req_level)
           
-          msg := sprintf("Property '%v' exists, but requested level '%v' is not defined", [prop_name, req_level])
+          msg := sprintf("NodeProperty '%v' exists, but requested level '%v' is not defined", [prop_name, req_level])
         }

@@ -20,7 +20,7 @@ spec:
               kubernetes.io/metadata.name: gatekeeper-system
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: taskrequest-controller
+              kubernetes.io/metadata.name: task-request-controller
       ports:
         - port: 8443
           protocol: TCP

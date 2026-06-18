@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 COPY main.py .
+COPY seeding.py .
 
 RUN chown -R app:app /app
 

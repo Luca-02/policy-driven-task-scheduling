@@ -15,3 +15,5 @@ spec:
     - dnotexist2 # non-existent dataset
     - dnotexistprop # dataset with "requirements": {"badprop1": 1, "badprop2": 3}
     - dnotexistlvl # dataset with "requirements": {"security": 99}
+    - dnotexistgeo # dataset with "geo": "geonotexist"
+  geo: "geonotexist" # non-existent geo

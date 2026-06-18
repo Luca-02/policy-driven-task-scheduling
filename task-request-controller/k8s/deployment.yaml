@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: taskrequest-controller
-  namespace: taskrequest-controller
+  name: task-request-controller
+  namespace: task-request-controller
   labels:
-    app.kubernetes.io/name: taskrequest-controller
+    app.kubernetes.io/name: task-request-controller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: taskrequest-controller
+      app.kubernetes.io/name: task-request-controller
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,9 +18,9 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: taskrequest-controller
+        app.kubernetes.io/name: task-request-controller
     spec:
-      serviceAccountName: taskrequest-controller-service-account
+      serviceAccountName: task-request-controller-service-account
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
@@ -41,8 +41,8 @@ spec:
               - key: ca.crt
                 path: ca.crt
       containers:
-        - name: taskrequest-controller
-          image: taskrequest-controller:latest
+        - name: task-request-controller
+          image: task-request-controller:latest
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -57,16 +57,32 @@ spec:
               value: "v1alpha1"
             - name: TASK_REQUESTS_PLURAL
               value: "taskrequests"
+            - name: GEOGRAPHICAL_GROUPS_PLURAL
+              value: "geographicalgroups"
             - name: TASK_NAMESPACE
               value: "compute"
-            - name: DATASET_SERVICE_URL
-              value: "https://dataset-service.dataset-service.svc.cluster.local"
-            - name: CA_CERT_FILE
-              value: "/tls/ca.crt"
+            - name: TASK_REQUEST_KIND
+              value: "TaskRequest"
             - name: JOB_LABEL_PREFIX
               value: "scheduling.task.policydriven.unimi.it"
             - name: JOB_ANNOTATION_PREFIX
               value: "scheduling.task.policydriven.unimi.it"
+            - name: TASK_REQUEST_REF_LABEL
+              value: "task-request"
+            - name: DATASETS_ANNOTATION
+              value: "datasets"
+            - name: BETA_STAR_ANNOTATION
+              value: "beta-star"
+            - name: GEO_STAR_ANNOTATION
+              value: "geo-star"
+            - name: NODE_PROPERTY_PREFIX
+              value: "property.node.policydriven.unimi.it"
+            - name: NODE_TOPOLOGY_LOCATION_LABEL
+              value: "topology.node.policydriven.unimi.it/location"
+            - name: DATASET_SERVICE_URL
+              value: "https://dataset-service.dataset-service.svc.cluster.local"
+            - name: CA_CERT_FILE
+              value: "/tls/ca.crt"
             - name: LOG_LEVEL
               value: "INFO"
           ports:

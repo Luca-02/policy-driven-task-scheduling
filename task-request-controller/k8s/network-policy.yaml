@@ -1,12 +1,12 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: taskrequest-controller-network-policy
-  namespace: taskrequest-controller
+  name: task-request-controller-network-policy
+  namespace: task-request-controller
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: taskrequest-controller
+      app.kubernetes.io/name: task-request-controller
   policyTypes:
     - Ingress
     - Egress

@@ -65,18 +65,12 @@ load_image() {
     local image="$2"
 
     if command_exist docker; then
-        if docker image inspect "$image" >/dev/null 2>&1; then
-            log "Docker image '$image' already exists"
-        else
-            log "Docker image '$image' not found, building from $path/"
-
-            if [[ ! -f "$path/Dockerfile" ]]; then
-                error "Dockerfile not found in $path/"
-                exit 1
-            fi
-
-            docker build -t "$image" "$path/"
+        log "Building image '$image' from $path/"
+        if [[ ! -f "$path/Dockerfile" ]]; then
+            error "Dockerfile not found in $path/"
+            exit 1
         fi
+        docker build -t "$image" "$path/"
 
         log "Loading image '$image' into cluster '$CLUSTER_NAME'"
         kind load docker-image "$image" --name "$CLUSTER_NAME"
@@ -192,6 +186,7 @@ readonly GATEKEEPER_CONFIG_FILE="k8s/gatekeeper-config.yaml"
 readonly TEMPLATE_CONSTRAINT_DIRS=(
     "k8s/policies/validate-task-request-namespace"
     "k8s/policies/validate-task-request-properties"
+    "k8s/policies/validate-task-request-geographical-group"
     "k8s/policies/validate-task-request-datasets"
 )
 

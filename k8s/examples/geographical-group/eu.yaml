@@ -1,7 +1,7 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: GeographicalGroup
 metadata:
-  name: EU
+  name: eu
 spec:
   locations:
     - eu-north

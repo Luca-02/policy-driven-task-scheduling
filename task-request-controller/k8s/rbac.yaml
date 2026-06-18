@@ -18,6 +18,10 @@ rules:
   - apiGroups: [policydriven.unimi.it]
     resources: [taskrequests/status]
     verbs: [get, patch, update]
+  # Read GeographicalGroups
+  - apiGroups: [policydriven.unimi.it]
+    resources: [geographicalgroups]
+    verbs: [get, list, watch]
   # Create and watch Jobs (in the compute namespace — enforced at deploy time
   # via the namespace scope of the controller's logic, not here at RBAC level).
   - apiGroups: [batch]

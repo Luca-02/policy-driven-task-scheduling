@@ -18,13 +18,10 @@ class DatasetServiceError(Exception):
 
 class DatasetService:
     """
-    Act as a client for the dataset service.
+    Act as a HTTP client for the dataset service.
 
-    Fetches dataset metadata and encapsulates dataset-related logic such as the
-    computation of the effective property class `beta*(t)`.
-
-    TLS verification uses the provided CA certificate. If no CA is given, the
-    default system trust store is used.
+    TLS verification uses the provided CA certificate. 
+    If no CA is given, TLS verification is disabled.
     """
 
     def __init__(self, base_url: str, ca_cert_file: str | None = None):
@@ -33,8 +30,10 @@ class DatasetService:
             self._ssl_ctx = ssl.create_default_context(cafile=ca_cert_file)
         else:
             self._ssl_ctx = ssl.create_default_context()
+            self._ssl_ctx.check_hostname = False
+            self._ssl_ctx.verify_mode = ssl.CERT_NONE
 
-    def _get_dataset(self, name: str) -> dict:
+    def get_dataset(self, name: str) -> dict:
         """
         Fetch dataset metadata by name.
 
@@ -71,27 +70,18 @@ class DatasetService:
                 f"Dataset service returned malformed JSON for dataset {name!r}: {e}"
             )
 
-    def compute_effective_beta(self, beta_t: dict, datasets: list[str]) -> dict:
+    def get_all_datasets(self, names: list[str]) -> list[dict]:
         """
-        Compute the effective property class `beta*(t)` for a given set of datasets and task beta values.
-
-        This is defined as `beta*(t) = LUB(beta(t), beta(d1), beta(d2), ...), where `beta(t)` is the
-        base task beta and `beta(d)` are fetched from the dataset service.
+        Fetch metadata for a list of datasets.
 
         Args:
-            beta_t: A dictionary of task beta values.
-            datasets: A list of dataset names.
+            names: A list of dataset names to fetch.
 
         Returns:
-            The computed effective beta as a dictionary.
+            A list of dictionaries containing the dataset metadata.
 
         Raises:
             DatasetNotFoundError: If any dataset is not found (HTTP 404).
-            DatasetServiceError: If there is any other error communicating with the dataset service.
+            DatasetServiceError: If there is any other error.
         """
-        beta_star_t: dict[str, int] = dict(beta_t)
-        for dataset_name in datasets:
-            dataset = self._get_dataset(dataset_name)
-            for prop, level in (dataset.get("requirements") or {}).items():
-                beta_star_t[prop] = max(beta_star_t.get(prop, 0), int(level))
-        return beta_star_t
+        return [self.get_dataset(name) for name in names]

@@ -18,6 +18,7 @@ class DatasetBase(BaseModel):
     requirements: dict[str, Level] = Field(default_factory=dict)
     size_mb: int = Field(ge=0, default=0)
     nodes: list[str] = Field(default_factory=list)
+    geo: str | None = Field(default=None)
 
 
 class Dataset(DatasetBase):

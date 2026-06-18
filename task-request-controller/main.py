@@ -110,3 +110,35 @@ def on_job_status_changed(body, logger, **kwargs):
 
     if ctrl is not None:
         ctrl.sync_job_status(task_request_name, namespace, status, logger)
+
+
+# ------------------------------------------------------------------
+# GeographicalGroup handlers
+# ------------------------------------------------------------------
+
+
+@kopf.on.resume(cfg.group, cfg.version, cfg.geographical_groups_plural)
+@kopf.on.create(cfg.group, cfg.version, cfg.geographical_groups_plural)
+@kopf.on.update(cfg.group, cfg.version, cfg.geographical_groups_plural)
+def on_geographical_group_created_or_updated(body, reason, logger, **kwargs):
+    name = body["metadata"]["name"]
+    spec = body.get("spec", {})
+
+    if reason == "create":
+        logger.info(f"🟢 GeographicalGroup {name!r} created with spec: {spec!r}")
+    elif reason == "update":
+        logger.info(f"🟡 GeographicalGroup {name!r} updated with spec: {spec!r}")
+    else:
+        logger.info(f"🔵 GeographicalGroup {name!r} resumed with spec: {spec!r}")
+
+    if ctrl is not None:
+        ctrl.on_geographical_group_created_or_updated(name, spec, logger)
+
+
+@kopf.on.delete(cfg.group, cfg.version, cfg.geographical_groups_plural)
+def on_geographical_group_deleted(body, logger, **kwargs):
+    name = body["metadata"]["name"]
+    logger.info(f"🔴 GeographicalGroup {name!r} deleted")
+
+    if ctrl is not None:
+        ctrl.on_geographical_group_deleted(name, logger)

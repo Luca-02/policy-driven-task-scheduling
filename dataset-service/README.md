@@ -6,7 +6,7 @@ The service is intentionally a thin demo component, not a production system: no 
 
 ## Architecture choices
 
-- **PostgreSQL in HA via CloudNativePG**: PostgreSQL `Cluster`. The service connects to the `-rw` service, so writes always reach the current primary.
+- **PostgreSQL via CloudNativePG**: PostgreSQL `Cluster`. The service connects to the `-rw` service, so writes always reach the current primary.
 - **Replicable service**: state lives only in PostgreSQL, so the Deployment could runs multiple replicas without coordination.
 
 ## Endpoints

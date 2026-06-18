@@ -44,6 +44,12 @@ openssl x509 -req -in "$TARGET_DIR/tls.csr" \
   -CA "$TARGET_DIR/ca.crt" -CAkey "$TARGET_DIR/ca.key" -CAcreateserial \
   -out "$TARGET_DIR/tls.crt" -days 365 -extfile "$TARGET_DIR/san.cnf"
 
+# OpenSSL on Windows/MINGW produces PEM files with CRLF (\r\n) line endings.
+# PEM format requires LF only: strip \r so that OpenSSL on Linux can parse 
+# the certificates correctly.
+echo "Normalizing file line endings..."
+sed -i 's/\r//' "$TARGET_DIR/ca.crt" "$TARGET_DIR/tls.crt" "$TARGET_DIR/tls.key"
+
 CA_B64=$(base64 -w0 "$TARGET_DIR/ca.crt")
 
 # Update the gatekeeper provider for external data with the 

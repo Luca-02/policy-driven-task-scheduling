@@ -1,0 +1,10 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sValidateTaskRequestGeographicalGroup
+metadata:
+  name: validate-task-request-geographical-group
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["policydriven.unimi.it"]
+        kinds: ["TaskRequest"]

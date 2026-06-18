@@ -31,18 +31,19 @@ def validate(
     for key in req.request.keys:
         dataset = repo.get(key)
         if dataset is None:
-            items.append(Item(key=key, error=f"Dataset not found"))
+            items.append(Item(key=key, error=f"Dataset '{key}' not found"))
             continue
 
-        items.append(
-            Item(
-                key=key,
-                value={
-                    "requirements": dataset.requirements,
-                    "size_mb": dataset.size_mb,
-                    "nodes": dataset.nodes,
-                },
-            )
-        )
+        value = {
+            "requirements": dataset.requirements,
+            "size_mb": dataset.size_mb,
+            "nodes": dataset.nodes,
+        }
+        # geo is omitted from the response when None so that Rego can
+        # distinguish not set (Omega) from an empty string.
+        if dataset.geo is not None:
+            value["geo"] = dataset.geo
+
+        items.append(Item(key=key, value=value))
 
     return make_response(items)

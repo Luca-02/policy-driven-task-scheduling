@@ -8,6 +8,7 @@ class DatasetORM(Base):
     __tablename__ = "datasets"
 
     name = Column(String(254), primary_key=True, nullable=False)
-    requirements = Column(JSON, nullable=False, default=dict) # beta(d)
+    requirements = Column(JSON, nullable=False, default=dict)  # beta(d)
     size_mb = Column(Integer, nullable=False, default=0)
-    nodes = Column(JSON, nullable=False, default=list) # lambda(d)
+    nodes = Column(JSON, nullable=False, default=list)  # lambda(d)
+    geo = Column(String(254), nullable=True, default=None)  # geo(d); None = Omega

@@ -1,7 +1,7 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: GeographicalGroup
 metadata:
-  name: OECD
+  name: oecd
 spec:
   # Composite group composed by the union of EU and US
   includes:

@@ -10,3 +10,4 @@ spec:
   datasets:
     - d1
     - d2
+  geo: "eu"

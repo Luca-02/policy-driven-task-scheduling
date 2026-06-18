@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dataset-seeding
+  namespace: dataset-service
+spec:
+  # Retry up to 3 times in case the dataset-service is not yet ready.
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+        - name: data
+          configMap:
+            name: dataset-seed
+        - name: tls
+          secret:
+            secretName: dataset-service-tls
+            items:
+              - key: ca.crt
+                path: ca.crt
+      containers:
+        - name: seeder
+          image: dataset-service:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "seeding"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: SEED_DATA_FILE
+              value: "/data/seed.json"
+            - name: SERVICE_URL
+              value: "https://dataset-service.dataset-service.svc.cluster.local"
+            - name: CA_CERT_FILE
+              value: "/tls/ca.crt"
+            - name: LOG_LEVEL
+              value: "INFO"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+              readOnly: true
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
