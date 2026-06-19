@@ -27,6 +27,17 @@
       ]
     },
     {
+      "name": "d3",
+      "requirements": {
+        "security": 1
+      },
+      "size_mb": 512,
+      "nodes": [
+        "kind-worker3"
+      ],
+      "geo": "us"
+    },
+    {
       "name": "dnotexistprop",
       "requirements": {
         "propnotexist1": 1,

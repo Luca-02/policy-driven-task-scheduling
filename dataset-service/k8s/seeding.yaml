@@ -4,7 +4,7 @@ metadata:
   name: dataset-seeding
   namespace: dataset-service
 spec:
-  # Retry up to 3 times in case the dataset-service is not yet ready.
+  ttlSecondsAfterFinished: 300
   template:
     spec:
       restartPolicy: Never

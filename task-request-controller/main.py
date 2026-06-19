@@ -57,6 +57,10 @@ def on_task_request(body, reason, logger, **kwargs):
     namespace = body["metadata"]["namespace"]
     spec = body.get("spec", {})
 
+    # Only care about TaskRequests in the task namespace
+    if namespace != cfg.task_namespace:
+        return
+
     if reason == "create":
         logger.info(
             f"🟢 TaskRequest {name!r} created in namespace {namespace!r} with spec: {spec!r}"
@@ -65,13 +69,6 @@ def on_task_request(body, reason, logger, **kwargs):
         logger.info(
             f"🔵 TaskRequest {name!r} resumed in namespace {namespace!r} with spec: {spec!r}"
         )
-
-    # Only reconcile TaskRequests in the configured namespace.
-    if namespace != cfg.task_namespace:
-        logger.info(
-            f"Skipping TaskRequest {name!r}: namespace {namespace!r} is not {cfg.task_namespace!r}"
-        )
-        return
 
     if ctrl is not None:
         ctrl.reconcile(name, namespace, body, logger)
@@ -89,17 +86,15 @@ def on_job_status_changed(body, logger, **kwargs):
     namespace = body["metadata"]["namespace"]
     status = body.get("status", {})
 
-    # Only care about Jobs in the task namespace that were created by this controller.
+    # Only care about Jobs in the task namespace
     if namespace != cfg.task_namespace:
-        logger.info(
-            f"Skipping Job {name!r}: namespace {namespace!r} is not {cfg.task_namespace!r}"
-        )
         return
 
     task_request_ref_label = f"{cfg.job_label_prefix}/{cfg.task_request_ref_label}"
     task_request_name = (body.get("metadata", {}).get("labels") or {}).get(
         task_request_ref_label
     )
+
     if not task_request_name:
         logger.info(f"Skipping Job {name!r}: missing label {task_request_ref_label!r}")
         return

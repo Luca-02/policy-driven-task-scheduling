@@ -173,8 +173,8 @@ class Controller:
         # TaskRequest phase to Failed.
         if geo_star is not None and len(geo_star) == 0:
             message = (
-                f"geo*(t) is empty: there are not an intersection of the geographic groups "
-                f"geo(t)={geo!r} and dataset geo(d)={dataset_geos!r}"
+                f"geo*(t) is empty: there are empty intersections between each dataset's "
+                f"geo(d)={dataset_geos!r} and the TaskRequest's geo(t)={geo!r}."
             )
             logger.error(f"TaskRequest {name!r}: {message}")
             self._set_status(

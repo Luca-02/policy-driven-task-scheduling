@@ -3,7 +3,7 @@ kind: GeographicalGroup
 metadata:
   name: oecd
 spec:
-  # Composite group composed by the union of EU and US
+  # Composite group composed by the union of eu and us
   includes:
-    - EU
-    - US
+    - eu
+    - us

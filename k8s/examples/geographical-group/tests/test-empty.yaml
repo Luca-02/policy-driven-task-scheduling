@@ -1,7 +1,7 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: GeographicalGroup
 metadata:
-  name: eu
+  name: test-empty
 spec:
   locations: [] # empty locations list is invalid
   includes: [] # empty includes list is invalid
