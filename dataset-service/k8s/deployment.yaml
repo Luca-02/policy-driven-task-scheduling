@@ -32,21 +32,43 @@ spec:
             secretName: dataset-service-tls
       initContainers:
         - name: wait-for-db
-          image: busybox:1.36
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z dataset-db-rw.dataset-service.svc.cluster.local 5432; do
-                echo "Waiting for dataset-db-rw..."
-                sleep 5
-              done
+          image: postgres:16
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             privileged: false
             capabilities:
               drop: ["ALL"]
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready \
+                -h dataset-db-rw.dataset-service.svc.cluster.local \
+                -p 5432 \
+                -U "$PGUSER" \
+                -d "$PGDATABASE"
+              do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+              echo "postgres is ready"
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dataset-db-app
+                  key: password
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: dataset-db-app
+                  key: username
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: dataset-db-app
+                  key: dbname
           resources:
             requests:
               cpu: 10m

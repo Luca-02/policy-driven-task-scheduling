@@ -300,6 +300,7 @@ kubectl wait -n dataset-service \
 readonly DATASET_SERVICE="dataset-service"
 readonly DATASET_SERVICE_NAMESPACE="dataset-service"
 readonly DATASET_SERVICE_DEPLOYMENT="dataset-service"
+readonly DATASET_SERVICE_TLS_SECRET="dataset-service-tls"
 
 log "Generating TLS certificates for dataset-service"
 (
@@ -310,8 +311,8 @@ log "Generating TLS certificates for dataset-service"
     TARGET_ENV="k8s" SVC=$DATASET_SERVICE NS=$DATASET_SERVICE_NAMESPACE \
         bash scripts/gen-certs.sh "$CERTS_DIR"
 
-    log "Creating dataset-service-tls secret in Kubernetes"
-    kubectl create secret generic dataset-service-tls \
+    log "Creating TLS secret for dataset-service"
+    kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
         --from-file=ca.crt="$CERTS_DIR/k8s/ca.crt" \
         --from-file=tls.crt="$CERTS_DIR/k8s/tls.crt" \
         --from-file=tls.key="$CERTS_DIR/k8s/tls.key" \
@@ -331,3 +332,36 @@ log "Applying dataset-service provider for gatekeeper external data"
 kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/provider.yaml"
 
 wait_for_deployment "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_DEPLOYMENT"
+
+#######################################
+# task-request-controller
+#######################################
+
+readonly TASK_REQUEST_CONTROLLER_PATH="task-request-controller"
+readonly TASK_REQUEST_CONTROLLER_IMAGE="task-request-controller:latest"
+
+log "Setting up task-request-controller image"
+load_image "$TASK_REQUEST_CONTROLLER_PATH" "$TASK_REQUEST_CONTROLLER_IMAGE"
+
+readonly TASK_REQUEST_CONTROLLER_NAMESPACE="task-request-controller"
+readonly TASK_REQUEST_CONTROLLER_DEPLOYMENT="task-request-controller"
+
+log "Extracting CA certificate from dataset-service TLS secret"
+kubectl get secret "$DATASET_SERVICE_TLS_SECRET" \
+    -n "$DATASET_SERVICE_NAMESPACE" \
+    -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
+
+log "Creating dataset-service-tls secret in task-request-controller namespace"
+kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
+  --from-file=ca.crt=/tmp/ca.crt \
+  -n "$TASK_REQUEST_CONTROLLER_NAMESPACE" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+rm -f /tmp/ca.crt
+
+log "Applying task-request-controller manifests"
+kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/rbac.yaml"
+kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/network-policy.yaml"
+kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/deployment.yaml"
+
+wait_for_deployment "$TASK_REQUEST_CONTROLLER_NAMESPACE" "$TASK_REQUEST_CONTROLLER_DEPLOYMENT"

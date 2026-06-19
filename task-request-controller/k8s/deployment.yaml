@@ -87,7 +87,7 @@ spec:
               value: "INFO"
           ports:
             - name: health
-              containerPort: 9091
+              containerPort: 9090
               protocol: TCP
           livenessProbe:
             httpGet:

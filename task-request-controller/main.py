@@ -13,6 +13,10 @@ cfg: Config = Config.from_env()
 ctrl: Controller | None = None
 
 
+def _in_task_namespace(namespace, **_):
+    return namespace == cfg.task_namespace
+
+
 @kopf.on.startup()
 def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     try:
@@ -50,16 +54,22 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 # ------------------------------------------------------------------
 
 
-@kopf.on.resume(cfg.group, cfg.version, cfg.task_requests_plural)
-@kopf.on.create(cfg.group, cfg.version, cfg.task_requests_plural)
+@kopf.on.resume(
+    cfg.group,
+    cfg.version,
+    cfg.task_requests_plural,
+    when=_in_task_namespace,
+)
+@kopf.on.create(
+    cfg.group,
+    cfg.version,
+    cfg.task_requests_plural,
+    when=_in_task_namespace,
+)
 def on_task_request(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     namespace = body["metadata"]["namespace"]
     spec = body.get("spec", {})
-
-    # Only care about TaskRequests in the task namespace
-    if namespace != cfg.task_namespace:
-        return
 
     if reason == "create":
         logger.info(
@@ -79,16 +89,18 @@ def on_task_request(body, reason, logger, **kwargs):
 # ------------------------------------------------------------------
 
 
-@kopf.on.resume("batch", "v1", "jobs")
-@kopf.on.field("batch", "v1", "jobs", field="status")
+@kopf.on.resume("batch", "v1", "jobs", when=_in_task_namespace)
+@kopf.on.field(
+    "batch",
+    "v1",
+    "jobs",
+    field="status",
+    when=_in_task_namespace,
+)
 def on_job_status_changed(body, logger, **kwargs):
     name = body["metadata"]["name"]
     namespace = body["metadata"]["namespace"]
     status = body.get("status", {})
-
-    # Only care about Jobs in the task namespace
-    if namespace != cfg.task_namespace:
-        return
 
     task_request_ref_label = f"{cfg.job_label_prefix}/{cfg.task_request_ref_label}"
     task_request_name = (body.get("metadata", {}).get("labels") or {}).get(

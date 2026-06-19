@@ -11,9 +11,9 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow kubelet health-check probes (liveness/readiness/startup) 
+    # Allow kubelet health-check probes (liveness/readiness/startup)
     - ports:
-        - port: 9091
+        - port: 9090
           protocol: TCP
   egress:
     # DNS resolution via kube-dns
@@ -28,11 +28,11 @@ spec:
           protocol: TCP
         - port: 6443
           protocol: TCP
-    # Dataset service (TLS on 443, which maps to container port 8443)
+    # Dataset service
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: dataset-service
       ports:
-        - port: 443
+        - port: 8443
           protocol: TCP

@@ -174,7 +174,7 @@ class Controller:
         if geo_star is not None and len(geo_star) == 0:
             message = (
                 f"geo*(t) is empty: there are empty intersections between each dataset's "
-                f"geo(d)={dataset_geos!r} and the TaskRequest's geo(t)={geo!r}."
+                f"geo(d)={dataset_geos!r} and the TaskRequest's geo(t)={geo!r}"
             )
             logger.error(f"TaskRequest {name!r}: {message}")
             self._set_status(

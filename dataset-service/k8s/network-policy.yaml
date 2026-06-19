@@ -8,7 +8,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: dataset-service
   policyTypes: [Ingress, Egress]
-  # Allow ingress traffic from gatekeeper-system and 
+  # Allow ingress traffic from gatekeeper-system and
   # taskrequest-controller namespaces on port 8443
   ingress:
     - from:

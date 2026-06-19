@@ -447,3 +447,4 @@ pyrightconfig.json
 ### Other ###
 .claude/
 .certs/
+.tmp/
