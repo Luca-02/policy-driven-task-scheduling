@@ -8,11 +8,26 @@
       },
       "size_mb": 1024,
       "nodes": [
+        "kind-worker1",
         "kind-worker2",
-        "kind-worker4",
-        "kind-worker5"
+        "kind-worker4"
       ],
-      "geo": "oecd"
+      "geo": "oecd",
+      "static": false
+    },
+    {
+      "name": "d1v2",
+      "requirements": {
+        "security": 2,
+        "computation": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker1",
+        "kind-worker4"
+      ],
+      "geo": "oecd",
+      "static": false
     },
     {
       "name": "d2",
@@ -24,7 +39,20 @@
       "nodes": [
         "kind-worker1",
         "kind-worker4"
-      ]
+      ],
+      "static": false
+    },
+    {
+      "name": "d2v2",
+      "requirements": {
+        "security": 1,
+        "computation": 3
+      },
+      "size_mb": 2048,
+      "nodes": [
+        "kind-worker1"
+      ],
+      "static": false
     },
     {
       "name": "d3",
@@ -35,7 +63,48 @@
       "nodes": [
         "kind-worker3"
       ],
-      "geo": "us"
+      "geo": "us",
+      "static": false
+    },
+    {
+      "name": "d1static",
+      "requirements": {
+        "security": 2,
+        "computation": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker1",
+        "kind-worker2",
+        "kind-worker4"
+      ],
+      "geo": "oecd",
+      "static": true
+    },
+    {
+      "name": "d2static",
+      "requirements": {
+        "security": 1,
+        "computation": 3
+      },
+      "size_mb": 2048,
+      "nodes": [
+        "kind-worker1",
+        "kind-worker4"
+      ],
+      "static": true
+    },
+    {
+      "name": "d3static",
+      "requirements": {
+        "security": 1
+      },
+      "size_mb": 512,
+      "nodes": [
+        "kind-worker3"
+      ],
+      "geo": "us",
+      "static": true
     },
     {
       "name": "dnotexistprop",
@@ -47,7 +116,8 @@
       "nodes": [
         "kind-worker3",
         "kind-worker5"
-      ]
+      ],
+      "static": false
     },
     {
       "name": "dnotexistlvl",
@@ -58,7 +128,8 @@
       "nodes": [
         "kind-worker2",
         "kind-worker4"
-      ]
+      ],
+      "static": false
     },
     {
       "name": "dnotexistgeo",
@@ -69,7 +140,8 @@
       "nodes": [
         "kind-worker1"
       ],
-      "geo": "doesnotexist"
+      "geo": "doesnotexist",
+      "static": false
     }
   ]
 }

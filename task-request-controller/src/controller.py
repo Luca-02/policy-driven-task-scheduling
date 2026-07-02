@@ -13,7 +13,11 @@ from src.dataset_service import (
     DatasetServiceError,
 )
 from src.geo import GeographicGroup
-from src.annotation import compute_effective_beta, compute_effective_geo
+from src.annotation import (
+    compute_effective_beta,
+    compute_effective_geo,
+    compute_static_nodes,
+)
 from src.job_builder import JobBuilder
 
 COMPLETE_PHASE = "Complete"
@@ -121,12 +125,13 @@ class Controller:
     def _full_reconcile(self, name: str, namespace: str, body: dict, logger):
         """
         Full reconciliation pipeline for a new or Pending TaskRequest:
-            1. Set phase to Pending
-            2. Fetch all required datasets in one pass
-            3. Compute `beta*(t)`
-            4. Compute `geo*(t)`, and if is empty (no node can satisfy it) fail
-            5. Create the Job with TaskRequest reference and dataset annotations
-            6. Set phase to Scheduled
+            - Set phase to Pending
+            - Fetch all required datasets in one pass
+            - Compute `beta*(t)`
+            - Compute `geo*(t)`, and if is empty fail
+            - Compute static dataset nodes intersection, and if is empty fail
+            - Create the Job with TaskRequest reference and dataset annotations
+            - Set phase to Scheduled
         """
         # Set phase to Pending at the start of reconciliation
         self._set_status(
@@ -140,7 +145,7 @@ class Controller:
 
         spec = body.get("spec", {})
         requirements: dict = spec.get("requirements", {})
-        datasets: list = spec.get("datasets", [])
+        datasets: set = spec.get("datasets", set())
         geo: str | None = spec.get("geo")
 
         try:
@@ -162,19 +167,41 @@ class Controller:
 
         dataset_requirements = [d.get("requirements") for d in datasets_data]
         beta_star = compute_effective_beta(requirements, dataset_requirements)
-        logger.info(f"TaskRequest {name!r}: computed beta*(t) = {beta_star}")
+        logger.info(f"TaskRequest {name!r}: computed beta*(t)={beta_star}")
 
         dataset_geos = [d.get("geo") for d in datasets_data]
         geo_star = compute_effective_geo(geo, dataset_geos, self._geo_groups)
-        logger.info(f"TaskRequest {name!r}: computed geo*(t) = {geo_star}")
+        logger.info(f"TaskRequest {name!r}: computed geo*(t)={geo_star}")
 
         # If geo*(t) is empty, it means there is no intersection between the TaskRequest's geo(t)
-        # and the datasets geo(d), so we cannot schedule the Job. We log an error and set the
-        # TaskRequest phase to Failed.
+        # and the datasets geo(d), so we cannot schedule the Job.
         if geo_star is not None and len(geo_star) == 0:
             message = (
                 f"geo*(t) is empty: there are empty intersections between each dataset's "
                 f"geo(d)={dataset_geos!r} and the TaskRequest's geo(t)={geo!r}"
+            )
+            logger.error(f"TaskRequest {name!r}: {message}")
+            self._set_status(
+                namespace=namespace,
+                name=name,
+                phase=FAILURE_PHASE,
+                message=message,
+                job_name="",
+                logger=logger,
+            )
+            return
+
+        static_nodes = compute_static_nodes(datasets_data)
+        logger.info(
+            f"TaskRequest {name!r}: computed static dataset nodes intersection {static_nodes}"
+        )
+
+        # If static dataset nodes intersection is empty, it means that the requested static datasets
+        # have no node in common hosting all of them locally.
+        if static_nodes is not None and len(static_nodes) == 0:
+            message = (
+                "Static dataset nodes intersection is empty: the requested static "
+                f"datasets have no node in common hosting all of them locally"
             )
             logger.error(f"TaskRequest {name!r}: {message}")
             self._set_status(
@@ -195,6 +222,7 @@ class Controller:
             .set_beta_star(beta_star)
             .set_geo_star(geo_star)
             .set_datasets(datasets)
+            .set_static_nodes(static_nodes)
             .set_owner(owner_uid)
             .build()
         )

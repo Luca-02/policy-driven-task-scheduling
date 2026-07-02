@@ -27,7 +27,8 @@ class JobBuilder:
         self._namespace: str | None = None
         self._beta_star: dict[str, int] = {}
         self._geo_star: set[str] | None = None
-        self._datasets: list[str] = []
+        self._datasets: set[str] = set()
+        self._static_nodes: set[str] | None = None
         self._owner_uid: str | None = None
 
     def set_name(self, name: str) -> "JobBuilder":
@@ -46,8 +47,12 @@ class JobBuilder:
         self._geo_star = geo_star
         return self
 
-    def set_datasets(self, datasets: list[str]) -> "JobBuilder":
+    def set_datasets(self, datasets: set[str]) -> "JobBuilder":
         self._datasets = datasets
+        return self
+
+    def set_static_nodes(self, static_nodes: set[str] | None) -> "JobBuilder":
+        self._static_nodes = static_nodes
         return self
 
     def set_owner(self, owner_uid: str) -> "JobBuilder":
@@ -156,12 +161,13 @@ class JobBuilder:
         Assemble nodeAffinity from all scheduling policies match expressions.
 
         Returns:
-            client.V1Affinity: The affinity object for the Job, or None if no 
+            client.V1Affinity: The affinity object for the Job, or None if no
                 match expressions are generated.
         """
         match_expressions = [
             *self._property_expressions(),
             *self._geo_expressions(),
+            *self._static_expressions(),
         ]
 
         if not match_expressions:
@@ -204,16 +210,37 @@ class JobBuilder:
         """
         Translate `geo*(t)` into a match expression realising the filter step `c_geo`.
 
-        Returns a single-element list with operator In over the topology
-        location label, or an empty list if `geo*(t) = Omega` (no constraint).
+        Returns:
+            list[client.V1NodeSelectorRequirement]: A list of a single match expression for the node selector,
+                or an empty list if `geo*(t)` is None (i.e., `Omega`).
         """
         if self._geo_star is None:
             return []
-        
+
         return [
             client.V1NodeSelectorRequirement(
                 key=self._config.node_topology_location_label,
                 operator="In",
                 values=sorted(self._geo_star),
+            )
+        ]
+
+    def _static_expressions(self) -> list[client.V1NodeSelectorRequirement]:
+        """
+        Translate the intersection of static datasets related nodes into a match
+        expression realising the filter step `c_static`.
+
+        Returns:
+            list[client.V1NodeSelectorRequirement]: A list of a single match expression for the node selector,
+                or an empty list if there are no static datasets (no constraint).
+        """
+        if self._static_nodes is None:
+            return []
+
+        return [
+            client.V1NodeSelectorRequirement(
+                key="kubernetes.io/hostname",
+                operator="In",
+                values=sorted(self._static_nodes),
             )
         ]

@@ -68,13 +68,13 @@ spec:
             - name: JOB_ANNOTATION_PREFIX
               value: "scheduling.task.policydriven.unimi.it"
             - name: TASK_REQUEST_REF_LABEL
-              value: "task-request"
+              value: "taskRequestRef"
             - name: DATASETS_ANNOTATION
               value: "datasets"
             - name: BETA_STAR_ANNOTATION
-              value: "beta-star"
+              value: "betaStar"
             - name: GEO_STAR_ANNOTATION
-              value: "geo-star"
+              value: "geoStar"
             - name: NODE_PROPERTY_PREFIX
               value: "property.node.policydriven.unimi.it"
             - name: NODE_TOPOLOGY_LOCATION_LABEL

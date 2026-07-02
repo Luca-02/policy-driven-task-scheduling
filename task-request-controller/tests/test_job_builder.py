@@ -62,14 +62,16 @@ class JobBuilderTestBase(unittest.TestCase):
         beta_star=None,
         geo_star=None,
         datasets=None,
+        static_nodes=None,
         owner_uid=OWNER_UID_DEFAULT,
     ) -> JobBuilder:
         return (
             self.builder.set_name(name)
             .set_namespace(namespace)
-            .set_beta_star(beta_star or {})
+            .set_beta_star(beta_star or dict())
             .set_geo_star(geo_star)
-            .set_datasets(datasets or [])
+            .set_datasets(datasets or set())
+            .set_static_nodes(static_nodes)
             .set_owner(owner_uid)
         )
 
@@ -117,6 +119,12 @@ class TestJobBuilderGeneral(JobBuilderTestBase):
         ds_key = f"{self.cfg.job_annotation_prefix}/{self.cfg.datasets_annotation}"
         self.assertEqual(json.loads(annotations[beta_key]), beta_star)
         self.assertEqual(json.loads(annotations[ds_key]), ["d1"])
+
+    def test_all_zero_beta_and_omega_geo_produces_no_affinity(self):
+        for beta_star in ({}, {"security": 0}):
+            with self.subTest(beta_star=beta_star):
+                job = self._build(beta_star=beta_star, geo_star=None)
+                self.assertIsNone(job.spec.template.spec.affinity)
 
 
 class TestPropertyExpressions(JobBuilderTestBase):
@@ -217,9 +225,47 @@ class TestGeoExpressions(JobBuilderTestBase):
         self.assertNotIn(key, job.metadata.annotations)
 
 
-class TestAllZeroOrOmegaProducesNoAffinity(JobBuilderTestBase):
-    def test_all_zero_beta_and_omega_geo_produces_no_affinity(self):
-        for beta_star in ({}, {"security": 0}):
-            with self.subTest(beta_star=beta_star):
-                job = self._build(beta_star=beta_star, geo_star=None)
-                self.assertIsNone(job.spec.template.spec.affinity)
+class TestStaticExpressions(JobBuilderTestBase):
+    def test_static_nodes_none_produces_no_expression(self):
+        self.builder.set_beta_star({"security": 1})
+        self.builder.set_static_nodes(None)
+        self.assertEqual(self.builder._static_expressions(), [])
+
+    def test_static_nodes_set_generates_in_expression(self):
+        self.builder.set_static_nodes({"n1", "n2"})
+        exprs = self.builder._static_expressions()
+        self.assertEqual(len(exprs), 1)
+        self.assertEqual(exprs[0].key, "kubernetes.io/hostname")
+        self.assertEqual(exprs[0].operator, "In")
+        self.assertEqual(set(exprs[0].values), {"n1", "n2"})
+
+    def test_static_nodes_values_are_sorted(self):
+        self.builder.set_static_nodes({"n3", "n1", "n2"})
+        exprs = self.builder._static_expressions()
+        self.assertEqual(exprs[0].values, ["n1", "n2", "n3"])
+
+    def test_static_none_and_no_properties_means_no_affinity(self):
+        job = self._build(beta_star={}, static_nodes=None)
+        self.assertIsNone(job.spec.template.spec.affinity)
+
+    def test_static_alone_produces_affinity(self):
+        job = self._build(beta_star={}, static_nodes={"n1"})
+        exprs = self._match_expressions(job)
+        self.assertEqual(len(exprs), 1)
+        self.assertEqual(exprs[0].key, "kubernetes.io/hostname")
+
+    def test_static_and_property_both_present_in_affinity(self):
+        job = self._build(beta_star={"security": 1}, static_nodes={"n1"})
+        keys = {e.key for e in self._match_expressions(job)}
+        self.assertIn(f"{self.cfg.node_property_prefix}/security", keys)
+        self.assertIn("kubernetes.io/hostname", keys)
+
+    def test_static_and_geo_both_present_same_term(self):
+        job = self._build(geo_star={"eu-west"}, static_nodes={"n1"})
+        terms = (
+            job.spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms
+        )
+        self.assertEqual(len(terms), 1)
+        keys = {e.key for e in self._match_expressions(job)}
+        self.assertIn(self.cfg.node_topology_location_label, keys)
+        self.assertIn("kubernetes.io/hostname", keys)

@@ -68,8 +68,6 @@ def make_job_condition(
 
 
 class ControllerTestBase(unittest.TestCase):
-    """Shared setup for all Controller tests."""
-
     def setUp(self):
         self.batch_v1 = MagicMock()
         self.custom_api = MagicMock()
@@ -171,16 +169,16 @@ class TestReconcile(ControllerTestBase):
 
     def test_datasets_fetched_once_via_get_all_datasets(self):
         self.dataset_service.get_all_datasets.return_value = [
-            {"requirements": {"security": 2}, "geo": None},
-            {"requirements": {"computation": 3}, "geo": None},
+            {"name": "d1", "requirements": {"security": 2}, "geo": None},
+            {"name": "d2", "requirements": {"computation": 3}, "geo": None},
         ]
         self.do_reconcile(datasets=["d1", "d2"])
         self.dataset_service.get_all_datasets.assert_called_once_with(["d1", "d2"])
 
     def test_full_reconcile_annotations_reflect_beta_star_and_datasets(self):
         self.dataset_service.get_all_datasets.return_value = [
-            {"requirements": {"security": 2}, "geo": None},
-            {"requirements": {"computation": 3}, "geo": None},
+            {"name": "d1", "requirements": {"security": 2}, "geo": None},
+            {"name": "d2", "requirements": {"computation": 3}, "geo": None},
         ]
         self.do_reconcile(datasets=["d1", "d2"])
         self.assertEqual(
@@ -231,8 +229,6 @@ class TestReconcile(ControllerTestBase):
 
 
 class TestReconcileGeo(ControllerTestBase):
-    """Tests for geo*(t) computation during reconciliation."""
-
     def test_geo_omega_creates_job_with_no_geo_annotation(self):
         self.do_reconcile(geo=None, datasets=[])
         self.assertIsNone(self.job_annotation(GEO_STAR_ANNOTATION_DEFAULT))
@@ -254,7 +250,7 @@ class TestReconcileGeo(ControllerTestBase):
             ("US", ["us-west"], []),
         )
         self.dataset_service.get_all_datasets.return_value = [
-            {"requirements": {}, "geo": "EU"},
+            {"name": "d1", "requirements": {}, "geo": "EU"},
         ]
         self.do_reconcile(geo="OECD", datasets=["d1"])
         # OECD intersection EU = EU
@@ -269,7 +265,7 @@ class TestReconcileGeo(ControllerTestBase):
             ("US", ["us-west"], []),
         )
         self.dataset_service.get_all_datasets.return_value = [
-            {"requirements": {}, "geo": "US"},
+            {"name": "d1", "requirements": {}, "geo": "US"},
         ]
         self.do_reconcile(geo="EU", datasets=["d1"])
         self.batch_v1.create_namespaced_job.assert_not_called()
@@ -304,6 +300,65 @@ class TestReconcileGeo(ControllerTestBase):
         self.assertEqual(len(geo_exprs), 1)
         self.assertEqual(geo_exprs[0].operator, "In")
         self.assertEqual(set(geo_exprs[0].values), {"eu-west", "eu-north"})
+
+
+class TestReconcileStaticNodes(ControllerTestBase):
+    def test_no_static_dataset_no_affinity_added(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1"], "static": False},
+        ]
+        self.do_reconcile(datasets=["d1"])
+        self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
+        static_exprs = self._static_expressions_on_job(self.created_job())
+        self.assertEqual(len(static_exprs), 0)
+
+    def test_single_static_dataset_affinity_present(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1", "n2"], "static": True},
+        ]
+        self.do_reconcile(datasets=["d1"])
+        exprs = self._static_expressions_on_job(self.created_job())
+        self.assertEqual(len(exprs), 1)
+        self.assertEqual(exprs[0].operator, "In")
+        self.assertEqual(set(exprs[0].values), {"n1", "n2"})
+
+    def test_disjoint_static_datasets_sets_failed_without_creating_job(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1"], "static": True},
+            {"name": "d2", "requirements": {}, "geo": None, "nodes": ["n2"], "static": True},
+        ]
+        self.do_reconcile(datasets=["d1", "d2"])
+        self.assertEqual(self.patched_phases(), [PENDING_PHASE, FAILURE_PHASE])
+        self.batch_v1.create_namespaced_job.assert_not_called()
+
+    def test_static_and_geo_expressions_combined_in_same_term(self):
+        self.load_geo_groups(("EU", ["eu-west"], []))
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1"], "static": True},
+        ]
+        self.do_reconcile(geo="EU", datasets=["d1"])
+        terms = self._node_selector_terms(self.created_job())
+        self.assertEqual(len(terms), 1)
+        keys = {e.key for e in terms[0].match_expressions}
+        self.assertIn("kubernetes.io/hostname", keys)
+        self.assertIn(self.cfg.node_topology_location_label, keys)
+
+    def _node_selector_terms(self, job):
+        affinity = job.spec.template.spec.affinity
+        if affinity is None or affinity.node_affinity is None:
+            return []
+
+        return (
+            affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms
+        )
+
+    def _static_expressions_on_job(self, job):
+        exprs = [
+            e
+            for t in self._node_selector_terms(job)
+            for e in (t.match_expressions or [])
+        ]
+        return [e for e in exprs if e.key == "kubernetes.io/hostname"]
 
 
 class TestGeoGroupRegistry(ControllerTestBase):

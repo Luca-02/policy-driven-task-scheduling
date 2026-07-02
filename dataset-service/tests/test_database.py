@@ -23,17 +23,19 @@ class TestRepository(unittest.TestCase):
         return Dataset(
             name="d1",
             requirements={"security": 2, "computation": 1},
-            sizeMB=1024,
+            size_mb=1024,
             nodes=["kind-worker2"],
             geo="us",
+            static=False,
         )
 
     def _d2(self):
         return Dataset(
             name="d2",
             requirements={"security": 1, "computation": 3},
-            sizeMB=2048,
+            size_mb=2048,
             nodes=["kind-worker3"],
+            static=True,
         )
 
     def test_create_get(self):
@@ -61,7 +63,12 @@ class TestRepository(unittest.TestCase):
 
     def test_update_replaces(self):
         dataset = self._d1()
-        update = DatasetBase(requirements={"security": 3}, sizeMB=0, nodes=[], geo="AS")
+        update = DatasetBase(
+            requirements={"security": 3},
+            size_mb=0,
+            nodes=[],
+            geo="AS",
+        )
         self.repo.create(dataset)
         self.repo.update(dataset.name, update)
         row = self.repo.get(dataset.name)
@@ -71,7 +78,8 @@ class TestRepository(unittest.TestCase):
     def test_update_missing_dataset(self):
         self.assertIsNone(
             self.repo.update(
-                "nope", DatasetBase(requirements={}, sizeMB=0, nodes=[], geo="AS")
+                "nope",
+                DatasetBase(requirements={}, size_mb=0, nodes=[], geo="AS"),
             )
         )
 

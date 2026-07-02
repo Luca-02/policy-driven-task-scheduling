@@ -1,14 +1,13 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
-  name: emptygeostar
+  name: t1static
   namespace: compute
 spec:
   requirements:
     security: 1
     computation: 2
   datasets:
-    - d1 # oecd
-    - d3 # us
+    - d1static
+    - d2static
   geo: "eu"
-# eu intersection us = []

@@ -38,6 +38,7 @@ def validate(
             "requirements": dataset.requirements,
             "size_mb": dataset.size_mb,
             "nodes": dataset.nodes,
+            "static": dataset.static,
         }
         # geo is omitted from the response when None so that Rego can
         # distinguish not set (Omega) from an empty string.

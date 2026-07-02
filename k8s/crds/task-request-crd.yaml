@@ -50,6 +50,7 @@ spec:
                 # req(t): datasets required for task execution.
                 datasets:
                   type: array
+                  x-kubernetes-list-type: set
                   description: >
                     Dataset names required for task execution (req(t)).
                     Each name is resolved against the external dataset service.

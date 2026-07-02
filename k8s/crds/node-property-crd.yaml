@@ -99,7 +99,6 @@ spec:
                                 properties:
                                   key:
                                     type: string
-                                    pattern: "^[a-zA-Z0-9._-]+$"
                                     minLength: 1
                                     maxLength: 254
                                   operator:

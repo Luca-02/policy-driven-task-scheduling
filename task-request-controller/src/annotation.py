@@ -2,7 +2,7 @@ from src.geo import GeographicGroup
 
 
 def compute_effective_beta(
-    beta_t: dict[str, int],
+    task_requirements: dict[str, int],
     dataset_requirements: list[dict[str, int]],
 ) -> dict[str, int]:
     """
@@ -12,7 +12,7 @@ def compute_effective_beta(
     base task beta and `beta(d)` are fetched from the dataset service.
 
     Args:
-        beta_t: Base property requirements of the task.
+        task_requirements: Base property requirements of the task.
         dataset_requirements: List of requirements dicts, one per dataset.
 
     Returns:
@@ -22,7 +22,7 @@ def compute_effective_beta(
         DatasetNotFoundError: If any dataset is not found (HTTP 404).
         DatasetServiceError: If there is any other error communicating with the dataset service.
     """
-    result: dict[str, int] = dict(beta_t)
+    result: dict[str, int] = dict(task_requirements)
 
     for reqs in dataset_requirements:
         for prop, level in (reqs or {}).items():
@@ -32,7 +32,7 @@ def compute_effective_beta(
 
 
 def compute_effective_geo(
-    geo_t: str | None,
+    task_geo: str | None,
     dataset_geos: list[str | None],
     geo_groups: dict[str, GeographicGroup],
 ) -> set[str] | None:
@@ -40,9 +40,9 @@ def compute_effective_geo(
     Compute the effective geographic regions `geo*(t)` for a given set of datasets and task
     geographic groups.
 
-    This is defined as `geo*(t) = geo(t) intersection geo(d1) intersection geo(d2) intersection ...`, 
-    where `geo(t)` is the geographic group specified for the task and `geo(d)` are the geographic groups 
-    specified for each dataset. 
+    This is defined as `geo*(t) = geo(t) intersection geo(d1) intersection geo(d2) intersection ...`,
+    where `geo(t)` is the geographic group specified for the task and `geo(d)` are the geographic groups
+    specified for each dataset.
 
     Args:
         geo_t: geographic group name for the task, or None for `Omega` (no constraint).
@@ -54,7 +54,7 @@ def compute_effective_geo(
         None if there are no geographic constraints (i.e. if geo*(t) = `Omega`). An empty set means
         no node satisfies all constraints, there are not an intersection of the geographic groups.
     """
-    geo_names = [g for g in [geo_t, *dataset_geos] if g is not None]
+    geo_names = [g for g in [task_geo, *dataset_geos] if g is not None]
 
     if not geo_names:
         return None  # No geographic constraints, return None (Omega)
@@ -68,7 +68,35 @@ def compute_effective_geo(
         locations = group.resolve(geo_groups)
         if result is None:
             result = set(locations)
-        else:            
+        else:
             result.intersection_update(locations)
-            
+
+    return result
+
+
+def compute_static_nodes(datasets_data: list[dict]) -> set[str] | None:
+    """
+    Compute the intersection of lambda(d) over every dataset in req(t)
+    that belongs to the static dataset set.
+
+    Args:
+        datasets_data: List of dataset metadata dictionaries.
+
+    Returns:
+        None if no requested dataset is static.
+        Otherwise, a set of node names; an empty set means no node hosts
+        all required static datasets locally (task cannot be scheduled).
+    """
+    static_datasets = [d for d in datasets_data if d.get("static", False)]
+    if not static_datasets:
+        return None
+
+    result: set[str] | None = None
+    for d in static_datasets:
+        nodes = set(d.get("nodes", []))
+        if result is None:
+            result = nodes
+        else:
+            result.intersection_update(nodes)
+
     return result

@@ -11,6 +11,7 @@ D1 = {
     "size_mb": 1024,
     "nodes": ["kind-worker2"],
     "geo": "eu",
+    "static": False,
 }
 
 D2 = {
@@ -18,9 +19,16 @@ D2 = {
     "requirements": {"security": 1, "computation": 2},
     "size_mb": 2048,
     "nodes": ["kind-worker3"],
+    "static": True,
 }
 
-UPDATE_D1 = {"requirements": {"security": 3}, "size_mb": 1, "nodes": [], "geo": "as"}
+UPDATE_D1 = {
+    "requirements": {"security": 3},
+    "size_mb": 1,
+    "nodes": [],
+    "geo": "as",
+    "static": True,
+}
 
 
 def make_cfg() -> Config:

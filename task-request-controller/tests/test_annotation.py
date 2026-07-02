@@ -1,13 +1,11 @@
 import unittest
 
 from src.geo import GeographicGroup
-from src.annotation import compute_effective_beta, compute_effective_geo
-
-EU = GeographicGroup("EU", ["eu-north", "eu-south", "eu-east", "eu-west"], [])
-US = GeographicGroup("US", ["us-north", "us-south", "us-east", "us-west"], [])
-OECD = GeographicGroup("OECD", [], ["EU", "US"])
-
-GEO_REGISTRY = {g.name: g for g in [EU, US, OECD]}
+from src.annotation import (
+    compute_effective_beta,
+    compute_effective_geo,
+    compute_static_nodes,
+)
 
 
 class TestComputeEffectiveBeta(unittest.TestCase):
@@ -49,6 +47,13 @@ class TestComputeEffectiveBeta(unittest.TestCase):
         beta_t = {"security": 1}
         compute_effective_beta(beta_t, [{"computation": 3}])
         self.assertNotIn("computation", beta_t)
+
+
+EU = GeographicGroup("EU", ["eu-north", "eu-south", "eu-east", "eu-west"], [])
+US = GeographicGroup("US", ["us-north", "us-south", "us-east", "us-west"], [])
+OECD = GeographicGroup("OECD", [], ["EU", "US"])
+
+GEO_REGISTRY = {g.name: g for g in [EU, US, OECD]}
 
 
 class TestComputeEffectiveGeo(unittest.TestCase):
@@ -124,3 +129,57 @@ class TestComputeEffectiveGeo(unittest.TestCase):
         # UNKNOWN skipped
         result = compute_effective_geo("EU", ["UNKNOWN", "OECD"], GEO_REGISTRY)
         self.assertEqual(result, EU.resolve(GEO_REGISTRY))
+
+
+class TestComputeStaticNodes(unittest.TestCase):
+    def test_no_datasets_returns_none(self):
+        self.assertIsNone(compute_static_nodes([]))
+
+    def test_no_static_dataset_returns_none(self):
+        result = compute_static_nodes(
+            [
+                {"nodes": ["n1", "n2"]},
+                {"nodes": ["n3"]},
+            ]
+        )
+        self.assertIsNone(result)
+
+    def test_single_static_dataset_returns_its_nodes(self):
+        result = compute_static_nodes(
+            [
+                {"nodes": ["n1", "n2"], "static": True},
+            ]
+        )
+        self.assertEqual(result, {"n1", "n2"})
+
+    def test_three_overlapping_static_datasets_returns_intersection(self):
+        result = compute_static_nodes(
+            [
+                {"nodes": ["n1", "n2", "n3"], "static": True},
+                {"nodes": ["n2", "n3", "n4"], "static": True},
+                {"nodes": ["n3", "n4", "n5"], "static": True},
+            ]
+        )
+        self.assertEqual(result, {"n3"})
+
+    def test_two_disjoint_static_datasets_returns_empty_set(self):
+        result = compute_static_nodes(
+            [
+                {"nodes": ["n1", "n2"], "static": True},
+                {"nodes": ["n3", "n4"], "static": True},
+            ]
+        )
+        self.assertEqual(result, set())
+
+    def test_non_static_dataset_does_not_constrain(self):
+        result = compute_static_nodes(
+            [
+                {"nodes": ["n1", "n2"], "static": True},
+                {"nodes": ["n5"], "static": False},
+            ]
+        )
+        self.assertEqual(result, {"n1", "n2"})
+
+    def test_missing_nodes_key_treated_as_empty(self):
+        result = compute_static_nodes([{"static": True}])
+        self.assertEqual(result, set())

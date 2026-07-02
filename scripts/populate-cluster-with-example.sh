@@ -33,4 +33,8 @@ echo "Seeding dataset-service"
         --for=condition=complete \
         job/dataset-seeding \
         --timeout=60s
+
+    kubectl delete configmap dataset-seed \
+        --namespace "${DATASET_SERVICE_NAMESPACE}" \
+        --ignore-not-found
 )

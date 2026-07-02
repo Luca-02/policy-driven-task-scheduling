@@ -19,6 +19,7 @@ class DatasetBase(BaseModel):
     size_mb: int = Field(ge=0, default=0)
     nodes: list[str] = Field(default_factory=list)
     geo: str | None = Field(default=None)
+    static: bool = Field(default=False)
 
 
 class Dataset(DatasetBase):

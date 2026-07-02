@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-dataset-service:
+    name: Test dataset-service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dataset-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: dataset-service/requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run tests
+        run: pytest tests/ -v
+
+  test-node-property-controller:
+    name: Test node-property-controller
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node-property-controller
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: node-property-controller/requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run tests
+        run: pytest tests/ -v
+
+  test-task-request-controller:
+    name: Test task-request-controller
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: task-request-controller
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: task-request-controller/requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run tests
+        run: pytest tests/ -v

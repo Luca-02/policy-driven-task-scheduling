@@ -1,7 +1,7 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
-  name: invalid-task-request
+  name: invalid
   # no namespace 'compute'
 spec:
   requirements:
