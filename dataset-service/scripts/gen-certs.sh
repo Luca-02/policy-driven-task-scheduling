@@ -12,7 +12,6 @@ readonly TARGET_DIR="${DIR}/${TARGET_ENV}"
 readonly SVC="${SVC:-dataset-service}" 
 readonly NS="${NS:-dataset-service}" 
 readonly CN="${SVC}.${NS}.svc"
-# readonly PROVIDER_FILE="k8s/provider.yaml"
 
 mkdir -p "$TARGET_DIR"
 

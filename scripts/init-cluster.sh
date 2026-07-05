@@ -301,22 +301,23 @@ readonly DATASET_SERVICE="dataset-service"
 readonly DATASET_SERVICE_NAMESPACE="dataset-service"
 readonly DATASET_SERVICE_DEPLOYMENT="dataset-service"
 readonly DATASET_SERVICE_TLS_SECRET="dataset-service-tls"
-readonly TARGET_ENV="k8s"
+
+TARGET_ENV="k8s"
+CERTS_DIR=".certs"
 
 log "Generating TLS certificates for dataset-service"
 (
     cd "$DATASET_SERVICE_PATH"
 
-    readonly CERTS_DIR=".certs"
 
     TARGET_ENV=$TARGET_ENV SVC=$DATASET_SERVICE NS=$DATASET_SERVICE_NAMESPACE \
         bash scripts/gen-certs.sh "$CERTS_DIR"
 
     log "Creating TLS secret for dataset-service"
     kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
-        --from-file=ca.crt="$CERTS_DIR/k8s/ca.crt" \
-        --from-file=tls.crt="$CERTS_DIR/k8s/tls.crt" \
-        --from-file=tls.key="$CERTS_DIR/k8s/tls.key" \
+        --from-file=ca.crt="$CERTS_DIR/${TARGET_ENV}/ca.crt" \
+        --from-file=tls.crt="$CERTS_DIR/${TARGET_ENV}/tls.crt" \
+        --from-file=tls.key="$CERTS_DIR/${TARGET_ENV}/tls.key" \
         -n "$DATASET_SERVICE_NAMESPACE" \
         --dry-run=client -o yaml | kubectl apply -f -
 )
@@ -330,7 +331,7 @@ kubectl apply -f "${DATASET_SERVICE_PATH}/${TARGET_ENV}/network-policy.yaml"
 kubectl apply -f "${DATASET_SERVICE_PATH}/${TARGET_ENV}/deployment.yaml"
 
 log "Rendering and applying dataset-service provider (caBundle injected at apply time)"
-CA_B64=$(base64 -w0 "${DATASET_SERVICE_PATH}/${CERTS_DIR}/${TARGET_ENV}/ca.crt")
+CA_B64=$(kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" -o jsonpath='{.data.ca\.crt}')
 sed "s|<CA_BUNDLE>|${CA_B64}|" "${DATASET_SERVICE_PATH}/${TARGET_ENV}/provider.yaml" | kubectl apply -f -
 
 wait_for_deployment "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_DEPLOYMENT"
