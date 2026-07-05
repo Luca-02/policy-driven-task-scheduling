@@ -16,7 +16,7 @@ metadata:
 spec:
   # Overkill for our use case
   # instances: 3
-  instances: 2
+  instances: 1
   storage:
     size: 1Gi
   bootstrap:

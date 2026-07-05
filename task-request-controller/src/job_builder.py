@@ -19,6 +19,7 @@ class JobBuilder:
     - A geo-star annotation with the serialised `geo*(t)` (omitted if None -> `Omega`).
     - A nodeAffinity realising filter steps `c_prop`.
     - A nodeAffinity realising filter steps `c_geo`.
+    - A nodeAffinity realising filter steps `c_static`.
     """
 
     def __init__(self, config: Config):
@@ -73,16 +74,13 @@ class JobBuilder:
             spec=self._build_spec(),
         )
 
-    def _build_metadata(self) -> client.V1ObjectMeta:
+    def _scheduling_annotations(self) -> dict:
         """
-        Build the metadata for the Job, including labels, annotations, and owner references.
+        Build the scheduling annotations.
 
         Returns:
-            client.V1ObjectMeta: The metadata object for the Job.
+            dict: A dictionary of annotations for the Job's pod template.
         """
-        task_request_ref_key = (
-            f"{self._config.job_label_prefix}/{self._config.task_request_ref_label}"
-        )
         datasets_key = (
             f"{self._config.job_annotation_prefix}/{self._config.datasets_annotation}"
         )
@@ -93,16 +91,26 @@ class JobBuilder:
             f"{self._config.job_annotation_prefix}/{self._config.geo_star_annotation}"
         )
 
-        labels = {task_request_ref_key: self._name}
-
         annotations = {}
         for key, value in (
-            (datasets_key, self._datasets),
+            (datasets_key, sorted(self._datasets) if self._datasets else None),
             (beta_star_key, self._beta_star),
             (geo_star_key, sorted(self._geo_star) if self._geo_star else None),
         ):
             if value:
                 annotations[key] = json.dumps(value)
+        return annotations
+
+    def _build_metadata(self) -> client.V1ObjectMeta:
+        """
+        Build the metadata for the Job, including labels and owner references.
+
+        Returns:
+            client.V1ObjectMeta: The metadata object for the Job.
+        """
+        labels = {
+            f"{self._config.job_label_prefix}/{self._config.task_request_ref_label}": self._name
+        }
 
         owner_references = []
         if self._name and self._owner_uid:
@@ -121,14 +129,13 @@ class JobBuilder:
             name=self._name,
             namespace=self._namespace,
             labels=labels,
-            annotations=annotations,
             owner_references=owner_references,
         )
 
     def _build_spec(self) -> client.V1JobSpec:
         """
         Build the spec for the Job, including the pod template with the
-        appropriate affinity.
+        appropriate affinity and pod annotations.
 
         **Blackbox image placeholder**: in a real implementation the task
         image would be supplied as metadata in the TaskRequest spec and
@@ -138,6 +145,9 @@ class JobBuilder:
         return client.V1JobSpec(
             backoff_limit=0,
             template=client.V1PodTemplateSpec(
+                metadata=client.V1ObjectMeta(
+                    annotations=self._scheduling_annotations(),
+                ),
                 spec=client.V1PodSpec(
                     restart_policy="Never",
                     affinity=self._build_affinity(),
@@ -152,7 +162,7 @@ class JobBuilder:
                             ],
                         )
                     ],
-                )
+                ),
             ),
         )
 

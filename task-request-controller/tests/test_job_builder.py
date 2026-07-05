@@ -114,7 +114,7 @@ class TestJobBuilderGeneral(JobBuilderTestBase):
     def test_scheduling_annotations_present(self):
         beta_star = {"security": 2, "computation": 1}
         job = self._build(beta_star=beta_star, datasets=["d1"])
-        annotations = job.metadata.annotations
+        annotations = job.spec.template.metadata.annotations
         beta_key = f"{self.cfg.job_annotation_prefix}/{self.cfg.beta_star_annotation}"
         ds_key = f"{self.cfg.job_annotation_prefix}/{self.cfg.datasets_annotation}"
         self.assertEqual(json.loads(annotations[beta_key]), beta_star)
@@ -216,13 +216,14 @@ class TestGeoExpressions(JobBuilderTestBase):
         job = self._build(geo_star={"eu-west", "eu-north"})
         key = f"{self.cfg.job_annotation_prefix}/{self.cfg.geo_star_annotation}"
         self.assertEqual(
-            json.loads(job.metadata.annotations[key]), sorted(["eu-west", "eu-north"])
+            json.loads(job.spec.template.metadata.annotations[key]),
+            sorted(["eu-west", "eu-north"]),
         )
 
     def test_geo_star_annotation_absent_when_geo_none(self):
         job = self._build(geo_star=None)
         key = f"{self.cfg.job_annotation_prefix}/{self.cfg.geo_star_annotation}"
-        self.assertNotIn(key, job.metadata.annotations)
+        self.assertNotIn(key, job.spec.template.metadata.annotations)
 
 
 class TestStaticExpressions(JobBuilderTestBase):
@@ -269,3 +270,33 @@ class TestStaticExpressions(JobBuilderTestBase):
         keys = {e.key for e in self._match_expressions(job)}
         self.assertIn(self.cfg.node_topology_location_label, keys)
         self.assertIn("kubernetes.io/hostname", keys)
+
+
+class TestPodTemplateAnnotations(JobBuilderTestBase):
+    def _pod_annotations(self, job: client.V1Job) -> dict:
+        meta = job.spec.template.metadata
+        self.assertIsNotNone(meta)
+        return meta.annotations or {}
+
+    def test_annotations_inherited_by_pod_template(self):
+        # Le stesse annotazioni devono stare su Job E su Pod template.
+        job = self._build(
+            beta_star={"security": 2}, datasets=["d1"], geo_star={"eu-west"}
+        )
+        self.assertEqual(
+            self._pod_annotations(job), job.spec.template.metadata.annotations
+        )
+
+    def test_beta_star_on_pod_template(self):
+        job = self._build(beta_star={"security": 2}, datasets=["d1"])
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.beta_star_annotation}"
+        self.assertEqual(json.loads(self._pod_annotations(job)[key]), {"security": 2})
+
+    def test_datasets_on_pod_template_sorted(self):
+        job = self._build(datasets=["d2", "d1"])
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.datasets_annotation}"
+        self.assertEqual(json.loads(self._pod_annotations(job)[key]), ["d1", "d2"])
+
+    def test_no_scheduling_data_empty_pod_annotations(self):
+        job = self._build(beta_star={}, geo_star=None, datasets=[])
+        self.assertEqual(self._pod_annotations(job), {})

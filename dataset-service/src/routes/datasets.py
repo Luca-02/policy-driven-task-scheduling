@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.database import DatasetRepository
 from src.dependencies import get_repository
-from src.models import Dataset, DatasetBase
+from src.models import Dataset, DatasetBase, DatasetQuery
 
 _RESPONSE_MODEL_KWARGS = {"response_model_exclude_none": True}
 
@@ -14,8 +14,8 @@ DatasetRepositoryDep = Annotated[DatasetRepository, Depends(get_repository)]
 
 
 @router.get("", response_model=list[Dataset], **_RESPONSE_MODEL_KWARGS)
-def list_datasets(repo: DatasetRepositoryDep):
-    return repo.list()
+def get_all_datasets(repo: DatasetRepositoryDep):
+    return repo.get_all()
 
 
 @router.get("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
@@ -24,6 +24,19 @@ def get_dataset(name: str, repo: DatasetRepositoryDep):
     if dataset is None:
         raise HTTPException(status_code=404, detail=f"Dataset not found: {name}")
     return dataset
+
+
+@router.post("/query", response_model=list[Dataset], **_RESPONSE_MODEL_KWARGS)
+def query_datasets(query: DatasetQuery, repo: DatasetRepositoryDep):
+    result = repo.query(query.keys)
+    if len(result) != len(query.keys):
+        found_keys = {dataset.name for dataset in result}
+        missing_keys = set(query.keys) - found_keys
+        raise HTTPException(
+            status_code=404,
+            detail=f"Datasets not found: {', '.join(missing_keys)}",
+        )
+    return result
 
 
 @router.post("", response_model=Dataset, status_code=201, **_RESPONSE_MODEL_KWARGS)
@@ -39,7 +52,9 @@ def create_dataset(
     return created
 
 
-@router.post("/batch", response_model=list[Dataset], status_code=201, **_RESPONSE_MODEL_KWARGS)
+@router.post(
+    "/batch", response_model=list[Dataset], status_code=201, **_RESPONSE_MODEL_KWARGS
+)
 def create_datasets(
     datasets: list[Dataset],
     repo: DatasetRepositoryDep,

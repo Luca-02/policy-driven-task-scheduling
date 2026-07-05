@@ -30,6 +30,10 @@ class Dataset(DatasetBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DatasetQuery(BaseModel):
+    keys: list[str] = Field(default_factory=list)
+
+
 # -----------------------------------------------------------------------------
 # Gatekeeper External Data Provider protocol
 # -----------------------------------------------------------------------------

@@ -129,9 +129,9 @@ class ControllerTestBase(unittest.TestCase):
     def created_job(self) -> client.V1Job:
         return self.batch_v1.create_namespaced_job.call_args[0][1]
 
-    def job_annotation(self, key_suffix: str) -> str | None:
+    def pod_annotation(self, key_suffix: str) -> str | None:
         key = f"{self.cfg.job_annotation_prefix}/{key_suffix}"
-        return self.created_job().metadata.annotations.get(key)
+        return self.created_job().spec.template.metadata.annotations.get(key)
 
     def load_geo_groups(self, *groups: tuple[str, list[str], list[str]]):
         """groups: (name, locations, includes) tuples."""
@@ -182,11 +182,11 @@ class TestReconcile(ControllerTestBase):
         ]
         self.do_reconcile(datasets=["d1", "d2"])
         self.assertEqual(
-            json.loads(self.job_annotation(BETA_STAR_ANNOTATION_DEFAULT)),
+            json.loads(self.pod_annotation(BETA_STAR_ANNOTATION_DEFAULT)),
             {"security": 2, "computation": 3},
         )
         self.assertEqual(
-            json.loads(self.job_annotation(DATASETS_ANNOTATION_DEFAULT)), ["d1", "d2"]
+            json.loads(self.pod_annotation(DATASETS_ANNOTATION_DEFAULT)), ["d1", "d2"]
         )
 
     def test_dataset_not_found_sets_failed_without_creating_job(self):
@@ -231,14 +231,14 @@ class TestReconcile(ControllerTestBase):
 class TestReconcileGeo(ControllerTestBase):
     def test_geo_omega_creates_job_with_no_geo_annotation(self):
         self.do_reconcile(geo=None, datasets=[])
-        self.assertIsNone(self.job_annotation(GEO_STAR_ANNOTATION_DEFAULT))
+        self.assertIsNone(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
 
     def test_geo_t_resolved_against_registry(self):
         self.load_geo_groups(("EU", ["eu-west", "eu-north"], []))
         self.do_reconcile(geo="EU", datasets=[])
         self.assertEqual(
-            set(json.loads(self.job_annotation(GEO_STAR_ANNOTATION_DEFAULT))),
+            set(json.loads(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))),
             {"eu-west", "eu-north"},
         )
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
@@ -255,7 +255,7 @@ class TestReconcileGeo(ControllerTestBase):
         self.do_reconcile(geo="OECD", datasets=["d1"])
         # OECD intersection EU = EU
         self.assertEqual(
-            set(json.loads(self.job_annotation(GEO_STAR_ANNOTATION_DEFAULT))),
+            set(json.loads(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))),
             {"eu-west", "eu-north"},
         )
 
@@ -278,7 +278,7 @@ class TestReconcileGeo(ControllerTestBase):
         # resulting in Omega (no constraint), not a failure.
         self.do_reconcile(geo="EU", datasets=[])
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
-        self.assertIsNone(self.job_annotation(GEO_STAR_ANNOTATION_DEFAULT))
+        self.assertIsNone(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))
 
     def test_geo_group_deleted_no_longer_resolved(self):
         self.load_geo_groups(("EU", ["eu-west"], []))
@@ -286,7 +286,7 @@ class TestReconcileGeo(ControllerTestBase):
         self.do_reconcile(geo="EU", datasets=[])
         # EU no longer in registry: skipped -> Omega -> Job still created.
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
-        self.assertIsNone(self.job_annotation(GEO_STAR_ANNOTATION_DEFAULT))
+        self.assertIsNone(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))
 
     def test_geo_affinity_present_on_job(self):
         self.load_geo_groups(("EU", ["eu-west", "eu-north"], []))

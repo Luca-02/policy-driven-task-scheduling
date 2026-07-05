@@ -50,6 +50,16 @@ class TestRepository(unittest.TestCase):
         self.assertIsNotNone(self.repo.create(dataset))
         self.assertIsNone(self.repo.create(dataset))
 
+    def test_query(self):
+        d1 = self._d1()
+        d2 = self._d2()
+        self.repo.create(d1)
+        self.repo.create(d2)
+        rows = self.repo.query([d1.name, d2.name])
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            self.assertIn(row.model_dump(), [d1.model_dump(), d2.model_dump()])
+
     def test_exists(self):
         dataset = self._d1()
         self.assertFalse(self.repo.exists(dataset.name))
@@ -59,7 +69,7 @@ class TestRepository(unittest.TestCase):
     def test_list(self):
         self.repo.create(self._d1())
         self.repo.create(self._d2())
-        self.assertEqual(len(self.repo.list()), 2)
+        self.assertEqual(len(self.repo.get_all()), 2)
 
     def test_update_replaces(self):
         dataset = self._d1()
@@ -97,4 +107,4 @@ class TestRepository(unittest.TestCase):
         self.repo.create(self._d2())
         count = self.repo.delete_all()
         self.assertEqual(count, 2)
-        self.assertEqual(len(self.repo.list()), 0)
+        self.assertEqual(len(self.repo.get_all()), 0)

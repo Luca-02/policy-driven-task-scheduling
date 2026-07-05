@@ -28,8 +28,11 @@ def validate(
     repo: DatasetRepositoryDep,
 ):
     items = []
+    datasets = repo.query(req.request.keys)
+    datasets_dict = {dataset.name: dataset for dataset in datasets}
+
     for key in req.request.keys:
-        dataset = repo.get(key)
+        dataset = datasets_dict.get(key)
         if dataset is None:
             items.append(Item(key=key, error=f"Dataset '{key}' not found"))
             continue

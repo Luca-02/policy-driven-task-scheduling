@@ -17,6 +17,7 @@ The service is intentionally a thin demo component, not a production system: no 
 | POST   | `/validate`        | Gatekeeper EDP                    |
 | GET    | `/datasets`        | list datasets                     |
 | GET    | `/datasets/{name}` | dataset detail                    |
+| POST   | `/datasets/query`  | query datasets                    |
 | POST   | `/datasets`        | create dataset                    |
 | POST   | `/datasets/batch`  | create multiple datasets          |
 | PUT    | `/datasets/{name}` | full replace dataset (debug only) |
