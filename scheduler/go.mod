@@ -1,4 +1,4 @@
-module unimi.it/policy-driven-task-scheduling/scheduler-plugin
+module github.com/Luca-02/policy-driven-task-scheduling/scheduler
 
 go 1.24.0
 
