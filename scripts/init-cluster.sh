@@ -320,19 +320,19 @@ log "Generating TLS certificates for dataset-service"
         --from-file=tls.key="$CERTS_DIR/${TARGET_ENV}/tls.key" \
         -n "$DATASET_SERVICE_NAMESPACE" \
         --dry-run=client -o yaml | kubectl apply -f -
+
+    log "Rendering and applying dataset-service provider (caBundle injected at apply time)"
+    CA_B64=$(kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" -o jsonpath='{.data.ca\.crt}')
+    sed "s|<CA_BUNDLE>|${CA_B64}|" "k8s/provider.yaml" | kubectl apply -f -
 )
 
 log "Setting up dataset-service image"
 load_image "$DATASET_SERVICE_PATH" "$DATASET_SERVICE_IMAGE"
 
 log "Applying dataset-service manifests"
-kubectl apply -f "${DATASET_SERVICE_PATH}/${TARGET_ENV}/service.yaml"
-kubectl apply -f "${DATASET_SERVICE_PATH}/${TARGET_ENV}/network-policy.yaml"
-kubectl apply -f "${DATASET_SERVICE_PATH}/${TARGET_ENV}/deployment.yaml"
-
-log "Rendering and applying dataset-service provider (caBundle injected at apply time)"
-CA_B64=$(kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" -o jsonpath='{.data.ca\.crt}')
-sed "s|<CA_BUNDLE>|${CA_B64}|" "${DATASET_SERVICE_PATH}/${TARGET_ENV}/provider.yaml" | kubectl apply -f -
+kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/service.yaml"
+kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/network-policy.yaml"
+kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/deployment.yaml"
 
 wait_for_deployment "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_DEPLOYMENT"
 
