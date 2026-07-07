@@ -36,7 +36,7 @@ def make_config() -> Config:
         geographical_groups_plural=GEOGRAPHICAL_GROUPS_PLURAL_DEFAULT,
         task_namespace=TASK_NAMESPACE_DEFAULT,
         dataset_service_url=DATASET_SERVICE_URL_DEFAULT,
-        ca_cert_file=None,
+        dataset_service_ca_file=None,
         task_request_kind=TASK_REQUEST_KIND_DEFAULT,
         job_label_prefix=JOB_LABEL_PREFIX_DEFAULT,
         job_annotation_prefix=JOB_ANNOTATION_PREFIX_DEFAULT,

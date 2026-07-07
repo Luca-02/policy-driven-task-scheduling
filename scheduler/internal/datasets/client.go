@@ -1,4 +1,4 @@
-package transfer
+package datasets
 
 import (
 	"bytes"
@@ -14,26 +14,6 @@ import (
 )
 
 const EndpointQuery = "/datasets/query"
-
-type DatasetInfo struct {
-	Name   string   `json:"name"`
-	SizeMB int      `json:"size_mb"`
-	Nodes  []string `json:"nodes"`
-}
-
-type queryRequest struct {
-	Keys []string `json:"keys"`
-}
-
-// datasetQuerier acts as a client for the dataset-service.
-type datasetQuerier interface {
-	Query(ctx context.Context, keys []string) ([]DatasetInfo, error)
-}
-
-type DatasetClient struct {
-	baseURL string
-	http    *http.Client
-}
 
 // NewDatasetClient builds an HTTPS client that verifies the dataset-service
 // certificate against the given CA (no InsecureSkipVerify).
@@ -64,7 +44,7 @@ func NewDatasetClient(baseURL string, caCertFile string) (*DatasetClient, error)
 }
 
 func (c *DatasetClient) Query(ctx context.Context, keys []string) ([]DatasetInfo, error) {
-	body, err := json.Marshal(queryRequest{Keys: keys})
+	body, err := json.Marshal(QueryRequest{Keys: keys})
 	if err != nil {
 		return nil, err
 	}

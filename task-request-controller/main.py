@@ -42,7 +42,7 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
         custom_api=client.CustomObjectsApi(),
         dataset_service=DatasetService(
             base_url=cfg.dataset_service_url,
-            ca_cert_file=cfg.ca_cert_file,
+            ca_cert_file=cfg.dataset_service_ca_file,
         ),
         config=cfg,
     )

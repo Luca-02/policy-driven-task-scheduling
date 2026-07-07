@@ -14,7 +14,7 @@ jobs:
       run:
         working-directory: dataset-service
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,7 +33,7 @@ jobs:
       run:
         working-directory: node-property-controller
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -52,7 +52,7 @@ jobs:
       run:
         working-directory: task-request-controller
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -63,3 +63,24 @@ jobs:
         run: pip install -r requirements.txt pytest
       - name: Run tests
         run: pytest tests/ -v
+
+  test-scheduler:
+    name: Test scheduler
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scheduler
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.4"
+          cache: go
+          cache-dependency-path: scheduler/go.sum
+      - name: Install dependencies
+        run: go get .
+      - name: Build
+        run: go build -v ./...
+      - name: Run tests
+        run: go test -v ./...

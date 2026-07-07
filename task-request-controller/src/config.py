@@ -37,7 +37,7 @@ class Config:
         node_property_prefix: str,
         node_topology_location_label: str,
         dataset_service_url: str,
-        ca_cert_file: str | None,
+        dataset_service_ca_file: str | None,
         log_level: str,
     ):
         self.group = group
@@ -46,7 +46,7 @@ class Config:
         self.geographical_groups_plural = geographical_groups_plural
         self.task_namespace = task_namespace
         self.dataset_service_url = dataset_service_url
-        self.ca_cert_file = ca_cert_file
+        self.dataset_service_ca_file = dataset_service_ca_file
         self.job_label_prefix = job_label_prefix
         self.task_request_kind = task_request_kind
         self.job_annotation_prefix = job_annotation_prefix
@@ -73,7 +73,7 @@ class Config:
             dataset_service_url=os.getenv(
                 "DATASET_SERVICE_URL", DATASET_SERVICE_URL_DEFAULT
             ),
-            ca_cert_file=os.getenv("CA_CERT_FILE"),
+            dataset_service_ca_file=os.getenv("DATASET_SERVICE_CA_FILE"),
             task_request_kind=os.getenv("TASK_REQUEST_KIND", TASK_REQUEST_KIND_DEFAULT),
             job_label_prefix=os.getenv(
                 "JOB_LABEL_PREFIX",

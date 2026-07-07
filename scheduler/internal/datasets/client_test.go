@@ -1,4 +1,4 @@
-package transfer
+package datasets
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func TestDatasetClientQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var req queryRequest
+		var req QueryRequest
 		if err := json.Unmarshal(body, &req); err != nil {
 			t.Fatal(err)
 		}
