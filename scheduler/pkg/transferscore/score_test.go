@@ -4,64 +4,28 @@ import (
 	"math"
 	"testing"
 
-	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/datasets"
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 )
 
 const eps = 1e-9
 
-func TestBuildTransferState(t *testing.T) {
-	infos := []datasets.DatasetInfo{
-		{
-			SizeMB: 100,
-			Nodes:  []string{"n1", "n2"},
-		},
-		{
-			SizeMB: 200,
-			Nodes:  []string{"n2"},
-		},
-	}
-
-	state := buildTransferState(infos)
-
-	if state.totalSizeMB != 300 {
-		t.Fatalf("expected totalSizeMB=300, got %d", state.totalSizeMB)
-	}
-
-	if len(state.datasets) != 2 {
-		t.Fatalf("expected 2 datasets, got %d", len(state.datasets))
-	}
-
-	if _, ok := state.datasets[0].nodes["n1"]; !ok {
-		t.Errorf("n1 should contain first dataset")
-	}
-
-	if _, ok := state.datasets[0].nodes["n2"]; !ok {
-		t.Errorf("n2 should contain first dataset")
-	}
-
-	if _, ok := state.datasets[1].nodes["n2"]; !ok {
-		t.Errorf("n2 should contain second dataset")
-	}
-}
-
-func TestComputeTransferPhi(t *testing.T) {
+func TestComputePhiTransfer(t *testing.T) {
 	tests := []struct {
 		name     string
 		node     string
-		state    *transferState
+		state    *preScoreState
 		expected float64
 	}{
 		{
 			name:     "no datasets",
 			node:     "n1",
-			state:    &transferState{},
+			state:    &preScoreState{},
 			expected: 1.0,
 		},
 		{
 			name: "total size zero",
 			node: "n1",
-			state: &transferState{
+			state: &preScoreState{
 				totalSizeMB: 0,
 				datasets: []dataset{
 					{
@@ -77,7 +41,7 @@ func TestComputeTransferPhi(t *testing.T) {
 		{
 			name: "all datasets local",
 			node: "n1",
-			state: &transferState{
+			state: &preScoreState{
 				totalSizeMB: 300,
 				datasets: []dataset{
 					{
@@ -99,7 +63,7 @@ func TestComputeTransferPhi(t *testing.T) {
 		{
 			name: "all datasets remote",
 			node: "n1",
-			state: &transferState{
+			state: &preScoreState{
 				totalSizeMB: 300,
 				datasets: []dataset{
 					{
@@ -121,7 +85,7 @@ func TestComputeTransferPhi(t *testing.T) {
 		{
 			name: "half local half remote",
 			node: "n1",
-			state: &transferState{
+			state: &preScoreState{
 				totalSizeMB: 300,
 				datasets: []dataset{
 					{
@@ -143,7 +107,7 @@ func TestComputeTransferPhi(t *testing.T) {
 		{
 			name: "rounding",
 			node: "n1",
-			state: &transferState{
+			state: &preScoreState{
 				totalSizeMB: 200,
 				datasets: []dataset{
 					{
@@ -166,7 +130,7 @@ func TestComputeTransferPhi(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := computeTransferPhi(test.node, test.state)
+			got := computePhiTransfer(test.node, test.state)
 			if math.Abs(got-test.expected) > eps {
 				t.Errorf("result = %f, want %f", got, test.expected)
 			}

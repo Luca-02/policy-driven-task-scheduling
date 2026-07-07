@@ -18,6 +18,8 @@ import (
 const (
 	Name = "TransferScore"
 
+	preScoreStateKey fwk.StateKey = "preScoreState"
+
 	// Key of the annotation carrying req(t), inherited by the Pod.
 	datasetsAnnotationKey = "scheduling.task.policydriven.unimi.it/datasets"
 )
@@ -37,7 +39,7 @@ func (t *TransferScore) Name() string {
 }
 
 func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.Plugin, error) {
-	logger := klog.FromContext(ctx).WithValues("scheduler", "plugin", Name)
+	logger := klog.FromContext(ctx).WithValues("plugin", Name)
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -59,60 +61,64 @@ func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.P
 // PreScore makes one call to the dataset-service for all datasets in req(t)
 // and stores their info in the cycle state, so Score does not per-node I/O.
 func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodes []fwk.NodeInfo) *fwk.Status {
+	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues("ExtensionPoint", "PreScore")
+
 	raw, ok := pod.Annotations[datasetsAnnotationKey]
 	if !ok {
-		t.logger.Info("no datasets annotation found, req(t) is empty")
-		state.Write(transferStateKey, &transferState{})
+		logger.Info("no datasets annotation found, req(t) is empty")
+		state.Write(preScoreStateKey, &preScoreState{})
 		return nil
 	}
 
 	var datasets []string
 	if err := json.Unmarshal([]byte(raw), &datasets); err != nil {
-		t.logger.Error(err, "datasets annotation malformed", "raw", raw)
+		logger.Error(err, "datasets annotation malformed", "raw", raw)
 		return fwk.AsStatus(fmt.Errorf("datasets annotation malformed: %w", err))
 	}
 
 	if len(datasets) == 0 {
-		t.logger.Info("datasets annotation is an empty list, req(t) is empty")
-		state.Write(transferStateKey, &transferState{})
+		logger.Info("datasets annotation is an empty list, req(t) is empty")
+		state.Write(preScoreStateKey, &preScoreState{})
 		return nil
 	}
 
-	t.logger.Info("fetching dataset info from dataset-service", "datasets", datasets, "candidateNodes", len(nodes))
+	logger.Info("fetching dataset info from dataset-service", "datasets", datasets, "candidateNodes", len(nodes))
 
 	infos, err := t.client.Query(ctx, datasets)
 	if err != nil {
-		t.logger.Error(err, "failed to fetch dataset info", "datasets", datasets)
+		logger.Error(err, "failed to fetch dataset info", "datasets", datasets)
 		return fwk.AsStatus(fmt.Errorf("fetching dataset info: %w", err))
 	}
 
-	transferState := buildTransferState(infos)
-	t.logger.Info("dataset info fetched", "datasets", len(transferState.datasets), "totalSizeMB", transferState.totalSizeMB)
+	transferState := buildPreScoreState(infos)
+	logger.Info("dataset info fetched", "datasets", len(transferState.datasets), "totalSizeMB", transferState.totalSizeMB)
 
-	state.Write(transferStateKey, transferState)
-	return nil
+	state.Write(preScoreStateKey, transferState)
+	return fwk.NewStatus(fwk.Success, "PreScore completed successfully")
 }
 
-func (t *TransferScore) Score(_ context.Context, state fwk.CycleState, pod *v1.Pod, nodeInfo fwk.NodeInfo) (int64, *fwk.Status) {
-	data, err := state.Read(transferStateKey)
+func (t *TransferScore) Score(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodeInfo fwk.NodeInfo) (int64, *fwk.Status) {
+	podName := pod.Name
+	nodeName := nodeInfo.Node().Name
+	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues(
+		"ExtensionPoint", "Score", "node", nodeName, "pod", podName)
+
+	data, err := state.Read(preScoreStateKey)
 	if err != nil {
-		t.logger.Error(err, "failed to read transfer state")
+		logger.Error(err, "failed to read transfer state")
 		return 0, fwk.AsStatus(fmt.Errorf("reading transfer state: %w", err))
 	}
 
-	status, ok := data.(*transferState)
+	status, ok := data.(*preScoreState)
 	if !ok {
 		err := fmt.Errorf("unexpected transfer state type %T", data)
-		t.logger.Error(err, "transfer state has unexpected type")
+		logger.Error(err, "transfer state has unexpected type")
 		return 0, fwk.AsStatus(err)
 	}
 
-	podName := pod.Name
-	nodeName := nodeInfo.Node().Name
-
-	phi := computeTransferPhi(nodeName, status)
+	phi := computePhiTransfer(nodeName, status)
 	score := FromPhi(phi)
-	t.logger.Info("phi_transfer computed", "podName", podName, "nodeName", nodeName, "phi", phi, "score", score)
+	logger.Info("phi_transfer computed", "podName", podName, "nodeName", nodeName, "phi", phi, "score", score)
 
 	return score, nil
 }
