@@ -4,8 +4,8 @@ package nodeproperty
 type NodePropertyInfo struct {
 	Name     string
 	Weight   float64
-	MaxLevel int
-	Levels   []int
+	MaxLevel int64
+	Levels   []int64
 }
 
 // Reader abstracts read access to NodeProperty data.

@@ -136,15 +136,19 @@ func extractInfo(u *unstructured.Unstructured) NodePropertyInfo {
 		Weight: 1.0,
 	}
 
-	rawLevels, _, _ := unstructured.NestedSlice(u.Object, "spec", "levels")
+	rawLevels, found, err := unstructured.NestedSlice(u.Object, "spec", "levels")
+	if err != nil || !found {
+		return info
+	}
+
 	for _, l := range rawLevels {
 		m, ok := l.(map[string]any)
 		if !ok {
 			continue
 		}
 
-		lvl, ok := m["level"].(int)
-		if !ok {
+		lvl, found, err := unstructured.NestedInt64(m, "level")
+		if err != nil || !found {
 			continue
 		}
 
@@ -154,8 +158,9 @@ func extractInfo(u *unstructured.Unstructured) NodePropertyInfo {
 		}
 	}
 
-	if w, found, _ := unstructured.NestedFloat64(u.Object, "spec", "weight"); found {
-		info.Weight = w
+	weight, found, err := unstructured.NestedFloat64(u.Object, "spec", "weight")
+	if err == nil && found {
+		info.Weight = weight
 	}
 
 	return info
