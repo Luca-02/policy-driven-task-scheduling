@@ -8,6 +8,6 @@ spec:
     security: 1
     computation: 2
   datasets:
-    - d1
-    - d2
+    - d1v2
+    - d2v2
   geo: "eu"

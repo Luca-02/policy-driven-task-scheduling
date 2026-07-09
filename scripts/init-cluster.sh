@@ -131,9 +131,9 @@ copy_ca_secret() {
 
     log "Creating secret '$secret' in namespace '$to_namespace'"
     kubectl create secret generic "$secret" \
-    --from-file=ca.crt=/tmp/ca.crt \
-    -n "$to_namespace" \
-    --dry-run=client -o yaml | kubectl apply -f -
+        --from-file=ca.crt=/tmp/ca.crt \
+        -n "$to_namespace" \
+        --dry-run=client -o yaml | kubectl apply -f -
 
     rm -f /tmp/ca.crt
 }

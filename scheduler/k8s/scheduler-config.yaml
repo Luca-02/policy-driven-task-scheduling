@@ -1,5 +1,7 @@
 apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
 profiles:
   - schedulerName: policy-driven-scheduler
     plugins:
@@ -9,4 +11,6 @@ profiles:
       score:
         enabled:
           - name: TransferScore
+            weight: 1
+          - name: PropScore
             weight: 1

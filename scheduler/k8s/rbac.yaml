@@ -5,6 +5,29 @@ metadata:
   namespace: scheduler
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: scheduler-cluster-role
+rules:
+  # Read NodeProperties
+  - apiGroups: [policydriven.unimi.it]
+    resources: [nodeproperties]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: scheduler-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: scheduler
+    namespace: scheduler
+roleRef:
+  kind: ClusterRole
+  name: scheduler-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: scheduler
@@ -28,4 +51,18 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: system:volume-scheduler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scheduler-extension-apiserver-authentication-reader
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: scheduler
+    namespace: scheduler
+roleRef:
+  kind: Role
+  name: extension-apiserver-authentication-reader
   apiGroup: rbac.authorization.k8s.io

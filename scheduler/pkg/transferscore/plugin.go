@@ -19,12 +19,10 @@ const (
 	Name = "TransferScore"
 
 	preScoreStateKey fwk.StateKey = "preScoreState"
-
-	// Key of the annotation carrying req(t), inherited by the Pod.
-	datasetsAnnotationKey = "scheduling.task.policydriven.unimi.it/datasets"
 )
 
 type TransferScore struct {
+	cfg    config.Config
 	logger klog.Logger
 	client datasets.DatasetQuerier
 }
@@ -40,12 +38,7 @@ func (t *TransferScore) Name() string {
 
 func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.Plugin, error) {
 	logger := klog.FromContext(ctx).WithValues("plugin", Name)
-
-	cfg, err := config.Load()
-	if err != nil {
-		logger.Error(err, "failed to load configuration")
-		return nil, fmt.Errorf("loading configuration: %w", err)
-	}
+	cfg := config.Load()
 
 	client, err := datasets.NewDatasetClient(cfg.DatasetServiceURL, cfg.DatasetServiceCAFile)
 	if err != nil {
@@ -55,15 +48,15 @@ func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.P
 	}
 
 	logger.Info("plugin initialised")
-	return &TransferScore{logger: logger, client: client}, nil
+	return &TransferScore{cfg: cfg, logger: logger, client: client}, nil
 }
 
 // PreScore makes one call to the dataset-service for all datasets in req(t)
 // and stores their info in the cycle state, so Score does not per-node I/O.
 func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodes []fwk.NodeInfo) *fwk.Status {
-	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues("ExtensionPoint", "PreScore")
+	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues("ExtensionPoint", "PreScore", "pod", pod.Name)
 
-	raw, ok := pod.Annotations[datasetsAnnotationKey]
+	raw, ok := pod.Annotations[t.cfg.DatasetsAnnotationKey]
 	if !ok {
 		logger.Info("no datasets annotation found, req(t) is empty")
 		state.Write(preScoreStateKey, &preScoreState{})
@@ -82,8 +75,7 @@ func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod 
 		return nil
 	}
 
-	logger.Info("fetching dataset info from dataset-service", "datasets", datasets, "candidateNodes", len(nodes))
-
+	logger.Info("fetching dataset info from dataset-service", "datasets", datasets)
 	infos, err := t.client.Query(ctx, datasets)
 	if err != nil {
 		logger.Error(err, "failed to fetch dataset info", "datasets", datasets)
@@ -91,7 +83,7 @@ func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod 
 	}
 
 	transferState := buildPreScoreState(infos)
-	logger.Info("dataset info fetched", "datasets", len(transferState.datasets), "totalSizeMB", transferState.totalSizeMB)
+	logger.Info("PreScore state built", "state", transferState)
 
 	state.Write(preScoreStateKey, transferState)
 	return fwk.NewStatus(fwk.Success, "PreScore completed successfully")
@@ -118,11 +110,13 @@ func (t *TransferScore) Score(ctx context.Context, state fwk.CycleState, pod *v1
 
 	phi := computePhiTransfer(nodeName, status)
 	score := FromPhi(phi)
-	logger.Info("phi_transfer computed", "podName", podName, "nodeName", nodeName, "phi", phi, "score", score)
+	logger.Info("phi_transfer computed", "phi", phi, "score", score)
 
 	return score, nil
 }
 
 // We do not normalize against the observed max: phi_transfer is already in [0,1],
 // and the [0, framework.MaxNodeScore] mapping preserves its absolute meaning.
-func (t *TransferScore) ScoreExtensions() framework.ScoreExtensions { return nil }
+func (t *TransferScore) ScoreExtensions() framework.ScoreExtensions {
+	return nil
+}
