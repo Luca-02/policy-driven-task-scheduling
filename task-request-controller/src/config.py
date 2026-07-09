@@ -13,6 +13,7 @@ DATASETS_ANNOTATION_DEFAULT = "datasets"
 BETA_STAR_ANNOTATION_DEFAULT = "betaStar"
 GEO_STAR_ANNOTATION_DEFAULT = "geoStar"
 NODE_PROPERTY_PREFIX_DEFAULT = f"property.node.{GROUP_DEFAULT}"
+SCHEDULER_NAME_DEFAULT = "policy-driven-scheduler"
 NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT = f"topology.node.{GROUP_DEFAULT}/location"
 DATASET_SERVICE_URL_DEFAULT = "https://127.0.0.1:8443"
 
@@ -36,6 +37,7 @@ class Config:
         geo_star_annotation: str,
         node_property_prefix: str,
         node_topology_location_label: str,
+        scheduler_name: str,
         dataset_service_url: str,
         dataset_service_ca_file: str | None,
         log_level: str,
@@ -45,8 +47,6 @@ class Config:
         self.task_requests_plural = task_requests_plural
         self.geographical_groups_plural = geographical_groups_plural
         self.task_namespace = task_namespace
-        self.dataset_service_url = dataset_service_url
-        self.dataset_service_ca_file = dataset_service_ca_file
         self.job_label_prefix = job_label_prefix
         self.task_request_kind = task_request_kind
         self.job_annotation_prefix = job_annotation_prefix
@@ -56,6 +56,9 @@ class Config:
         self.geo_star_annotation = geo_star_annotation
         self.node_property_prefix = node_property_prefix
         self.node_topology_location_label = node_topology_location_label
+        self.scheduler_name = scheduler_name
+        self.dataset_service_url = dataset_service_url
+        self.dataset_service_ca_file = dataset_service_ca_file
         self.log_level = log_level
 
     @staticmethod
@@ -70,10 +73,6 @@ class Config:
                 "GEOGRAPHICAL_GROUPS_PLURAL", GEOGRAPHICAL_GROUPS_PLURAL_DEFAULT
             ),
             task_namespace=os.getenv("TASK_NAMESPACE", TASK_NAMESPACE_DEFAULT),
-            dataset_service_url=os.getenv(
-                "DATASET_SERVICE_URL", DATASET_SERVICE_URL_DEFAULT
-            ),
-            dataset_service_ca_file=os.getenv("DATASET_SERVICE_CA_FILE"),
             task_request_kind=os.getenv("TASK_REQUEST_KIND", TASK_REQUEST_KIND_DEFAULT),
             job_label_prefix=os.getenv(
                 "JOB_LABEL_PREFIX",
@@ -100,5 +99,10 @@ class Config:
             node_topology_location_label=os.getenv(
                 "NODE_TOPOLOGY_LOCATION_LABEL", NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT
             ),
+            scheduler_name=os.getenv("SCHEDULER_NAME", SCHEDULER_NAME_DEFAULT),
+            dataset_service_url=os.getenv(
+                "DATASET_SERVICE_URL", DATASET_SERVICE_URL_DEFAULT
+            ),
+            dataset_service_ca_file=os.getenv("DATASET_SERVICE_CA_FILE"),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
         )

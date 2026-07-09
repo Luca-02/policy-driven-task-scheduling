@@ -22,6 +22,7 @@ from src.config import (
     GEO_STAR_ANNOTATION_DEFAULT,
     DATASETS_ANNOTATION_DEFAULT,
     NODE_PROPERTY_PREFIX_DEFAULT,
+    SCHEDULER_NAME_DEFAULT,
 )
 from src.controller import (
     Controller,
@@ -51,6 +52,7 @@ def make_config() -> Config:
         datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
         node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
         node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
+        scheduler_name=SCHEDULER_NAME_DEFAULT,
         log_level="WARNING",
     )
 

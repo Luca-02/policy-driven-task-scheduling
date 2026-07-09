@@ -136,11 +136,6 @@ class JobBuilder:
         """
         Build the spec for the Job, including the pod template with the
         appropriate affinity and pod annotations.
-
-        **Blackbox image placeholder**: in a real implementation the task
-        image would be supplied as metadata in the TaskRequest spec and
-        validated by a dedicated image-service before the controller
-        translates the request into a Job.
         """
         return client.V1JobSpec(
             backoff_limit=0,
@@ -151,20 +146,35 @@ class JobBuilder:
                 spec=client.V1PodSpec(
                     restart_policy="Never",
                     affinity=self._build_affinity(),
-                    containers=[
-                        client.V1Container(
-                            name="task",
-                            image="busybox:latest",
-                            command=[
-                                "sh",
-                                "-c",
-                                'echo "Task executed successfully" && sleep 5',
-                            ],
-                        )
-                    ],
+                    scheduler_name=self._config.scheduler_name,
+                    containers=self._build_containers()
                 ),
             ),
         )
+    
+    def _build_containers(self) -> list[client.V1Container]:
+        """
+        Build the list of containers for the Job's pod template.
+
+        **Blackbox image placeholder**: in a real implementation the task
+        image would be supplied as metadata in the TaskRequest spec and
+        validated by a dedicated `image-service` before the controller
+        translates the request into a Job.
+
+        Returns:
+            list[client.V1Container]: A list containing a single container for the Job.
+        """
+        return [
+            client.V1Container(
+                name="task",
+                image="busybox:latest",
+                command=[
+                    "sh",
+                    "-c",
+                    'echo "Task executed successfully" && sleep 5',
+                ],
+            )
+        ]
 
     def _build_affinity(self) -> client.V1Affinity | None:
         """

@@ -79,6 +79,28 @@ load_image() {
     fi
 }
 
+readonly MAX_RETRIES=10
+
+apply_with_retry() {
+    local file="$1"
+    local label="$2"
+    local max_retries="${3:-10}"
+
+    for attempt in $(seq 1 "$max_retries"); do
+        if kubectl apply -f "$file"; then
+            return 0
+        fi
+
+        if [[ $attempt -eq $max_retries ]]; then
+            error "Unable to apply $label after $max_retries retries"
+            exit 1
+        fi
+
+        warn "$label webhook not ready, retrying ($attempt/$max_retries)..."
+        sleep 3
+    done
+}
+
 wait_for_deployment() {
     local ns="$1"
     local deploy="$2"
@@ -95,6 +117,25 @@ wait_for_deployment() {
         kubectl -n "$ns" logs deployment/"$deploy" --tail=100 || true
         exit 1
     fi
+}
+
+copy_ca_secret() {
+    local from_namespace="$1"
+    local to_namespace="$2"
+    local secret="$3"
+    
+    log "Extracting CA certificate from secret '$secret' in namespace '$from_namespace'"
+    kubectl get secret "$secret" \
+        -n "$from_namespace" \
+        -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
+
+    log "Creating secret '$secret' in namespace '$to_namespace'"
+    kubectl create secret generic "$secret" \
+    --from-file=ca.crt=/tmp/ca.crt \
+    -n "$to_namespace" \
+    --dry-run=client -o yaml | kubectl apply -f -
+
+    rm -f /tmp/ca.crt
 }
 
 #######################################
@@ -210,22 +251,8 @@ kubectl patch deployment gatekeeper-controller-manager \
 wait_for_deployment "$GATEKEEPER_NAMESPACE" "gatekeeper-controller-manager"
 wait_for_deployment "$GATEKEEPER_NAMESPACE" "gatekeeper-audit"
 
-readonly MAX_RETRIES=10
-
 log "Applying Gatekeeper configuration"
-for attempt in {1..$MAX_RETRIES}; do
-    if kubectl apply -f "$GATEKEEPER_CONFIG_FILE"; then
-        break
-    fi
-
-    if [[ $attempt -eq $MAX_RETRIES ]]; then
-        error "Unable to apply Gatekeeper configuration after retries"
-        exit 1
-    fi
-
-    warn "Gatekeeper webhook not ready, retrying ($attempt/$MAX_RETRIES)..."
-    sleep 3
-done
+apply_with_retry "$GATEKEEPER_CONFIG_FILE" "Gatekeeper configuration" "$MAX_RETRIES"
 
 log "Applying ConstraintTemplates"
 for template_dir in "${TEMPLATE_CONSTRAINT_DIRS[@]}"; do
@@ -245,6 +272,24 @@ for constraint_dir in "${TEMPLATE_CONSTRAINT_DIRS[@]}"; do
         kubectl apply -f "$constraint_file"
     fi
 done
+
+#######################################
+# CloudNativePG
+#######################################
+
+readonly CLOUDNATIVE_PG_NAMESPACE="cnpg-system"
+readonly CLOUDNATIVE_PG_MANIFEST_URL="https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.30/releases/cnpg-1.30.0.yaml"
+
+log "Installing CloudNativePG"
+kubectl apply --server-side -f "$CLOUDNATIVE_PG_MANIFEST_URL"
+
+wait_for_deployment "$CLOUDNATIVE_PG_NAMESPACE" "cnpg-controller-manager"
+kubectl wait -n "$CLOUDNATIVE_PG_NAMESPACE" \
+    --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg \
+    --timeout=120s
+
+log "Waiting for CloudNativePG CRDs to be established"
+kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=120s
 
 #######################################
 # node-property-controller 
@@ -270,27 +315,11 @@ wait_for_deployment "$NODE_PROPERTY_CONTROLLER_NAMESPACE" "$NODE_PROPERTY_CONTRO
 # dataset-service
 #######################################
 
-readonly CLOUDNATIVE_PG_RELEASE="release-1.29" 
-readonly CLOUDNATIVE_PG_MANIFEST="cnpg-1.29.1"
-readonly CLOUDNATIVE_PG_NAMESPACE="cnpg-system"
-readonly CLOUDNATIVE_PG_MANIFEST_URL="https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/${CLOUDNATIVE_PG_RELEASE}/releases/${CLOUDNATIVE_PG_MANIFEST}.yaml"
-
-log "Installing CloudNativePG"
-kubectl apply --server-side -f "$CLOUDNATIVE_PG_MANIFEST_URL"
-
-wait_for_deployment "$CLOUDNATIVE_PG_NAMESPACE" "cnpg-controller-manager"
-kubectl wait -n "$CLOUDNATIVE_PG_NAMESPACE" \
-    --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg \
-    --timeout=120s
-
-log "Waiting for CloudNativePG CRDs to be established"
-kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=120s
-
 readonly DATASET_SERVICE_PATH="dataset-service"
 readonly DATASET_SERVICE_IMAGE="dataset-service:latest"
 
 log "Applying CloudNativePG postgres cluster manifest"
-kubectl apply -f "$DATASET_SERVICE_PATH/k8s/postgres-cluster.yaml"
+apply_with_retry "$DATASET_SERVICE_PATH/k8s/postgres-cluster.yaml" "CloudNativePG" "$MAX_RETRIES"
 
 log "Waiting for CloudNativePG postgres cluster to be ready"
 kubectl wait -n dataset-service \
@@ -309,17 +338,20 @@ log "Generating TLS certificates for dataset-service"
 (
     cd "$DATASET_SERVICE_PATH"
 
-
-    TARGET_ENV=$TARGET_ENV SVC=$DATASET_SERVICE NS=$DATASET_SERVICE_NAMESPACE \
-        bash scripts/gen-certs.sh "$CERTS_DIR"
-
     log "Creating TLS secret for dataset-service"
-    kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
-        --from-file=ca.crt="$CERTS_DIR/${TARGET_ENV}/ca.crt" \
-        --from-file=tls.crt="$CERTS_DIR/${TARGET_ENV}/tls.crt" \
-        --from-file=tls.key="$CERTS_DIR/${TARGET_ENV}/tls.key" \
-        -n "$DATASET_SERVICE_NAMESPACE" \
-        --dry-run=client -o yaml | kubectl apply -f -
+    if kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" >/dev/null 2>&1; then
+        log "TLS secret for dataset-service already exists"
+    else
+        TARGET_ENV=$TARGET_ENV SVC=$DATASET_SERVICE NS=$DATASET_SERVICE_NAMESPACE \
+            bash scripts/gen-certs.sh "$CERTS_DIR"
+
+        kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
+            --from-file=ca.crt="$CERTS_DIR/${TARGET_ENV}/ca.crt" \
+            --from-file=tls.crt="$CERTS_DIR/${TARGET_ENV}/tls.crt" \
+            --from-file=tls.key="$CERTS_DIR/${TARGET_ENV}/tls.key" \
+            -n "$DATASET_SERVICE_NAMESPACE" \
+            --dry-run=client -o yaml | kubectl apply -f -
+    fi
 
     log "Rendering and applying dataset-service provider (caBundle injected at apply time)"
     CA_B64=$(kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" -o jsonpath='{.data.ca\.crt}')
@@ -349,18 +381,7 @@ load_image "$TASK_REQUEST_CONTROLLER_PATH" "$TASK_REQUEST_CONTROLLER_IMAGE"
 readonly TASK_REQUEST_CONTROLLER_NAMESPACE="task-request-controller"
 readonly TASK_REQUEST_CONTROLLER_DEPLOYMENT="task-request-controller"
 
-log "Extracting CA certificate from dataset-service TLS secret"
-kubectl get secret "$DATASET_SERVICE_TLS_SECRET" \
-    -n "$DATASET_SERVICE_NAMESPACE" \
-    -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
-
-log "Creating dataset-service-tls secret in task-request-controller namespace"
-kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
-  --from-file=ca.crt=/tmp/ca.crt \
-  -n "$TASK_REQUEST_CONTROLLER_NAMESPACE" \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-rm -f /tmp/ca.crt
+copy_ca_secret "$DATASET_SERVICE_NAMESPACE" "$TASK_REQUEST_CONTROLLER_NAMESPACE" "$DATASET_SERVICE_TLS_SECRET"
 
 log "Applying task-request-controller manifests"
 kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/rbac.yaml"
@@ -368,3 +389,31 @@ kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/network-policy.yaml"
 kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/deployment.yaml"
 
 wait_for_deployment "$TASK_REQUEST_CONTROLLER_NAMESPACE" "$TASK_REQUEST_CONTROLLER_DEPLOYMENT"
+
+#######################################
+# scheduler
+#######################################
+
+# readonly SCHEDULER_PATH="scheduler"
+# readonly SCHEDULER_IMAGE="scheduler:latest"
+
+# log "Setting up scheduler image"
+# load_image "$SCHEDULER_PATH" "$SCHEDULER_IMAGE"
+
+# readonly SCHEDULER_NAMESPACE="scheduler"
+# readonly SCHEDULER_DEPLOYMENT="scheduler"
+
+# copy_ca_secret "$DATASET_SERVICE_NAMESPACE" "$SCHEDULER_NAMESPACE" "$DATASET_SERVICE_TLS_SECRET"
+
+# log "Creating scheduler-config ConfigMap"
+# kubectl create configmap scheduler-config \
+#   --from-file=scheduler-config.yaml="${SCHEDULER_PATH}/k8s/scheduler-config.yaml" \
+#   -n "$SCHEDULER_NAMESPACE" \
+#   --dry-run=client -o yaml | kubectl apply -f -
+
+# log "Applying scheduler manifests"
+# kubectl apply -f "${SCHEDULER_PATH}/k8s/rbac.yaml"
+# kubectl apply -f "${SCHEDULER_PATH}/k8s/network-policy.yaml"
+# kubectl apply -f "${SCHEDULER_PATH}/k8s/deployment.yaml"
+
+# wait_for_deployment "$SCHEDULER_NAMESPACE" "$SCHEDULER_DEPLOYMENT"

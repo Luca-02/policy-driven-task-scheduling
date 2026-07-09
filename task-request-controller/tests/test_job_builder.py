@@ -18,6 +18,7 @@ from src.config import (
     TASK_REQUEST_REF_LABEL_DEFAULT,
     BETA_STAR_ANNOTATION_DEFAULT,
     GEO_STAR_ANNOTATION_DEFAULT,
+    SCHEDULER_NAME_DEFAULT,
     DATASETS_ANNOTATION_DEFAULT,
     NODE_PROPERTY_PREFIX_DEFAULT,
 )
@@ -44,6 +45,7 @@ def make_config() -> Config:
         beta_star_annotation=BETA_STAR_ANNOTATION_DEFAULT,
         geo_star_annotation=GEO_STAR_ANNOTATION_DEFAULT,
         datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
+        scheduler_name=SCHEDULER_NAME_DEFAULT,
         node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
         node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
         log_level="WARNING",
@@ -119,6 +121,10 @@ class TestJobBuilderGeneral(JobBuilderTestBase):
         ds_key = f"{self.cfg.job_annotation_prefix}/{self.cfg.datasets_annotation}"
         self.assertEqual(json.loads(annotations[beta_key]), beta_star)
         self.assertEqual(json.loads(annotations[ds_key]), ["d1"])
+
+    def test_pod_uses_configured_scheduler(self):
+        job = self._build()
+        self.assertEqual(job.spec.template.spec.scheduler_name, self.cfg.scheduler_name)
 
     def test_all_zero_beta_and_omega_geo_produces_no_affinity(self):
         for beta_star in ({}, {"security": 0}):

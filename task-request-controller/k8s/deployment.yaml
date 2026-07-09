@@ -21,7 +21,6 @@ spec:
         app.kubernetes.io/name: task-request-controller
     spec:
       serviceAccountName: task-request-controller-service-account
-      terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -79,9 +78,11 @@ spec:
               value: "property.node.policydriven.unimi.it"
             - name: NODE_TOPOLOGY_LOCATION_LABEL
               value: "topology.node.policydriven.unimi.it/location"
+            - name: SCHEDULER_NAME
+              value: "policy-driven-scheduler"
             - name: DATASET_SERVICE_URL
               value: "https://dataset-service.dataset-service.svc.cluster.local"
-            - name: CA_CERT_FILE
+            - name: DATASET_SERVICE_CA_FILE
               value: "/tls/ca.crt"
             - name: LOG_LEVEL
               value: "INFO"

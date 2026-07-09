@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scheduler-network-policy
+  namespace: scheduler
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: scheduler
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow kubelet health-check probes (secure serving, default port 10259)
+    - ports:
+        - port: 10259
+          protocol: TCP
+  egress:
+    # DNS resolution via kube-dns
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Kubernetes API server (HTTPS) - watches nodes/pods, writes bindings
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 6443
+          protocol: TCP
+    # Dataset service - actual container port (8443), not the Service port (443)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dataset-service
+      ports:
+        - port: 8443
+          protocol: TCP
