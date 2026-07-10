@@ -8,17 +8,36 @@ import (
 	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperty"
 )
 
-// computePhiProp implements phi_prop(n,t) = 1 / (1 + Delta(n,t)) mapped into
-// [0, 1], where Delta(n,t) is the weighted normalized property excess:
+// computePhiProp computes the property-based phi score for a candidate node.
+//
+// The score is defined as:
+//
+//	phi_prop(n,t) = 1 / (1 + Delta(n,t))
+//
+// where Delta(n,t) is the weighted normalized excess of the node properties
+// compared to the task requirements:
 //
 //	Delta(n,t) = sum_{p: beta*_p(t) < maxL_p} w_p * (alpha_p(n) - beta*_p(t)) / (maxL_p - beta*_p(t))
 //
-// betaStar holds beta*_p(t) for each property p in the task's requirements;
-// nodeLevels holds alpha_p(n) for the candidate node, read from its labels
-// (an absent label means alpha_p(n) = 0, the implicit default level).
-// Properties not found in the NodeProperty registry are skipped: an unknown
-// property carries no discriminating information, consistent with how the
-// rest of the system tolerates unresolved references.
+// Properties with beta*_p equal to their
+// maximum level are ignored because they do not provide discrimination.
+//
+// Unknown properties (not present in the NodeProperty registry) are skipped.
+//
+// Parameters:
+//   - betaStar: map of required property levels for the task, where the key is
+//     the property name and the value is beta*_p(t), the minimum required level.
+//   - nodeLevels: map of property levels for the candidate node, where the key is
+//     the property name and the value is alpha_p(n). Missing properties are
+//     treated as having level 0.
+//   - properties: reader used to retrieve metadata for each property, including
+//     its maximum level (maxL_p) and weight (w_p). Properties not found in the
+//     registry are ignored.
+//
+// Returns:
+//   - A float64 value representing phi_prop(n,t), normalized in the range
+//     [0, 1]. Higher values indicate a better match between node properties
+//     and task requirements.
 func computePhiProp(betaStar map[string]int, nodeLevels map[string]int, properties nodeproperty.Reader) float64 {
 	delta := 0.0
 	for prop, betaP := range betaStar {
@@ -26,14 +45,16 @@ func computePhiProp(betaStar map[string]int, nodeLevels map[string]int, properti
 		if !found {
 			continue
 		}
+
 		maxLevel := int(info.MaxLevel)
 		if betaP >= maxLevel {
 			continue // term excluded: not discriminating (beta*_p == max L_p)
 		}
+
 		alphaP := nodeLevels[prop] // absent label => level 0
-		numer := float64(alphaP - betaP)
-		denom := float64(maxLevel - betaP)
-		delta += info.Weight * (numer / denom)
+		excess := float64(alphaP - betaP)
+		norm := float64(maxLevel - betaP)
+		delta += info.Weight * (excess / norm)
 	}
 	return 1.0 / (1.0 + delta)
 }

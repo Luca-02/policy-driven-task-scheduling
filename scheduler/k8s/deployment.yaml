@@ -55,12 +55,24 @@ spec:
           command:
             - /scheduler
             - --config=/etc/kubernetes/scheduler-config.yaml
-            # - --v=4
+            - --v=4
           env:
+            - name: CRD_GROUP
+              value: "policydriven.unimi.it"
+            - name: CRD_VERSION
+              value: "v1alpha1"
+            - name: NODE_PROPERTY_RESOURCE_PLURAL
+              value: "nodeproperties"
             - name: DATASET_SERVICE_URL
               value: "https://dataset-service.dataset-service.svc.cluster.local"
             - name: DATASET_SERVICE_CA_FILE
               value: "/tls/ca.crt"
+            - name: NODE_PROPERTY_LABEL_PREFIX
+              value: "property.node.policydriven.unimi.it/"
+            - name: DATASETS_ANNOTATION_KEY
+              value: "scheduling.task.policydriven.unimi.it/datasets"
+            - name: BETA_STAR_ANNOTATION_KEY
+              value: "scheduling.task.policydriven.unimi.it/betaStar"
           ports:
             - name: healthz
               containerPort: 10259

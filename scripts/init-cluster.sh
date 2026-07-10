@@ -394,26 +394,26 @@ wait_for_deployment "$TASK_REQUEST_CONTROLLER_NAMESPACE" "$TASK_REQUEST_CONTROLL
 # scheduler
 #######################################
 
-# readonly SCHEDULER_PATH="scheduler"
-# readonly SCHEDULER_IMAGE="scheduler:latest"
+readonly SCHEDULER_PATH="scheduler"
+readonly SCHEDULER_IMAGE="scheduler:latest"
 
-# log "Setting up scheduler image"
-# load_image "$SCHEDULER_PATH" "$SCHEDULER_IMAGE"
+log "Setting up scheduler image"
+load_image "$SCHEDULER_PATH" "$SCHEDULER_IMAGE"
 
-# readonly SCHEDULER_NAMESPACE="scheduler"
-# readonly SCHEDULER_DEPLOYMENT="scheduler"
+readonly SCHEDULER_NAMESPACE="scheduler"
+readonly SCHEDULER_DEPLOYMENT="scheduler"
 
-# copy_ca_secret "$DATASET_SERVICE_NAMESPACE" "$SCHEDULER_NAMESPACE" "$DATASET_SERVICE_TLS_SECRET"
+copy_ca_secret "$DATASET_SERVICE_NAMESPACE" "$SCHEDULER_NAMESPACE" "$DATASET_SERVICE_TLS_SECRET"
 
-# log "Creating scheduler-config ConfigMap"
-# kubectl create configmap scheduler-config \
-#   --from-file=scheduler-config.yaml="${SCHEDULER_PATH}/k8s/scheduler-config.yaml" \
-#   -n "$SCHEDULER_NAMESPACE" \
-#   --dry-run=client -o yaml | kubectl apply -f -
+log "Creating scheduler-config ConfigMap"
+kubectl create configmap scheduler-config \
+  --from-file=scheduler-config.yaml="${SCHEDULER_PATH}/k8s/scheduler-config.yaml" \
+  -n "$SCHEDULER_NAMESPACE" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
-# log "Applying scheduler manifests"
-# kubectl apply -f "${SCHEDULER_PATH}/k8s/rbac.yaml"
-# kubectl apply -f "${SCHEDULER_PATH}/k8s/network-policy.yaml"
-# kubectl apply -f "${SCHEDULER_PATH}/k8s/deployment.yaml"
+log "Applying scheduler manifests"
+kubectl apply -f "${SCHEDULER_PATH}/k8s/rbac.yaml"
+kubectl apply -f "${SCHEDULER_PATH}/k8s/network-policy.yaml"
+kubectl apply -f "${SCHEDULER_PATH}/k8s/deployment.yaml"
 
-# wait_for_deployment "$SCHEDULER_NAMESPACE" "$SCHEDULER_DEPLOYMENT"
+wait_for_deployment "$SCHEDULER_NAMESPACE" "$SCHEDULER_DEPLOYMENT"

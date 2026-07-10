@@ -47,7 +47,7 @@ func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.P
 		return nil, fmt.Errorf("initialising dataset client: %w", err)
 	}
 
-	logger.Info("plugin initialised")
+	logger.V(2).Info("plugin initialised")
 	return &TransferScore{cfg: cfg, logger: logger, client: client}, nil
 }
 
@@ -58,7 +58,7 @@ func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod 
 
 	raw, ok := pod.Annotations[t.cfg.DatasetsAnnotationKey]
 	if !ok {
-		logger.Info("no datasets annotation found, req(t) is empty")
+		logger.V(4).Info("no datasets annotation found, req(t) is empty")
 		state.Write(preScoreStateKey, &preScoreState{})
 		return nil
 	}
@@ -70,12 +70,12 @@ func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod 
 	}
 
 	if len(datasets) == 0 {
-		logger.Info("datasets annotation is an empty list, req(t) is empty")
+		logger.V(4).Info("datasets annotation is an empty list, req(t) is empty")
 		state.Write(preScoreStateKey, &preScoreState{})
 		return nil
 	}
 
-	logger.Info("fetching dataset info from dataset-service", "datasets", datasets)
+	logger.V(4).Info("fetching dataset info from dataset-service", "datasets", datasets)
 	infos, err := t.client.Query(ctx, datasets)
 	if err != nil {
 		logger.Error(err, "failed to fetch dataset info", "datasets", datasets)
@@ -83,7 +83,7 @@ func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod 
 	}
 
 	transferState := buildPreScoreState(infos)
-	logger.Info("PreScore state built", "state", transferState)
+	logger.V(2).Info("PreScore state built", "state", transferState)
 
 	state.Write(preScoreStateKey, transferState)
 	return fwk.NewStatus(fwk.Success, "PreScore completed successfully")
@@ -100,6 +100,7 @@ func (t *TransferScore) Score(ctx context.Context, state fwk.CycleState, pod *v1
 		logger.Error(err, "failed to read transfer state")
 		return 0, fwk.AsStatus(fmt.Errorf("reading transfer state: %w", err))
 	}
+	logger.V(4).Info("PreScore state read", "state", data)
 
 	status, ok := data.(*preScoreState)
 	if !ok {
@@ -110,7 +111,7 @@ func (t *TransferScore) Score(ctx context.Context, state fwk.CycleState, pod *v1
 
 	phi := computePhiTransfer(nodeName, status)
 	score := FromPhi(phi)
-	logger.Info("phi_transfer computed", "phi", phi, "score", score)
+	logger.V(2).Info("phi_transfer computed", "phi", phi, "score", score)
 
 	return score, nil
 }

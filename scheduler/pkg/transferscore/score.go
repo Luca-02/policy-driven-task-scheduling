@@ -6,9 +6,21 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 )
 
-// computePhiTransfer implements phi_transfer(n,t) = 1 - size(remote(n,t))/size(req(t))
-// mapped into [0, 1]. By model convention, if req(t) is empty (or the total
-// volume is zero) there is no transfer and phi_transfer = 1 (max score).
+// computePhiTransfer computes the transfer-based phi score for a candidate node based
+// on the data locality of the required datasets.
+//
+// The score is defined as:
+//
+//	phi_transfer(n,t) = 1 - size(remote(n,t))/size(req(t))
+//
+// Parameters:
+//   - nodeName: name of the candidate node n.
+//   - state: pre-computed state for the scheduling cycle, containing the
+//
+// Returns:
+//   - A float64 value representing phi_transfer(n,t), normalized in the range
+//     [0, 1]. Higher values indicate a better match between node data locality
+//     and task requirements.
 func computePhiTransfer(nodeName string, state *preScoreState) float64 {
 	if len(state.datasets) == 0 || state.totalSizeMB == 0 {
 		return 1.0

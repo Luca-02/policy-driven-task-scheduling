@@ -43,7 +43,7 @@ func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.P
 		return nil, fmt.Errorf("initialising NodeProperty cache: %w", err)
 	}
 
-	logger.Info("plugin initialised")
+	logger.V(2).Info("plugin initialised")
 	return &PropScore{cfg: cfg, logger: logger, properties: cache}, nil
 }
 
@@ -59,15 +59,18 @@ func (p *PropScore) Score(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, no
 
 	betaStar, err := readBetaStar(pod, p.cfg.BetaStarAnnotationKey)
 	if err != nil {
-		logger.Error(err, "beta-star annotation malformed")
+		logger.Error(err, "beta-star annotation malformed",
+			"betaStarAnnotationKey", p.cfg.BetaStarAnnotationKey)
 		return 0, fwk.AsStatus(fmt.Errorf("beta-star annotation malformed: %w", err))
 	}
+	logger.V(4).Info("beta-star read", "betaStar", betaStar)
 
 	nodePropertiesLevel := readNodePropertiesLevel(nodeInfo.Node().Labels, p.cfg.NodePropertyLabelPrefix)
+	logger.V(4).Info("node properties read", "nodePropertiesLevel", nodePropertiesLevel)
 
 	phi := computePhiProp(betaStar, nodePropertiesLevel, p.properties)
 	score := FromPhi(phi)
-	logger.Info("phi_prop computed", "phi", phi, "score", score)
+	logger.V(2).Info("phi_prop computed", "phi", phi, "score", score)
 
 	return score, nil
 }
@@ -106,7 +109,8 @@ func readNodePropertiesLevel(labels map[string]string, nodePropertyLabelPrefix s
 			continue
 		}
 
-		prop := strings.TrimPrefix(k, nodePropertyLabelPrefix+"/")
+		prop := strings.TrimPrefix(k, nodePropertyLabelPrefix)
+		prop = strings.TrimPrefix(prop, "/")
 		if lvl, err := strconv.Atoi(v); err == nil {
 			levels[prop] = lvl
 		}

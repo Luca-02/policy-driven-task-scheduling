@@ -8,10 +8,10 @@ const (
 	DefaultCrdGroup                   = "policydriven.unimi.it"
 	DefaultCrdVersion                 = "v1alpha1"
 	DefaultNodePropertyResourcePlural = "nodeproperties"
-	DefaultDatasetServiceURL          = "https://dataset-service:8443"
-	DefaultNodePropertyLabelPrefix    = "property.node.policydriven.unimi.it/"
+	DefaultDatasetServiceURL          = "https://127.0.0.1:8443"
+	DefaultNodePropertyLabelPrefix    = "property.node.policydriven.unimi.it"
 	DefaultDatasetsAnnotationKey      = "scheduling.task.policydriven.unimi.it/datasets"
-	DefaultBetaStarAnnotationKey      = "scheduling.task.policydriven.unimi.it/beta-star"
+	DefaultBetaStarAnnotationKey      = "scheduling.task.policydriven.unimi.it/betaStar"
 )
 
 type Config struct {
