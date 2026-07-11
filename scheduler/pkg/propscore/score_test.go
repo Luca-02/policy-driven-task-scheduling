@@ -34,36 +34,46 @@ func TestComputePhiPropIdealNode(t *testing.T) {
 }
 
 func TestComputePhiPropExcessReducesScore(t *testing.T) {
-	// alpha_p(n) = maxL_p, beta*_p(t) = 0: maximum possible excess for this property.
+	// alpha_p(n) = maxL_p, beta*_p(t) = 0: maximum possible excess for this
+	// property, saturating Delta at Delta_max.
 	properties := fakeReader{
 		"security": {Name: "security", MaxLevel: 4, Weight: 1},
 	}
 	betaStar := map[string]int{"security": 0}
 	nodePropertiesLevel := map[string]int{"security": 4}
 
-	// Delta = 1 * (4-0)/(4-0) = 1 -> phi = 1/(1+1) = 0.5
+	// Delta = 1 * (4-0)/(4-0) = 1, Delta_max = 1 -> phi = 1 - 1/1 = 0
 	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
-	if !floatsEqual(got, 0.5) {
-		t.Errorf("phi_prop = %v, want 0.5", got)
+	want := 0.0
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v", got, want)
 	}
 }
 
 func TestComputePhiPropWeightScalesExcess(t *testing.T) {
+	// Two properties with different weights and partial excess: the more
+	// heavily weighted property dominates the resulting score.
 	properties := fakeReader{
-		"security": {Name: "security", MaxLevel: 2, Weight: 3}, // same excess, tripled weight
+		"security":    {Name: "security", MaxLevel: 3, Weight: 3},
+		"computation": {Name: "computation", MaxLevel: 3, Weight: 1},
 	}
-	betaStar := map[string]int{"security": 0}
-	nodePropertiesLevel := map[string]int{"security": 2}
+	betaStar := map[string]int{"security": 1, "computation": 1}
+	nodePropertiesLevel := map[string]int{"security": 2, "computation": 3}
 
-	// Delta = 3 * (2-0)/(2-0) = 3 -> phi = 1/(1+3) = 0.25
+	// security: 3 * (2-1)/(3-1) = 1.5
+	// computation: 1 * (3-1)/(3-1) = 1
+	// Delta = 1.5 + 1 = 2.5, Delta_max = 3 + 1 = 4 -> phi = 1 - 2.5/4 = 0.375
 	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
-	if !floatsEqual(got, 0.25) {
-		t.Errorf("phi_prop = %v, want 0.25", got)
+	want := 0.375
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v", got, want)
 	}
 }
 
 func TestComputePhiPropExcludesTermAtMaxLevel(t *testing.T) {
-	// beta*_p(t) == maxL_p: term excluded from the sum regardless of alpha_p(n).
+	// beta*_p(t) == maxL_p: term excluded from both Delta and Delta_max,
+	// regardless of alpha_p(n). No discriminating property remains, so the
+	// node is trivially ideal.
 	properties := fakeReader{
 		"security": {Name: "security", MaxLevel: 2, Weight: 1},
 	}
@@ -71,8 +81,9 @@ func TestComputePhiPropExcludesTermAtMaxLevel(t *testing.T) {
 	nodePropertiesLevel := map[string]int{"security": 2}
 
 	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
-	if !floatsEqual(got, 1.0) {
-		t.Errorf("phi_prop = %v, want 1.0 (term excluded)", got)
+	want := 1.0
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v (term excluded)", got, want)
 	}
 }
 
@@ -82,8 +93,9 @@ func TestComputePhiPropUnknownPropertySkipped(t *testing.T) {
 	nodePropertiesLevel := map[string]int{"ghost": 3}
 
 	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
-	if !floatsEqual(got, 1.0) {
-		t.Errorf("phi_prop = %v, want 1.0 (unknown property contributes nothing)", got)
+	want := 1.0
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v (unknown property contributes nothing)", got, want)
 	}
 }
 
@@ -94,10 +106,11 @@ func TestComputePhiPropMissingNodeLabelDefaultsToZero(t *testing.T) {
 	betaStar := map[string]int{"security": 0}
 	nodePropertiesLevel := map[string]int{} // no label for "security" on this node
 
-	// alpha_p(n) defaults to 0 -> Delta = 1*(0-0)/(2-0) = 0 -> phi = 1
+	// alpha_p(n) defaults to 0 -> Delta = 1*(0-0)/(2-0) = 0, Delta_max = 1 -> phi = 1
 	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
-	if !floatsEqual(got, 1.0) {
-		t.Errorf("phi_prop = %v, want 1.0", got)
+	want := 1.0
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v", got, want)
 	}
 }
 
@@ -111,18 +124,37 @@ func TestComputePhiPropMultipleProperties(t *testing.T) {
 
 	// security:    1 * (2-1)/(4-1) = 1/3
 	// computation: 2 * (1-0)/(2-0) = 1
-	// Delta = 1/3 + 1 = 4/3 -> phi = 1/(1+4/3) = 3/7
+	// Delta = 1/3 + 1 = 4/3, Delta_max = 1 + 2 = 3 -> phi = 1 - (4/3)/3 = 5/9
 	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
-	want := 3.0 / 7.0
+	want := 5.0 / 9.0
 	if !floatsEqual(got, want) {
 		t.Errorf("phi_prop = %v, want %v", got, want)
 	}
 }
 
 func TestComputePhiPropEmptyBetaStar(t *testing.T) {
+	// No requirements at all: Delta_max = 0, node is trivially ideal.
 	got := computePhiProp(nil, map[string]int{"security": 5}, fakeReader{})
-	if !floatsEqual(got, 1.0) {
-		t.Errorf("phi_prop = %v, want 1.0 (no requirements)", got)
+	want := 1.0
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v (no requirements)", got, want)
+	}
+}
+
+func TestComputePhiPropAllPropertiesAtMaxLevel(t *testing.T) {
+	// Every requested property is already at its max level: Delta_max = 0,
+	// node is trivially ideal even though it offers no room for excess.
+	properties := fakeReader{
+		"security":    {Name: "security", MaxLevel: 3, Weight: 1},
+		"computation": {Name: "computation", MaxLevel: 2, Weight: 5},
+	}
+	betaStar := map[string]int{"security": 3, "computation": 2}
+	nodePropertiesLevel := map[string]int{"security": 3, "computation": 2}
+
+	got := computePhiProp(betaStar, nodePropertiesLevel, properties)
+	want := 1.0
+	if !floatsEqual(got, want) {
+		t.Errorf("phi_prop = %v, want %v (Delta_max = 0)", got, want)
 	}
 }
 

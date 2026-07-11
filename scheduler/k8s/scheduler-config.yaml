@@ -11,6 +11,6 @@ profiles:
       score:
         enabled:
           - name: TransferScore
-            weight: 1
+            weight: 2
           - name: PropScore
             weight: 1

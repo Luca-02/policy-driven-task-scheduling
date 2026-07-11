@@ -12,17 +12,27 @@ import (
 //
 // The score is defined as:
 //
-//	phi_prop(n,t) = 1 / (1 + Delta(n,t))
+//	phi_prop(n,t) = 1 - Delta(n,t) / Delta_max(t)
 //
 // where Delta(n,t) is the weighted normalized excess of the node properties
 // compared to the task requirements:
 //
 //	Delta(n,t) = sum_{p: beta*_p(t) < maxL_p} w_p * (alpha_p(n) - beta*_p(t)) / (maxL_p - beta*_p(t))
 //
-// Properties with beta*_p equal to their
-// maximum level are ignored because they do not provide discrimination.
+// and Delta_max(t) is the upper bound of Delta(n,t), obtained by summing the
+// weights of the same discriminating properties (each normalized ratio is at
+// most 1):
+//
+//	Delta_max(t) = sum_{p: beta*_p(t) < maxL_p} w_p
+//
+// Properties with beta*_p equal to their maximum level are ignored because
+// they do not provide discrimination.
 //
 // Unknown properties (not present in the NodeProperty registry) are skipped.
+//
+// If no property contributes to the sum (e.g. betaStar is empty, or every
+// requested property is already at its max level), Delta_max is 0 and the
+// node is trivially ideal: phi_prop = 1.
 //
 // Parameters:
 //   - betaStar: map of required property levels for the task, where the key is
@@ -40,6 +50,7 @@ import (
 //     and task requirements.
 func computePhiProp(betaStar map[string]int, nodeLevels map[string]int, properties nodeproperty.Reader) float64 {
 	delta := 0.0
+	deltaMax := 0.0
 	for prop, betaP := range betaStar {
 		info, found := properties.Get(prop)
 		if !found {
@@ -55,8 +66,16 @@ func computePhiProp(betaStar map[string]int, nodeLevels map[string]int, properti
 		excess := float64(alphaP - betaP)
 		norm := float64(maxLevel - betaP)
 		delta += info.Weight * (excess / norm)
+		deltaMax += info.Weight
 	}
-	return 1.0 / (1.0 + delta)
+
+	if deltaMax == 0 {
+		// No discriminating property contributes to the sum: there is no
+		// possible excess, so the node is trivially ideal.
+		return 1.0
+	}
+
+	return 1.0 - delta/deltaMax
 }
 
 // FromPhi maps a normalized indicator phi in [0,1], as formalized in the
