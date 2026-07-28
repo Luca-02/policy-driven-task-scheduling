@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from src.dependencies import get_repository
-from src.database import DatasetRepository
+from src.repository import DatasetRepository
 from src.models import (
     Item,
     ProviderRequest,

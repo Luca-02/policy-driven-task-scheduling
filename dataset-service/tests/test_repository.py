@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 
 from src.orm import Base
 from src.models import Dataset, DatasetBase
-from src.database import DatasetRepository, create_engine_factory
+from src.database import create_engine_factory
+from src.repositories import DatasetRepository
 
 
 class TestRepository(unittest.TestCase):

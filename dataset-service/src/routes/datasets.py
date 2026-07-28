@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.database import DatasetRepository
 from src.dependencies import get_repository
+from src.repository import DatasetRepository
 from src.models import Dataset, DatasetBase, DatasetQuery
 
 _RESPONSE_MODEL_KWARGS = {"response_model_exclude_none": True}

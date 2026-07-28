@@ -12,8 +12,6 @@ from src.config import Config
 from src.orm import Base
 from src.database import create_engine_factory
 from src.routes.healthz import router as health_router
-from src.routes.provider import router as provider_router
-from src.routes.datasets import router as datasets_router
 
 load_dotenv()
 
@@ -23,7 +21,7 @@ logging.basicConfig(
     level=getattr(logging, cfg.log_level.upper(), logging.INFO),
     format="[%(asctime)s] %(name)-s [%(levelname)-s] %(message)s",
 )
-logger = logging.getLogger("dataset-service")
+logger = logging.getLogger("context-service")
 
 
 @asynccontextmanager
@@ -52,18 +50,16 @@ def create_app(custom_cfg: Config | None = None) -> FastAPI:
     custom_cfg = custom_cfg or cfg
 
     app = FastAPI(
-        title="Mock Dataset Service",
+        title="Mock Context Service",
         description=(
-            "Simulates an external dataset catalog. "
-            "Implements the Gatekeeper External Data Provider protocol."
+            "Simulates an external context catalog. "
+            "Implements the Gatekeeper External Context Provider protocol."
         ),
         version="0.1.0",
         lifespan=lifespan,
     )
 
     app.include_router(health_router)
-    app.include_router(provider_router)
-    app.include_router(datasets_router)
 
     @app.middleware("http")
     async def log_requests_and_responses(request: Request, call_next):

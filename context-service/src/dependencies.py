@@ -1,7 +1,7 @@
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
-from src.repositories import DatasetRepository
+from src.repositories import ContextRepository
 
 
 def get_session(req: Request):
@@ -11,5 +11,5 @@ def get_session(req: Request):
         yield db
 
 
-def get_repository(db: Session = Depends(get_session)) -> DatasetRepository:
-    return DatasetRepository(db)
+def get_repository(db: Session = Depends(get_session)) -> ContextRepository:
+    return ContextRepository(db)
