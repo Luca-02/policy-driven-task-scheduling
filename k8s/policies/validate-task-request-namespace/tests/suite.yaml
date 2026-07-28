@@ -1,0 +1,15 @@
+apiVersion: test.gatekeeper.sh/v1alpha1
+kind: Suite
+tests:
+- name: validate-task-request-namespace
+  template: ../template.yaml
+  constraint: ../constraint.yaml
+  cases:
+  - name: allowed
+    object: ok.yaml
+    assertions:
+    - violations: no
+  - name: denied
+    object: bad.yaml
+    assertions:
+    - violations: yes

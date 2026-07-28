@@ -1,0 +1,10 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: ok-zero-level
+  namespace: compute
+spec:
+  issuer: issuer
+  datasets: [d]
+  requirements:
+    gpu-model: 0

@@ -1,0 +1,19 @@
+# This is an invalid TaskRequest used to test the validation webhook with external data provider.
+# IMPORTANT:
+# This task is based on the `dataset-service/data/seed.json` data seed, 
+# and it contains several invalid properties and datasets.
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: bad
+  namespace: compute
+spec:
+  issuer: issuer
+  datasets:
+    - d1
+    - d2
+    - dnotexist1 # non-existent dataset
+    - dnotexist2 # non-existent dataset
+    - dnotexistprop # dataset with "requirements": {"badprop1": 1, "badprop2": 3}
+    - dnotexistlvl # dataset with "requirements": {"security": 99}
+    - dnotexistgeo # dataset with "geo": "geonotexist"

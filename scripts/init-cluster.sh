@@ -4,6 +4,11 @@ set -euo pipefail
 
 readonly CLUSTER_NAME="${CLUSTER_NAME:-kind}"
 
+# Captured before any subshell below cd's into a service directory, so that
+# shared scripts (e.g. scripts/gen-certs.sh) can always be referenced by
+# absolute path regardless of the caller's current directory.
+readonly ROOT_DIR="$(pwd)"
+
 #######################################
 # Logging
 #######################################
@@ -242,9 +247,14 @@ kubectl patch deployment gatekeeper-controller-manager \
   --type=json \
   -p="[
     {
-      \"op\": \"add\",
-      \"path\": \"/spec/template/spec/containers/0/args/-\",
-      \"value\": \"--external-data-provider-response-cache-ttl=${GATEKEEPER_CACHE_TTL}\"
+        \"op\": \"add\",
+        \"path\": \"/spec/template/spec/containers/0/args/-\",
+        \"value\": \"--enable-external-data=true\"
+    },
+    {
+        \"op\": \"add\",
+        \"path\": \"/spec/template/spec/containers/0/args/-\",
+        \"value\": \"--external-data-provider-response-cache-ttl=${GATEKEEPER_CACHE_TTL}\"
     }
   ]"
 
@@ -347,7 +357,7 @@ log "Generating TLS certificates for dataset-service"
         log "TLS secret for dataset-service already exists"
     else
         TARGET_ENV=$TARGET_ENV SVC=$DATASET_SERVICE NS=$DATASET_SERVICE_NAMESPACE \
-            bash scripts/gen-certs.sh "$CERTS_DIR"
+            bash "$ROOT_DIR/scripts/gen-certs.sh" "$CERTS_DIR"
 
         kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
             --from-file=ca.crt="$CERTS_DIR/${TARGET_ENV}/ca.crt" \

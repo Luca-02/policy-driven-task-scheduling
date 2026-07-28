@@ -3,8 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.dependencies import get_repository
-from src.repository import DatasetRepository
+from src.repositories import DatasetRepository
 from src.models import Dataset, DatasetBase, DatasetQuery
+from src.exceptions import NotFoundError, AlreadyExistsError
 
 _RESPONSE_MODEL_KWARGS = {"response_model_exclude_none": True}
 
@@ -20,10 +21,10 @@ def get_all_datasets(repo: DatasetRepositoryDep):
 
 @router.get("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
 def get_dataset(name: str, repo: DatasetRepositoryDep):
-    dataset = repo.get(name)
-    if dataset is None:
+    try:
+        return repo.get(name)
+    except NotFoundError:
         raise HTTPException(status_code=404, detail=f"Dataset not found: {name}")
-    return dataset
 
 
 @router.post("/query", response_model=list[Dataset], **_RESPONSE_MODEL_KWARGS)
@@ -44,12 +45,12 @@ def create_dataset(
     dataset: Dataset,
     repo: DatasetRepositoryDep,
 ):
-    created = repo.create(dataset)
-    if created is None:
+    try:
+        return repo.create(dataset)
+    except AlreadyExistsError:
         raise HTTPException(
             status_code=409, detail=f"Dataset already exists: {dataset.name}"
         )
-    return created
 
 
 @router.post(
@@ -61,46 +62,38 @@ def create_datasets(
 ):
     created = []
     for dataset in datasets:
-        if repo.exists(dataset.name):
+        try:
+            created.append(repo.create(dataset))
+        except AlreadyExistsError:
             raise HTTPException(
                 status_code=409, detail=f"Dataset already exists: {dataset.name}"
             )
-
-        created.append(repo.create(dataset))
     return created
 
 
-# TODO: Add versioning suppoert for the assumption of immutability of metadata.
-# This will mitigate the Time-of-check to Time-of-use race condition that can occur when updating metadata.
 @router.put("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
 def update_dataset(
     name: str,
     dataset: DatasetBase,
     repo: DatasetRepositoryDep,
 ):
-    updated = repo.update(name, dataset)
-    if updated is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Dataset not found: {name}",
-        )
-    return updated
+    try:
+        return repo.update(name, dataset)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail=f"Dataset not found: {name}")
 
 
 @router.delete("/{name}", status_code=204)
 def delete_dataset(name: str, repo: DatasetRepositoryDep):
-    if not repo.delete(name):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Dataset not found: {name}",
-        )
+    try:
+        repo.delete(name)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail=f"Dataset not found: {name}")
 
 
 @router.delete("", status_code=204)
 def delete_all_datasets(repo: DatasetRepositoryDep):
-    count = repo.delete_all()
-    if count == 0:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No datasets to delete",
-        )
+    try:
+        repo.delete_all()
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="No datasets to delete")

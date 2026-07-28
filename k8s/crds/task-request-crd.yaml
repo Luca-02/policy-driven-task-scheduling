@@ -58,6 +58,8 @@ spec:
                 # req(t): datasets required for task execution.
                 datasets:
                   type: array
+                  minItems: 1
+                  maxItems: 32
                   x-kubernetes-list-type: set
                   description: >
                     Dataset names required for task execution (req(t)).

@@ -1,0 +1,8 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: ok
+  namespace: compute
+spec:
+  issuer: issuer
+  geo: eu-south

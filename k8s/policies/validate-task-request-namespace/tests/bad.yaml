@@ -1,0 +1,7 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: bad
+spec:
+  issuer: issuer
+  datasets: [d]

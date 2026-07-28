@@ -1,0 +1,10 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: bad-missing-prop
+  namespace: compute
+spec:
+  issuer: issuer
+  datasets: [d]
+  requirements:
+    cpu-arch: 1

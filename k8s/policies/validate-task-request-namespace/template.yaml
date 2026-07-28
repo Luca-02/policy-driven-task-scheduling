@@ -22,7 +22,7 @@ spec:
       rego: |
         package k8svalidatetaskrequestnamespace
 
-        requested_ns := input.review.object.metadata.namespace
+        requested_ns := object.get(input.review.object.metadata, "namespace", "")
         allowed_ns := input.parameters.allowedNamespaces
 
         is_namespace_allowed(namespace) {

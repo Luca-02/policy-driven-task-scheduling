@@ -1,0 +1,33 @@
+apiVersion: test.gatekeeper.sh/v1alpha1
+kind: Suite
+metadata:
+  name: validate-task-request-properties
+tests:
+  - name: validate-task-request-properties
+    template: ../template.yaml
+    constraint: ../constraint.yaml
+    cases:
+      - name: allowed-valid-requirement
+        object: ok.yaml
+        inventory:
+          - inventory.yaml
+        assertions:
+          - violations: no
+      - name: allowed-zero-level
+        object: ok-zero-level.yaml
+        inventory:
+          - inventory.yaml
+        assertions:
+          - violations: no
+      - name: denied-missing-property
+        object: bad-prop.yaml
+        inventory:
+          - inventory.yaml
+        assertions:
+          - violations: yes
+      - name: denied-invalid-level
+        object: bad-level.yaml
+        inventory:
+          - inventory.yaml
+        assertions:
+          - violations: yes

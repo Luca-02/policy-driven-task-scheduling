@@ -70,10 +70,10 @@ kubectl wait -n dataset-service --for=condition=Ready cluster/dataset-db --timeo
 
 ### 2. Certificates & App Deployment
 
-The `gen-certs.sh`, if executed with the env `TARGET_ENV=k8s`, automatically generates a self-signed CA, creates the server certificates, and automatically injects the base64 CA bundle into k8s/provider.yaml.
+`gen-certs.sh` lives at the repo root (`scripts/gen-certs.sh`, shared across all mock services) and, if executed with the env `TARGET_ENV=k8s`, automatically generates a self-signed CA, creates the server certificates, and automatically injects the base64 CA bundle into k8s/provider.yaml. Since it's shared, `SVC`/`NS` must always be passed explicitly.
 ```bash
-# Generate TLS certs and update provider.yaml
-TARGET_ENV="k8s" bash scripts/gen-certs.sh
+# From this directory (dataset-service/); generate TLS certs and update provider.yaml
+SVC="dataset-service" NS="dataset-service" TARGET_ENV="k8s" bash ../scripts/gen-certs.sh
 
 # Create the TLS Secret for the service
 kubectl create secret generic dataset-service-tls \

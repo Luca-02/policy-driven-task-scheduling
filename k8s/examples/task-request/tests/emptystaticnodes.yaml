@@ -1,0 +1,15 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: emptystaticnodes
+  namespace: compute
+spec:
+  issuer: issuer
+  requirements:
+    security: 1
+    computation: 2
+  datasets:
+    - d1static # kind-worker, kind-worker2, kind-worker4
+    - d2static #kind-worker, kind-worker4
+    - d3static # kind-worker3
+  # empty intersection of static nodes

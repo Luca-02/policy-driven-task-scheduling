@@ -1,0 +1,10 @@
+{
+  "conflicts": [
+    { "context_a": "Ferrari", "context_b": "Ford" },
+    { "context_a": "BMW", "context_b": "Mercedes" }
+  ],
+  "issuers": [
+    { "name": "issuer-ford", "contexts": ["Ford"] },
+    { "name": "issuer-ferrari", "contexts": ["Ferrari", "Finance"] }
+  ]
+}

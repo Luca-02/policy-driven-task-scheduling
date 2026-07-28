@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: context-service
+  namespace: context-service
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: context-service
+  policyTypes: [Ingress, Egress]
+  # Allow ingress traffic from scheduler, gatekeeper-system,
+  # task-request-controller, dataset-service (calls /conflicts to
+  # validate ctx(d)), and context-service namespaces on port 8443
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: scheduler
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gatekeeper-system
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: task-request-controller
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dataset-service
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: context-service
+      ports:
+        - port: 8443
+          protocol: TCP
+  # Allow egress traffic to DNS and context-db cluster on port 5432
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: context-db
+      ports:
+        - port: 5432
+          protocol: TCP

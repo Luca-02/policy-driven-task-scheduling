@@ -6,6 +6,7 @@ from src.orm import Base
 from src.models import Dataset, DatasetBase
 from src.database import create_engine_factory
 from src.repositories import DatasetRepository
+from src.exceptions import NotFoundError, AlreadyExistsError
 
 
 class TestRepository(unittest.TestCase):
@@ -44,13 +45,17 @@ class TestRepository(unittest.TestCase):
         dataset = self._d1()
         self.repo.create(dataset)
         row = self.repo.get(dataset.name)
-        self.assertIsNotNone(row)
         self.assertEqual(row.model_dump(), dataset.model_dump())
 
-    def test_create_exists(self):
+    def test_get_missing_raises(self):
+        with self.assertRaises(NotFoundError):
+            self.repo.get("nope")
+
+    def test_create_exists_raises(self):
         dataset = self._d1()
-        self.assertIsNotNone(self.repo.create(dataset))
-        self.assertIsNone(self.repo.create(dataset))
+        self.repo.create(dataset)
+        with self.assertRaises(AlreadyExistsError):
+            self.repo.create(dataset)
 
     def test_query(self):
         d1 = self._d1()
@@ -61,6 +66,11 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         for row in rows:
             self.assertIn(row.model_dump(), [d1.model_dump(), d2.model_dump()])
+
+    def test_query_partial_match_does_not_raise(self):
+        self.repo.create(self._d1())
+        rows = self.repo.query(["d1", "nope"])
+        self.assertEqual([row.name for row in rows], ["d1"])
 
     def test_exists(self):
         dataset = self._d1()
@@ -87,22 +97,22 @@ class TestRepository(unittest.TestCase):
         for key, value in update.model_dump(exclude_unset=True).items():
             self.assertEqual(getattr(row, key), value)
 
-    def test_update_missing_dataset(self):
-        self.assertIsNone(
+    def test_update_missing_raises(self):
+        with self.assertRaises(NotFoundError):
             self.repo.update(
                 "nope",
                 DatasetBase(requirements={}, size_mb=0, nodes=[], geo="AS"),
             )
-        )
 
     def test_delete(self):
         dataset = self._d1()
         self.repo.create(dataset)
-        self.assertTrue(self.repo.delete(dataset.name))
+        self.repo.delete(dataset.name)  # no exception = success
         self.assertFalse(self.repo.exists(dataset.name))
 
-    def test_delete_missing_false(self):
-        self.assertFalse(self.repo.delete("nope"))
+    def test_delete_missing_raises(self):
+        with self.assertRaises(NotFoundError):
+            self.repo.delete("nope")
 
     def test_delete_all(self):
         self.repo.create(self._d1())
@@ -110,3 +120,7 @@ class TestRepository(unittest.TestCase):
         count = self.repo.delete_all()
         self.assertEqual(count, 2)
         self.assertEqual(len(self.repo.get_all()), 0)
+
+    def test_delete_all_empty_raises(self):
+        with self.assertRaises(NotFoundError):
+            self.repo.delete_all()

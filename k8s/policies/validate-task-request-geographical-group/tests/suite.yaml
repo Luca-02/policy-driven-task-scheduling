@@ -1,0 +1,21 @@
+apiVersion: test.gatekeeper.sh/v1alpha1
+kind: Suite
+metadata:
+  name: validate-task-request-geographical-group
+tests:
+  - name: validate-task-request-geographical-group
+    template: ../template.yaml
+    constraint: ../constraint.yaml
+    cases:
+      - name: allowed
+        object: ok.yaml
+        inventory:
+          - inventory.yaml
+        assertions:
+          - violations: no
+      - name: denied
+        object: bad.yaml
+        inventory:
+          - inventory.yaml
+        assertions:
+          - violations: yes

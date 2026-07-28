@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.orm import DatasetORM
 from src.models import Dataset, DatasetBase
+from src.exceptions import NotFoundError, AlreadyExistsError
 
 
 class DatasetRepository:
@@ -15,9 +16,11 @@ class DatasetRepository:
         rows = self._db.execute(select(DatasetORM)).scalars().all()
         return [Dataset.model_validate(row) for row in rows]
 
-    def get(self, name: str) -> Dataset | None:
+    def get(self, name: str) -> Dataset:
         row = self._db.get(DatasetORM, name)
-        return Dataset.model_validate(row) if row is not None else None
+        if row is None:
+            raise NotFoundError(name)
+        return Dataset.model_validate(row)
 
     def query(self, names: list[str]) -> list[Dataset]:
         rows = (
@@ -28,11 +31,11 @@ class DatasetRepository:
         return [Dataset.model_validate(row) for row in rows]
 
     def exists(self, name: str) -> bool:
-        return self.get(name) is not None
+        return self._db.get(DatasetORM, name) is not None
 
-    def create(self, dataset: Dataset):
+    def create(self, dataset: Dataset) -> Dataset:
         if self.exists(dataset.name):
-            return None
+            raise AlreadyExistsError(dataset.name)
 
         row = DatasetORM(**dataset.model_dump())
         self._db.add(row)
@@ -40,10 +43,12 @@ class DatasetRepository:
         self._db.refresh(row)
         return Dataset.model_validate(row)
 
-    def update(self, name: str, update: DatasetBase) -> Dataset | None:
+    # TODO: Add versioning support for the assumption of immutability of metadata.
+    # This will mitigate the Time-of-check to Time-of-use race condition that can occur when updating metadata.
+    def update(self, name: str, update: DatasetBase) -> Dataset:
         row = self._db.get(DatasetORM, name)
         if row is None:
-            return None
+            raise NotFoundError(name)
 
         for key, value in update.model_dump(exclude_unset=True).items():
             setattr(row, key, value)
@@ -52,17 +57,18 @@ class DatasetRepository:
         self._db.refresh(row)
         return Dataset.model_validate(row)
 
-    def delete(self, name: str) -> bool:
+    def delete(self, name: str) -> None:
         row = self._db.get(DatasetORM, name)
         if row is None:
-            return False
+            raise NotFoundError(name)
 
         self._db.delete(row)
         self._db.commit()
-        return True
 
     def delete_all(self) -> int:
         stmt = delete(DatasetORM)
         result = self._db.execute(stmt)
         self._db.commit()
+        if result.rowcount == 0:
+            raise NotFoundError(message="no datasets to delete")
         return result.rowcount

@@ -1,0 +1,8 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: GeographicalGroup
+metadata:
+  name: eu-south
+spec:
+  locations:
+    - mil
+    - rom

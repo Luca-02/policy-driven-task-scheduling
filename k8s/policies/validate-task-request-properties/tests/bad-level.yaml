@@ -1,14 +1,10 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
-  name: emptystaticnodes
+  name: bad-invalid-level
   namespace: compute
 spec:
   issuer: issuer
+  datasets: [d]
   requirements:
-    security: 1
-    computation: 2
-  datasets:
-    - d1static
-    - d2static
-    - d3static
+    gpu-model: 3

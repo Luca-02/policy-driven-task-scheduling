@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from src.dependencies import get_repository
-from src.repository import DatasetRepository
+from src.repositories import DatasetRepository
 from src.models import (
     Item,
     ProviderRequest,
@@ -27,6 +27,9 @@ def validate(
     req: ProviderRequest,
     repo: DatasetRepositoryDep,
 ):
+    """
+    Resolves dataset existence and metadata for OPA Gatekeeper.
+    """
     items = []
     datasets = repo.query(req.request.keys)
     datasets_dict = {dataset.name: dataset for dataset in datasets}

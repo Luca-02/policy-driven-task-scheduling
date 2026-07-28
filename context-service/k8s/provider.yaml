@@ -1,0 +1,28 @@
+apiVersion: externaldata.gatekeeper.sh/v1beta1
+kind: Provider
+metadata:
+  name: context-service
+spec:
+  url: https://context-service.context-service.svc.cluster.local/validate
+  timeout: 5
+  caBundle: <CA_BUNDLE>
+
+# Response example from the provider:
+# {
+#   "errors": [
+#     [
+#       "issuer-x",
+#       "Issuer not found"
+#     ]
+#   ],
+#   "responses": [
+#     [
+#       "issuer-ford",
+#       {
+#         "contexts": ["Ford"]
+#       }
+#     ]
+#   ],
+#   "status_code": 200,
+#   "system_error": ""
+# }

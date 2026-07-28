@@ -1,0 +1,18 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: NodeProperty
+metadata:
+  name: gpu-model
+spec:
+  levels:
+    - level: 1
+      disjunction:
+        - clause:
+            - key: "nvidia.com/gpu.product"
+              operator: "In"
+              values: ["Tesla-T4"]
+    - level: 2
+      disjunction:
+        - clause:
+            - key: "nvidia.com/gpu.product"
+              operator: "Eq"
+              values: ["A100"]
