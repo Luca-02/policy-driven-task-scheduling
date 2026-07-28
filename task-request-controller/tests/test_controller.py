@@ -5,25 +5,13 @@ from unittest.mock import MagicMock
 from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
+from tests.test_config_base import make_config
 from src.config import (
-    Config,
-    DATASET_SERVICE_URL_DEFAULT,
-    GEOGRAPHICAL_GROUPS_PLURAL_DEFAULT,
-    GROUP_DEFAULT,
-    NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
-    TASK_NAMESPACE_DEFAULT,
-    TASK_REQUESTS_PLURAL_DEFAULT,
-    VERSION_DEFAULT,
-    TASK_REQUEST_KIND_DEFAULT,
-    JOB_LABEL_PREFIX_DEFAULT,
-    JOB_ANNOTATION_PREFIX_DEFAULT,
-    TASK_REQUEST_REF_LABEL_DEFAULT,
     BETA_STAR_ANNOTATION_DEFAULT,
     GEO_STAR_ANNOTATION_DEFAULT,
+    CTX_STAR_ANNOTATION_DEFAULT,
     DATASETS_ANNOTATION_DEFAULT,
     ISSUER_ANNOTATION_DEFAULT,
-    NODE_PROPERTY_PREFIX_DEFAULT,
-    SCHEDULER_NAME_DEFAULT,
 )
 from src.controller import (
     Controller,
@@ -33,30 +21,6 @@ from src.controller import (
     PENDING_PHASE,
 )
 from src.dataset_service import DatasetNotFoundError, DatasetServiceError
-
-
-def make_config() -> Config:
-    return Config(
-        group=GROUP_DEFAULT,
-        version=VERSION_DEFAULT,
-        task_requests_plural=TASK_REQUESTS_PLURAL_DEFAULT,
-        geographical_groups_plural=GEOGRAPHICAL_GROUPS_PLURAL_DEFAULT,
-        task_namespace=TASK_NAMESPACE_DEFAULT,
-        dataset_service_url=DATASET_SERVICE_URL_DEFAULT,
-        dataset_service_ca_file=None,
-        task_request_kind=TASK_REQUEST_KIND_DEFAULT,
-        job_label_prefix=JOB_LABEL_PREFIX_DEFAULT,
-        job_annotation_prefix=JOB_ANNOTATION_PREFIX_DEFAULT,
-        task_request_ref_label=TASK_REQUEST_REF_LABEL_DEFAULT,
-        beta_star_annotation=BETA_STAR_ANNOTATION_DEFAULT,
-        geo_star_annotation=GEO_STAR_ANNOTATION_DEFAULT,
-        datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
-        issuer_annotation=ISSUER_ANNOTATION_DEFAULT,
-        node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
-        node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
-        scheduler_name=SCHEDULER_NAME_DEFAULT,
-        log_level="WARNING",
-    )
 
 
 def make_logger() -> MagicMock:
@@ -314,10 +278,64 @@ class TestReconcileGeo(ControllerTestBase):
         self.assertEqual(set(geo_exprs[0].values), {"eu-west", "eu-north"})
 
 
+class TestReconcileCtxStar(ControllerTestBase):
+    def test_no_datasets_no_ctx_annotation(self):
+        self.do_reconcile(datasets=[])
+        self.assertIsNone(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))
+
+    def test_all_public_datasets_no_ctx_annotation(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "contexts": []},
+        ]
+        self.do_reconcile(datasets=["d1"])
+        self.assertIsNone(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))
+
+    def test_ctx_star_is_union_of_dataset_contexts(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "contexts": ["ford"]},
+            {
+                "name": "d2",
+                "requirements": {},
+                "geo": None,
+                "contexts": ["ferrari", "finance"],
+            },
+        ]
+        self.do_reconcile(datasets=["d1", "d2"])
+        self.assertEqual(
+            set(json.loads(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))),
+            {"ford", "ferrari", "finance"},
+        )
+        self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
+
+    def test_ctx_star_deduplicates_overlapping_contexts(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None, "contexts": ["ford"]},
+            {"name": "d2", "requirements": {}, "geo": None, "contexts": ["ford"]},
+        ]
+        self.do_reconcile(datasets=["d1", "d2"])
+        self.assertEqual(
+            set(json.loads(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))),
+            {"ford"},
+        )
+
+    def test_missing_contexts_key_treated_as_empty(self):
+        self.dataset_service.get_all_datasets.return_value = [
+            {"name": "d1", "requirements": {}, "geo": None},
+        ]
+        self.do_reconcile(datasets=["d1"])
+        self.assertIsNone(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))
+
+
 class TestReconcileStaticNodes(ControllerTestBase):
     def test_no_static_dataset_no_affinity_added(self):
         self.dataset_service.get_all_datasets.return_value = [
-            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1"], "static": False},
+            {
+                "name": "d1",
+                "requirements": {},
+                "geo": None,
+                "nodes": ["n1"],
+                "static": False,
+            },
         ]
         self.do_reconcile(datasets=["d1"])
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
@@ -326,7 +344,13 @@ class TestReconcileStaticNodes(ControllerTestBase):
 
     def test_single_static_dataset_affinity_present(self):
         self.dataset_service.get_all_datasets.return_value = [
-            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1", "n2"], "static": True},
+            {
+                "name": "d1",
+                "requirements": {},
+                "geo": None,
+                "nodes": ["n1", "n2"],
+                "static": True,
+            },
         ]
         self.do_reconcile(datasets=["d1"])
         exprs = self._static_expressions_on_job(self.created_job())
@@ -336,8 +360,20 @@ class TestReconcileStaticNodes(ControllerTestBase):
 
     def test_disjoint_static_datasets_sets_failed_without_creating_job(self):
         self.dataset_service.get_all_datasets.return_value = [
-            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1"], "static": True},
-            {"name": "d2", "requirements": {}, "geo": None, "nodes": ["n2"], "static": True},
+            {
+                "name": "d1",
+                "requirements": {},
+                "geo": None,
+                "nodes": ["n1"],
+                "static": True,
+            },
+            {
+                "name": "d2",
+                "requirements": {},
+                "geo": None,
+                "nodes": ["n2"],
+                "static": True,
+            },
         ]
         self.do_reconcile(datasets=["d1", "d2"])
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, FAILURE_PHASE])
@@ -346,7 +382,13 @@ class TestReconcileStaticNodes(ControllerTestBase):
     def test_static_and_geo_expressions_combined_in_same_term(self):
         self.load_geo_groups(("EU", ["eu-west"], []))
         self.dataset_service.get_all_datasets.return_value = [
-            {"name": "d1", "requirements": {}, "geo": None, "nodes": ["n1"], "static": True},
+            {
+                "name": "d1",
+                "requirements": {},
+                "geo": None,
+                "nodes": ["n1"],
+                "static": True,
+            },
         ]
         self.do_reconcile(geo="EU", datasets=["d1"])
         terms = self._node_selector_terms(self.created_job())

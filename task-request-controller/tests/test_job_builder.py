@@ -3,56 +3,13 @@ import unittest
 
 from kubernetes import client
 
-from src.config import (
-    Config,
-    DATASET_SERVICE_URL_DEFAULT,
-    GEOGRAPHICAL_GROUPS_PLURAL_DEFAULT,
-    GROUP_DEFAULT,
-    NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
-    TASK_NAMESPACE_DEFAULT,
-    TASK_REQUESTS_PLURAL_DEFAULT,
-    VERSION_DEFAULT,
-    TASK_REQUEST_KIND_DEFAULT,
-    JOB_LABEL_PREFIX_DEFAULT,
-    JOB_ANNOTATION_PREFIX_DEFAULT,
-    TASK_REQUEST_REF_LABEL_DEFAULT,
-    BETA_STAR_ANNOTATION_DEFAULT,
-    GEO_STAR_ANNOTATION_DEFAULT,
-    SCHEDULER_NAME_DEFAULT,
-    DATASETS_ANNOTATION_DEFAULT,
-    ISSUER_ANNOTATION_DEFAULT,
-    NODE_PROPERTY_PREFIX_DEFAULT,
-)
+from tests.test_config_base import make_config
 from src.job_builder import JobBuilder
 
 NAME_DEFAULT = "test-name"
 NAMESPACE_DEFAULT = "test-namespace"
 OWNER_UID_DEFAULT = "test-uid"
 ISSUER_DEFAULT = "alice"
-
-
-def make_config() -> Config:
-    return Config(
-        group=GROUP_DEFAULT,
-        version=VERSION_DEFAULT,
-        task_requests_plural=TASK_REQUESTS_PLURAL_DEFAULT,
-        geographical_groups_plural=GEOGRAPHICAL_GROUPS_PLURAL_DEFAULT,
-        task_namespace=TASK_NAMESPACE_DEFAULT,
-        dataset_service_url=DATASET_SERVICE_URL_DEFAULT,
-        dataset_service_ca_file=None,
-        task_request_kind=TASK_REQUEST_KIND_DEFAULT,
-        job_label_prefix=JOB_LABEL_PREFIX_DEFAULT,
-        job_annotation_prefix=JOB_ANNOTATION_PREFIX_DEFAULT,
-        task_request_ref_label=TASK_REQUEST_REF_LABEL_DEFAULT,
-        beta_star_annotation=BETA_STAR_ANNOTATION_DEFAULT,
-        geo_star_annotation=GEO_STAR_ANNOTATION_DEFAULT,
-        datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
-        issuer_annotation=ISSUER_ANNOTATION_DEFAULT,
-        scheduler_name=SCHEDULER_NAME_DEFAULT,
-        node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
-        node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
-        log_level="WARNING",
-    )
 
 
 class JobBuilderTestBase(unittest.TestCase):
@@ -66,6 +23,7 @@ class JobBuilderTestBase(unittest.TestCase):
         namespace=NAMESPACE_DEFAULT,
         beta_star=None,
         geo_star=None,
+        ctx_star=None,
         datasets=None,
         static_nodes=None,
         owner_uid=OWNER_UID_DEFAULT,
@@ -79,6 +37,7 @@ class JobBuilderTestBase(unittest.TestCase):
             .set_datasets(datasets or set())
             .set_beta_star(beta_star or dict())
             .set_geo_star(geo_star)
+            .set_ctx_star(ctx_star or set())
             .set_static_nodes(static_nodes)
         )
 
@@ -237,6 +196,25 @@ class TestGeoExpressions(JobBuilderTestBase):
         self.assertNotIn(key, job.spec.template.metadata.annotations)
 
 
+class TestCtxStarAnnotation(JobBuilderTestBase):
+    def test_ctx_star_annotation_present_when_ctx_set(self):
+        job = self._build(ctx_star={"ford", "ferrari"})
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.ctx_star_annotation}"
+        self.assertEqual(
+            json.loads(job.spec.template.metadata.annotations[key]),
+            sorted(["ford", "ferrari"]),
+        )
+
+    def test_ctx_star_annotation_absent_when_empty(self):
+        job = self._build(ctx_star=set())
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.ctx_star_annotation}"
+        self.assertNotIn(key, job.spec.template.metadata.annotations)
+
+    def test_ctx_star_does_not_affect_affinity(self):
+        job = self._build(beta_star={}, geo_star=None, ctx_star={"ford"})
+        self.assertIsNone(job.spec.template.spec.affinity)
+
+
 class TestStaticExpressions(JobBuilderTestBase):
     def test_static_nodes_none_produces_no_expression(self):
         self.builder.set_beta_star({"security": 1})
@@ -302,6 +280,11 @@ class TestPodTemplateAnnotations(JobBuilderTestBase):
         job = self._build(beta_star={"security": 2}, datasets=["d1"])
         key = f"{self.cfg.job_annotation_prefix}/{self.cfg.beta_star_annotation}"
         self.assertEqual(json.loads(self._pod_annotations(job)[key]), {"security": 2})
+
+    def test_ctx_star_on_pod_template(self):
+        job = self._build(ctx_star={"ford"})
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.ctx_star_annotation}"
+        self.assertEqual(json.loads(self._pod_annotations(job)[key]), ["ford"])
 
     def test_datasets_on_pod_template_sorted(self):
         job = self._build(datasets=["d2", "d1"])

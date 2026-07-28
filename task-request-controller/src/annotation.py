@@ -74,6 +74,28 @@ def compute_effective_geo(
     return result
 
 
+def compute_ctx_star(dataset_contexts: list[list[str]]) -> set[str]:
+    """
+    Compute the trace of a task `ctx*(t)` for a given set of datasets.
+
+    This is defined as `ctx*(t) = ctx(d1) union ctx(d2) union ...`, where `ctx(d)`
+    is the set of contexts fetched from the dataset service for each dataset in `req(t)`.
+
+    Args:
+        dataset_contexts: List of context lists, one per dataset.
+
+    Returns:
+        The computed `ctx*(t)` as a set of context names. Empty if no dataset
+        declares any context.
+    """
+    result: set[str] = set()
+
+    for contexts in dataset_contexts:
+        result.update(contexts or [])
+
+    return result
+
+
 def compute_static_nodes(datasets_data: list[dict]) -> set[str] | None:
     """
     Compute the intersection of lambda(d) over every dataset in req(t)

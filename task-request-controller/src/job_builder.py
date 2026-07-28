@@ -18,6 +18,7 @@ class JobBuilder:
     - A datasets annotation with the serialised list of required dataset names.
     - A beta-star annotation with the serialised `beta*(t)`.
     - A geo-star annotation with the serialised `geo*(t)` (omitted if None -> `Omega`).
+    - A ctx-star annotation with the serialised `ctx*(t)`.
     - A nodeAffinity realising filter steps `c_prop`.
     - A nodeAffinity realising filter steps `c_geo`.
     - A nodeAffinity realising filter steps `c_static`.
@@ -32,6 +33,7 @@ class JobBuilder:
         self._datasets: set[str] = set()
         self._beta_star: dict[str, int] = {}
         self._geo_star: set[str] | None = None
+        self._ctx_star: set[str] = set()
         self._static_nodes: set[str] | None = None
 
     def set_name(self, name: str) -> "JobBuilder":
@@ -60,6 +62,10 @@ class JobBuilder:
 
     def set_geo_star(self, geo_star: set[str] | None) -> "JobBuilder":
         self._geo_star = geo_star
+        return self
+
+    def set_ctx_star(self, ctx_star: set[str]) -> "JobBuilder":
+        self._ctx_star = ctx_star
         return self
 
     def set_static_nodes(self, static_nodes: set[str] | None) -> "JobBuilder":
@@ -99,6 +105,9 @@ class JobBuilder:
         geo_star_key = (
             f"{self._config.job_annotation_prefix}/{self._config.geo_star_annotation}"
         )
+        ctx_star_key = (
+            f"{self._config.job_annotation_prefix}/{self._config.ctx_star_annotation}"
+        )
 
         annotations = {}
         for key, value in (
@@ -106,6 +115,7 @@ class JobBuilder:
             (datasets_key, sorted(self._datasets) if self._datasets else None),
             (beta_star_key, self._beta_star),
             (geo_star_key, sorted(self._geo_star) if self._geo_star else None),
+            (ctx_star_key, sorted(self._ctx_star) if self._ctx_star else None),
         ):
             if value:
                 annotations[key] = json.dumps(value)

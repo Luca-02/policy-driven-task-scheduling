@@ -16,6 +16,7 @@ from src.geo import GeographicGroup
 from src.annotation import (
     compute_effective_beta,
     compute_effective_geo,
+    compute_ctx_star,
     compute_static_nodes,
 )
 from src.job_builder import JobBuilder
@@ -126,9 +127,11 @@ class Controller:
         """
         Full reconciliation pipeline for a new or Pending TaskRequest:
             - Set phase to Pending
-            - Fetch all required datasets in one pass
+            - Validate issuer is not empty, if empty fail
+            - Fetch all required datasets in one pass, and if any is missing fail
             - Compute `beta*(t)`
             - Compute `geo*(t)`, and if is empty fail
+            - Compute `ctx*(t)`
             - Compute static dataset nodes intersection, and if is empty fail
             - Create the Job with TaskRequest reference and dataset annotations
             - Set phase to Scheduled
@@ -207,6 +210,10 @@ class Controller:
             )
             return
 
+        dataset_contexts = [d.get("contexts", []) for d in datasets_data]
+        ctx_star = compute_ctx_star(dataset_contexts)
+        logger.info(f"TaskRequest {name!r}: computed ctx*(t)={ctx_star}")
+
         static_nodes = compute_static_nodes(datasets_data)
         logger.info(
             f"TaskRequest {name!r}: computed static dataset nodes intersection {static_nodes}"
@@ -240,6 +247,7 @@ class Controller:
             .set_datasets(datasets)
             .set_beta_star(beta_star)
             .set_geo_star(geo_star)
+            .set_ctx_star(ctx_star)
             .set_static_nodes(static_nodes)
             .build()
         )

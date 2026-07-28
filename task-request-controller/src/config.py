@@ -13,6 +13,7 @@ ISSUER_ANNOTATION_DEFAULT = "issuer"
 DATASETS_ANNOTATION_DEFAULT = "datasets"
 BETA_STAR_ANNOTATION_DEFAULT = "betaStar"
 GEO_STAR_ANNOTATION_DEFAULT = "geoStar"
+CTX_STAR_ANNOTATION_DEFAULT = "ctxStar"
 NODE_PROPERTY_PREFIX_DEFAULT = f"property.node.{GROUP_DEFAULT}"
 SCHEDULER_NAME_DEFAULT = "policy-driven-scheduler"
 NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT = f"topology.node.{GROUP_DEFAULT}/location"
@@ -37,6 +38,7 @@ class Config:
         datasets_annotation: str,
         beta_star_annotation: str,
         geo_star_annotation: str,
+        ctx_star_annotation: str,
         node_property_prefix: str,
         node_topology_location_label: str,
         scheduler_name: str,
@@ -57,6 +59,7 @@ class Config:
         self.datasets_annotation = datasets_annotation
         self.beta_star_annotation = beta_star_annotation
         self.geo_star_annotation = geo_star_annotation
+        self.ctx_star_annotation = ctx_star_annotation
         self.node_property_prefix = node_property_prefix
         self.node_topology_location_label = node_topology_location_label
         self.scheduler_name = scheduler_name
@@ -87,9 +90,7 @@ class Config:
             task_request_ref_label=os.getenv(
                 "TASK_REQUEST_REF_LABEL", TASK_REQUEST_REF_LABEL_DEFAULT
             ),
-            issuer_annotation=os.getenv(
-                "ISSUER_ANNOTATION", ISSUER_ANNOTATION_DEFAULT
-            ),
+            issuer_annotation=os.getenv("ISSUER_ANNOTATION", ISSUER_ANNOTATION_DEFAULT),
             datasets_annotation=os.getenv(
                 "DATASETS_ANNOTATION", DATASETS_ANNOTATION_DEFAULT
             ),
@@ -98,6 +99,9 @@ class Config:
             ),
             geo_star_annotation=os.getenv(
                 "GEO_STAR_ANNOTATION", GEO_STAR_ANNOTATION_DEFAULT
+            ),
+            ctx_star_annotation=os.getenv(
+                "CTX_STAR_ANNOTATION", CTX_STAR_ANNOTATION_DEFAULT
             ),
             node_property_prefix=os.getenv(
                 "NODE_PROPERTY_PREFIX", NODE_PROPERTY_PREFIX_DEFAULT

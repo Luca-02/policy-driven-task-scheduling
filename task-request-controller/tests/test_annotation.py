@@ -4,6 +4,7 @@ from src.geo import GeographicGroup
 from src.annotation import (
     compute_effective_beta,
     compute_effective_geo,
+    compute_ctx_star,
     compute_static_nodes,
 )
 
@@ -129,6 +130,33 @@ class TestComputeEffectiveGeo(unittest.TestCase):
         # UNKNOWN skipped
         result = compute_effective_geo("EU", ["UNKNOWN", "OECD"], GEO_REGISTRY)
         self.assertEqual(result, EU.resolve(GEO_REGISTRY))
+
+
+class TestComputeCtxStar(unittest.TestCase):
+    def test_no_datasets_returns_empty_set(self):
+        self.assertEqual(compute_ctx_star([]), set())
+
+    def test_all_public_datasets_returns_empty_set(self):
+        self.assertEqual(compute_ctx_star([[], []]), set())
+
+    def test_single_dataset_single_context(self):
+        self.assertEqual(compute_ctx_star([["ford"]]), {"ford"})
+
+    def test_multiple_datasets_union(self):
+        result = compute_ctx_star([["ford"], ["ferrari", "finance"]])
+        self.assertEqual(result, {"ford", "ferrari", "finance"})
+
+    def test_overlapping_contexts_deduplicated(self):
+        result = compute_ctx_star([["ford", "finance"], ["ford"]])
+        self.assertEqual(result, {"ford", "finance"})
+
+    def test_public_dataset_does_not_constrain(self):
+        result = compute_ctx_star([[], ["ford"]])
+        self.assertEqual(result, {"ford"})
+
+    def test_none_contexts_treated_as_empty(self):
+        result = compute_ctx_star([None, ["ford"]])
+        self.assertEqual(result, {"ford"})
 
 
 class TestComputeStaticNodes(unittest.TestCase):

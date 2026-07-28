@@ -76,6 +76,8 @@ spec:
               value: "betaStar"
             - name: GEO_STAR_ANNOTATION
               value: "geoStar"
+            - name: CTX_STAR_ANNOTATION
+              value: "ctxStar"
             - name: NODE_PROPERTY_PREFIX
               value: "property.node.policydriven.unimi.it"
             - name: NODE_TOPOLOGY_LOCATION_LABEL
