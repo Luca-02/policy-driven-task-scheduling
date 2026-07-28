@@ -1,4 +1,15 @@
 # policy-driven-task-scheduling
 
 ### TODO
-- [ ] implementation of excess indicator phi_prop
+- [x] implement iss : T -> I
+- [x] implement ctx : D -> 2^X
+- [ ] implement X_conf, pair of contexts in conflict
+- [ ] assume (ctx(d) x ctx(d)) intersection X_conf = empty, for each d in D
+- [ ] implement auth : I -> 2^X
+- [ ] assume (auth(i) x auth(i)) intersection X_conf = empty, for each i in I
+- [ ] implement c_auth: for each d in req(t), ctx(d) subset of auth(iss(t))
+- [ ] calculate trace of a task ctx*(t) = union of ctx(d) for each d in req(t) 
+- [ ] implement nodes memory Lambda : N -> 2^X
+- [ ] implement nodes memory update such as: f(t) != null => Lambda(f(t)) = Lambda(f(t)) union ctx*(t)
+- [ ] implement c_wall: (auth(iss(t)) x Lambda(n)) intersection X_conf = empty
+- [ ] implement sanification of nodes

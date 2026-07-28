@@ -4,10 +4,11 @@ metadata:
   name: t1static
   namespace: compute
 spec:
+  issuer: issuer1
   requirements:
     security: 1
     computation: 2
   datasets:
     - d1static
     - d2static
-  geo: "eu"
+  geo: eu

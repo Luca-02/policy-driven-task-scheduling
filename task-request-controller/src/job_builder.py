@@ -14,6 +14,7 @@ class JobBuilder:
 
     The resulting Job carries:
     - A label linking it back to the originating TaskRequest.
+    - An issuer annotation with `iss(t)`.
     - A datasets annotation with the serialised list of required dataset names.
     - A beta-star annotation with the serialised `beta*(t)`.
     - A geo-star annotation with the serialised `geo*(t)` (omitted if None -> `Omega`).
@@ -26,11 +27,12 @@ class JobBuilder:
         self._config = config
         self._name: str | None = None
         self._namespace: str | None = None
+        self._owner_uid: str | None = None
+        self._issuer: str | None = None
+        self._datasets: set[str] = set()
         self._beta_star: dict[str, int] = {}
         self._geo_star: set[str] | None = None
-        self._datasets: set[str] = set()
         self._static_nodes: set[str] | None = None
-        self._owner_uid: str | None = None
 
     def set_name(self, name: str) -> "JobBuilder":
         self._name = name
@@ -40,6 +42,18 @@ class JobBuilder:
         self._namespace = namespace
         return self
 
+    def set_owner(self, owner_uid: str) -> "JobBuilder":
+        self._owner_uid = owner_uid
+        return self
+
+    def set_issuer(self, issuer: str) -> "JobBuilder":
+        self._issuer = issuer
+        return self
+
+    def set_datasets(self, datasets: set[str]) -> "JobBuilder":
+        self._datasets = datasets
+        return self
+    
     def set_beta_star(self, beta_star: dict[str, int]) -> "JobBuilder":
         self._beta_star = beta_star
         return self
@@ -48,16 +62,8 @@ class JobBuilder:
         self._geo_star = geo_star
         return self
 
-    def set_datasets(self, datasets: set[str]) -> "JobBuilder":
-        self._datasets = datasets
-        return self
-
     def set_static_nodes(self, static_nodes: set[str] | None) -> "JobBuilder":
         self._static_nodes = static_nodes
-        return self
-
-    def set_owner(self, owner_uid: str) -> "JobBuilder":
-        self._owner_uid = owner_uid
         return self
 
     def build(self) -> client.V1Job:
@@ -81,6 +87,9 @@ class JobBuilder:
         Returns:
             dict: A dictionary of annotations for the Job's pod template.
         """
+        issuer_key = (
+            f"{self._config.job_annotation_prefix}/{self._config.issuer_annotation}"
+        )
         datasets_key = (
             f"{self._config.job_annotation_prefix}/{self._config.datasets_annotation}"
         )
@@ -93,6 +102,7 @@ class JobBuilder:
 
         annotations = {}
         for key, value in (
+            (issuer_key, self._issuer),
             (datasets_key, sorted(self._datasets) if self._datasets else None),
             (beta_star_key, self._beta_star),
             (geo_star_key, sorted(self._geo_star) if self._geo_star else None),

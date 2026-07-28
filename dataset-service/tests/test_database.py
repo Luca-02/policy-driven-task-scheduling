@@ -27,6 +27,7 @@ class TestRepository(unittest.TestCase):
             nodes=["kind-worker2"],
             geo="us",
             static=False,
+            contexts=["personal-data"],
         )
 
     def _d2(self):

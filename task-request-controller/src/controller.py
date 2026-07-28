@@ -144,9 +144,25 @@ class Controller:
         )
 
         spec = body.get("spec", {})
+
+        issuer: str = spec.get("issuer", "")
         requirements: dict = spec.get("requirements", {})
         datasets: set = spec.get("datasets", set())
         geo: str | None = spec.get("geo")
+
+        # Issuer must be not empty to ensure that the TaskRequest is valid and can be processed
+        if not issuer:
+            message = "Missing issuer in spec"
+            logger.error(f"TaskRequest {name!r}: {message}")
+            self._set_status(
+                namespace=namespace,
+                name=name,
+                phase=FAILURE_PHASE,
+                message=message,
+                job_name="",
+                logger=logger,
+            )
+            return
 
         try:
             datasets_data = self._dataset_service.get_all_datasets(datasets)
@@ -218,12 +234,13 @@ class Controller:
         job = (
             JobBuilder(config=self._config)
             .set_name(name)
+            .set_owner(owner_uid)
             .set_namespace(namespace)
+            .set_issuer(issuer)
+            .set_datasets(datasets)
             .set_beta_star(beta_star)
             .set_geo_star(geo_star)
-            .set_datasets(datasets)
             .set_static_nodes(static_nodes)
-            .set_owner(owner_uid)
             .build()
         )
 

@@ -35,14 +35,22 @@ spec:
           properties:
             spec:
               type: object
+              required: [issuer]
               properties:
-                # β(t): minimum property levels required by the task.
+                # iss(t): identity of the entity that issued the task request.
+                issuer:
+                  type: string
+                  minLength: 1
+                  maxLength: 254
+                  description: >
+                    Identity of the entity that issued the task request (iss(t)).
+                # beta(t): minimum property levels required by the task.
                 # Keys are NodeProperty names.
                 # Omitted properties default to level 0 (no requirement).
                 requirements:
                   type: object
                   description: >
-                    Minimum property levels required by the task (β(t)).
+                    Minimum property levels required by the task (beta(t)).
                     Keys must match existing NodeProperty names.
                   additionalProperties:
                     type: integer

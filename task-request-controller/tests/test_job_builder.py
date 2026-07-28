@@ -20,6 +20,7 @@ from src.config import (
     GEO_STAR_ANNOTATION_DEFAULT,
     SCHEDULER_NAME_DEFAULT,
     DATASETS_ANNOTATION_DEFAULT,
+    ISSUER_ANNOTATION_DEFAULT,
     NODE_PROPERTY_PREFIX_DEFAULT,
 )
 from src.job_builder import JobBuilder
@@ -27,6 +28,7 @@ from src.job_builder import JobBuilder
 NAME_DEFAULT = "test-name"
 NAMESPACE_DEFAULT = "test-namespace"
 OWNER_UID_DEFAULT = "test-uid"
+ISSUER_DEFAULT = "alice"
 
 
 def make_config() -> Config:
@@ -45,6 +47,7 @@ def make_config() -> Config:
         beta_star_annotation=BETA_STAR_ANNOTATION_DEFAULT,
         geo_star_annotation=GEO_STAR_ANNOTATION_DEFAULT,
         datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
+        issuer_annotation=ISSUER_ANNOTATION_DEFAULT,
         scheduler_name=SCHEDULER_NAME_DEFAULT,
         node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
         node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
@@ -66,15 +69,17 @@ class JobBuilderTestBase(unittest.TestCase):
         datasets=None,
         static_nodes=None,
         owner_uid=OWNER_UID_DEFAULT,
+        issuer=ISSUER_DEFAULT,
     ) -> JobBuilder:
         return (
             self.builder.set_name(name)
             .set_namespace(namespace)
+            .set_owner(owner_uid)
+            .set_issuer(issuer)
+            .set_datasets(datasets or set())
             .set_beta_star(beta_star or dict())
             .set_geo_star(geo_star)
-            .set_datasets(datasets or set())
             .set_static_nodes(static_nodes)
-            .set_owner(owner_uid)
         )
 
     def _build(self, **kwargs) -> client.V1Job:
@@ -304,5 +309,20 @@ class TestPodTemplateAnnotations(JobBuilderTestBase):
         self.assertEqual(json.loads(self._pod_annotations(job)[key]), ["d1", "d2"])
 
     def test_no_scheduling_data_empty_pod_annotations(self):
-        job = self._build(beta_star={}, geo_star=None, datasets=[])
+        job = self._build(beta_star={}, geo_star=None, datasets=[], issuer=None)
         self.assertEqual(self._pod_annotations(job), {})
+
+    def test_issuer_on_pod_template(self):
+        job = self._build(issuer=ISSUER_DEFAULT)
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.issuer_annotation}"
+        self.assertEqual(json.loads(self._pod_annotations(job)[key]), ISSUER_DEFAULT)
+
+    def test_issuer_annotation_absent_when_empty(self):
+        job = self._build(issuer="")
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.issuer_annotation}"
+        self.assertNotIn(key, self._pod_annotations(job))
+
+    def test_issuer_annotation_absent_when_none(self):
+        job = self._build(issuer=None)
+        key = f"{self.cfg.job_annotation_prefix}/{self.cfg.issuer_annotation}"
+        self.assertNotIn(key, self._pod_annotations(job))

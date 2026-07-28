@@ -4,11 +4,12 @@ metadata:
   name: emptygeostar
   namespace: compute
 spec:
+  issuer: issuer
   requirements:
     security: 1
     computation: 2
   datasets:
     - d1 # oecd
     - d3 # us
-  geo: "eu"
+  geo: eu
 # eu intersection us = []

@@ -21,6 +21,7 @@ from src.config import (
     BETA_STAR_ANNOTATION_DEFAULT,
     GEO_STAR_ANNOTATION_DEFAULT,
     DATASETS_ANNOTATION_DEFAULT,
+    ISSUER_ANNOTATION_DEFAULT,
     NODE_PROPERTY_PREFIX_DEFAULT,
     SCHEDULER_NAME_DEFAULT,
 )
@@ -50,6 +51,7 @@ def make_config() -> Config:
         beta_star_annotation=BETA_STAR_ANNOTATION_DEFAULT,
         geo_star_annotation=GEO_STAR_ANNOTATION_DEFAULT,
         datasets_annotation=DATASETS_ANNOTATION_DEFAULT,
+        issuer_annotation=ISSUER_ANNOTATION_DEFAULT,
         node_property_prefix=NODE_PROPERTY_PREFIX_DEFAULT,
         node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
         scheduler_name=SCHEDULER_NAME_DEFAULT,
@@ -94,10 +96,12 @@ class ControllerTestBase(unittest.TestCase):
         requirements=None,
         datasets=None,
         geo=None,
+        issuer="alice",
     ):
         body = {
             "metadata": {"name": name, "namespace": "compute", "uid": uid},
             "spec": {
+                "issuer": issuer,
                 "requirements": requirements or {},
                 "datasets": datasets or [],
             },
@@ -189,6 +193,12 @@ class TestReconcile(ControllerTestBase):
         )
         self.assertEqual(
             json.loads(self.pod_annotation(DATASETS_ANNOTATION_DEFAULT)), ["d1", "d2"]
+        )
+
+    def test_full_reconcile_annotation_reflects_issuer(self):
+        self.do_reconcile(issuer="bob", datasets=[])
+        self.assertEqual(
+            json.loads(self.pod_annotation(ISSUER_ANNOTATION_DEFAULT)), "bob"
         )
 
     def test_dataset_not_found_sets_failed_without_creating_job(self):

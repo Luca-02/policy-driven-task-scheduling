@@ -1,6 +1,6 @@
 import os
 
-DB_URL_DEFAULT = "sqlite://"
+DB_URL_DEFAULT = "sqlite://" # Default to in-memory SQLite database for testing purposes
 HOST_DEFAULT = "127.0.0.1"
 PORT_DEFAULT = 8443
 

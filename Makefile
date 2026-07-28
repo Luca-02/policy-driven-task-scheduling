@@ -1,7 +1,8 @@
 CLUSTER_NAME ?= kind
+DATASET_SERVICE_LIGHT_MODE ?= true
 
 init: 
-	CLUSTER_NAME=$(CLUSTER_NAME) bash ./scripts/init-cluster.sh
+	CLUSTER_NAME=$(CLUSTER_NAME) DATASET_SERVICE_LIGHT_MODE=$(DATASET_SERVICE_LIGHT_MODE) bash ./scripts/init-cluster.sh
 
 token:
 	@echo "Use the following token to log in to the Headlamp dashboard:"

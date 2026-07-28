@@ -12,6 +12,7 @@ D1 = {
     "nodes": ["kind-worker2"],
     "geo": "eu",
     "static": False,
+    "contexts": ["personal-data"],
 }
 
 D2 = {
@@ -20,6 +21,7 @@ D2 = {
     "size_mb": 2048,
     "nodes": ["kind-worker3"],
     "static": True,
+    "contexts": []
 }
 
 UPDATE_D1 = {
@@ -28,6 +30,7 @@ UPDATE_D1 = {
     "nodes": [],
     "geo": "as",
     "static": True,
+    "contexts": ["personal-data", "medical"],
 }
 
 
@@ -101,6 +104,13 @@ class TestDatasets(TestBase):
                 self.assertEqual(dataset, D2)
             else:
                 self.fail(f"Unexpected dataset name: {dataset['name']}")
+
+    def test_create_without_contexts_defaults_to_public(self):
+        public_dataset = {**D2, "name": "public"}
+        del public_dataset["contexts"]
+        self.client.post("/datasets", json=public_dataset)
+        r = self.client.get("/datasets/public")
+        self.assertEqual(r.json()["contexts"], [])
 
     def test_query_empty_keys_returns_empty_list(self):
         r = self.client.post("/datasets/query", json={"keys": []})

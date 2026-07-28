@@ -68,6 +68,8 @@ spec:
               value: "scheduling.task.policydriven.unimi.it"
             - name: TASK_REQUEST_REF_LABEL
               value: "taskRequestRef"
+            - name: ISSUER_ANNOTATION
+              value: "issuer"
             - name: DATASETS_ANNOTATION
               value: "datasets"
             - name: BETA_STAR_ANNOTATION

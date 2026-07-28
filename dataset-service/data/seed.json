@@ -13,7 +13,8 @@
         "kind-worker4"
       ],
       "geo": "oecd",
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "d1v2",
@@ -27,7 +28,8 @@
         "kind-worker4"
       ],
       "geo": "oecd",
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "d2",
@@ -40,7 +42,8 @@
         "kind-worker",
         "kind-worker4"
       ],
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "d2v2",
@@ -52,7 +55,8 @@
       "nodes": [
         "kind-worker"
       ],
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "d3",
@@ -64,7 +68,8 @@
         "kind-worker3"
       ],
       "geo": "us",
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "d1static",
@@ -79,7 +84,8 @@
         "kind-worker4"
       ],
       "geo": "oecd",
-      "static": true
+      "static": true,
+      "contexts": []
     },
     {
       "name": "d2static",
@@ -92,7 +98,8 @@
         "kind-worker",
         "kind-worker4"
       ],
-      "static": true
+      "static": true,
+      "contexts": []
     },
     {
       "name": "d3static",
@@ -104,7 +111,60 @@
         "kind-worker3"
       ],
       "geo": "us",
-      "static": true
+      "static": true,
+      "contexts": []
+    },
+    {
+      "name": "d1ctx",
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "static": false,
+      "contexts": ["ford"]
+    },
+    {
+      "name": "d2ctx",
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "static": false,
+      "contexts": ["ford"]
+    },
+    {
+      "name": "d3ctx",
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "static": false,
+      "contexts": ["ferrari", "finance"]
+    },
+    {
+      "name": "d4ctx",
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "static": false,
+      "contexts": []
     },
     {
       "name": "dnotexistprop",
@@ -117,7 +177,8 @@
         "kind-worker3",
         "kind-worker5"
       ],
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "dnotexistlvl",
@@ -129,7 +190,8 @@
         "kind-worker2",
         "kind-worker4"
       ],
-      "static": false
+      "static": false,
+      "contexts": []
     },
     {
       "name": "dnotexistgeo",
@@ -141,7 +203,8 @@
         "kind-worker"
       ],
       "geo": "doesnotexist",
-      "static": false
+      "static": false,
+      "contexts": []
     }
   ]
 }

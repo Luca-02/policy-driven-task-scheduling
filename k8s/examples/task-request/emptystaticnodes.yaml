@@ -4,6 +4,7 @@ metadata:
   name: emptystaticnodes
   namespace: compute
 spec:
+  issuer: issuer
   requirements:
     security: 1
     computation: 2

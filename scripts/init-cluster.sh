@@ -316,15 +316,19 @@ wait_for_deployment "$NODE_PROPERTY_CONTROLLER_NAMESPACE" "$NODE_PROPERTY_CONTRO
 #######################################
 
 readonly DATASET_SERVICE_PATH="dataset-service"
-readonly DATASET_SERVICE_IMAGE="dataset-service:latest"
+readonly DATASET_SERVICE_LIGHT_MODE="${DATASET_SERVICE_LIGHT_MODE:-false}"
 
-log "Applying CloudNativePG postgres cluster manifest"
-apply_with_retry "$DATASET_SERVICE_PATH/k8s/postgres-cluster.yaml" "CloudNativePG" "$MAX_RETRIES"
+if [[ "$DATASET_SERVICE_LIGHT_MODE" == "true" ]]; then
+    log "Dataset service light mode enabled, skipping postgres cluster setup"
+else
+    log "Applying CloudNativePG postgres cluster manifest"
+    apply_with_retry "$DATASET_SERVICE_PATH/k8s/postgres-cluster.yaml" "CloudNativePG" "$MAX_RETRIES"
 
-log "Waiting for CloudNativePG postgres cluster to be ready"
-kubectl wait -n dataset-service \
-    --for=condition=Ready cluster/dataset-db \
-    --timeout=600s
+    log "Waiting for CloudNativePG postgres cluster to be ready"
+    kubectl wait -n dataset-service \
+        --for=condition=Ready cluster/dataset-db \
+        --timeout=600s
+fi
 
 readonly DATASET_SERVICE="dataset-service"
 readonly DATASET_SERVICE_NAMESPACE="dataset-service"
@@ -358,13 +362,19 @@ log "Generating TLS certificates for dataset-service"
     sed "s|<CA_BUNDLE>|${CA_B64}|" "k8s/provider.yaml" | kubectl apply -f -
 )
 
+readonly DATASET_SERVICE_IMAGE="dataset-service:latest"
+
 log "Setting up dataset-service image"
 load_image "$DATASET_SERVICE_PATH" "$DATASET_SERVICE_IMAGE"
 
 log "Applying dataset-service manifests"
 kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/service.yaml"
 kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/network-policy.yaml"
-kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/deployment.yaml"
+if [[ "$DATASET_SERVICE_LIGHT_MODE" == "true" ]]; then
+    kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/deployment-light.yaml"
+else
+    kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/deployment.yaml"
+fi
 
 wait_for_deployment "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_DEPLOYMENT"
 

@@ -4,10 +4,11 @@ metadata:
   name: t1
   namespace: compute
 spec:
+  issuer: issuer1
   requirements:
     security: 1
     computation: 2
   datasets:
     - d1v2
     - d2v2
-  geo: "eu"
+  geo: eu
