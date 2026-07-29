@@ -19,7 +19,7 @@ class DatasetRepository:
     def get(self, name: str) -> Dataset:
         row = self._db.get(DatasetORM, name)
         if row is None:
-            raise NotFoundError(name)
+            raise NotFoundError(identifier=name)
         return Dataset.model_validate(row)
 
     def query(self, names: list[str]) -> list[Dataset]:
@@ -35,6 +35,7 @@ class DatasetRepository:
 
     def create(self, dataset: Dataset) -> Dataset:
         if self.exists(dataset.name):
+            self._db.rollback()
             raise AlreadyExistsError(dataset.name)
 
         row = DatasetORM(**dataset.model_dump())
@@ -43,12 +44,11 @@ class DatasetRepository:
         self._db.refresh(row)
         return Dataset.model_validate(row)
 
-    # TODO: Add versioning support for the assumption of immutability of metadata.
-    # This will mitigate the Time-of-check to Time-of-use race condition that can occur when updating metadata.
     def update(self, name: str, update: DatasetBase) -> Dataset:
         row = self._db.get(DatasetORM, name)
         if row is None:
-            raise NotFoundError(name)
+            self._db.rollback()
+            raise NotFoundError(identifier=name)
 
         for key, value in update.model_dump(exclude_unset=True).items():
             setattr(row, key, value)
@@ -60,14 +60,14 @@ class DatasetRepository:
     def delete(self, name: str) -> None:
         row = self._db.get(DatasetORM, name)
         if row is None:
-            raise NotFoundError(name)
+            self._db.rollback()
+            raise NotFoundError(identifier=name)
 
         self._db.delete(row)
         self._db.commit()
 
     def delete_all(self) -> int:
-        stmt = delete(DatasetORM)
-        result = self._db.execute(stmt)
+        result = self._db.execute(delete(DatasetORM))
         self._db.commit()
         if result.rowcount == 0:
             raise NotFoundError(message="no datasets to delete")

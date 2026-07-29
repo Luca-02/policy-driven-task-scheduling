@@ -61,14 +61,6 @@ spec:
             capabilities:
               drop: ["ALL"]
           env:
-            # Percorso del file SQLite nel volume persistente, al posto
-            # del secret di Postgres. NOTA: con SQLite il lock di
-            # concorrenza in ContextRepository._acquire_lock e' un no-op
-            # (vedi README), quindi qui la mutua esclusione tra scritture
-            # concorrenti si affida interamente al locking a livello di
-            # file di SQLite, non a un vero row lock. Va bene per demo a
-            # bassa concorrenza, non e' la configurazione consigliata se
-            # si vuole esercitare davvero la protezione dal write skew.
             - name: DB_URL
               value: "sqlite:////data/context_catalog.db"
             - name: HOST

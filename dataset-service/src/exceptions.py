@@ -3,9 +3,7 @@ class DatasetServiceError(Exception):
 
 
 class NotFoundError(DatasetServiceError):
-    """
-    Raised when an operation targets a resource that doesn't exist.
-    """
+    """Raised when an operation targets a resource that doesn't exist."""
 
     def __init__(self, identifier: str = "", message: str | None = None):
         self.identifier = identifier

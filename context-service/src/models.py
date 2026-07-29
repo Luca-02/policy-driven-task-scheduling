@@ -9,21 +9,21 @@ GATEKEEPER_API_VERSION = "externaldata.gatekeeper.sh/v1beta1"
 # -----------------------------------------------------------------------------
 
 
-class IssuerBase(BaseModel):
-    """Base issuer metadata, used for both creation and update."""
+class IssuerAuthBase(BaseModel):
+    """Base issuer authorization payload, used for both creation and update."""
 
     contexts: list[str] = Field(default_factory=list)  # auth(i)
 
 
-class Issuer(IssuerBase):
-    """Full issuer as stored and returned by the API."""
+class IssuerAuth(IssuerAuthBase):
+    """Issuer's authorization record as stored and returned by the API"""
 
     name: str
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class IssuerQuery(BaseModel):
+class IssuerAuthQuery(BaseModel):
     keys: list[str] = Field(default_factory=list)
 
 
@@ -39,10 +39,15 @@ class ConflictPair(BaseModel):
     context_b: str
 
     @model_validator(mode="after")
-    def _check_irreflexive(self):
+    def _normalize(self):
         if self.context_a == self.context_b:
             raise ValueError("a conflict pair must relate two distinct contexts")
+        if self.context_a > self.context_b:
+            self.context_a, self.context_b = self.context_b, self.context_a
         return self
+
+    def __str__(self):
+        return f"{self.context_a}|{self.context_b}"
 
 
 class Conflict(ConflictPair):
@@ -54,8 +59,6 @@ class Conflict(ConflictPair):
 # -----------------------------------------------------------------------------
 # Gatekeeper External Data Provider protocol
 # -----------------------------------------------------------------------------
-# Same protocol/shapes used by dataset-service; here the provider resolves
-# issuer existence and auth(i), consumed by the c_auth admission constraint.
 
 
 class ProviderRequestBody(BaseModel):

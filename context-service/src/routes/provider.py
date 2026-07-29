@@ -2,13 +2,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from src.dependencies import get_repository
-from src.repositories import ContextRepository
+from src.dependencies import get_issuer_auth_repository
+from src.repositories import IssuerAuthRepository
 from src.models import Item, ProviderRequest, ProviderResponse, ProviderResponseBody
 
 router = APIRouter(tags=["provider"])
 
-ContextRepositoryDep = Annotated[ContextRepository, Depends(get_repository)]
+IssuerAuthRepositoryDep = Annotated[
+    IssuerAuthRepository, Depends(get_issuer_auth_repository)
+]
 
 
 def make_response(items: list[Item], system_error: str = "") -> ProviderResponse:
@@ -18,23 +20,22 @@ def make_response(items: list[Item], system_error: str = "") -> ProviderResponse
 
 
 @router.post("/validate", response_model=ProviderResponse)
-def validate(
-    req: ProviderRequest,
-    repo: ContextRepositoryDep,
-):
-    """
-    Resolves issuer existence and auth(i) for OPA Gatekeeper.
-    """
+def validate(req: ProviderRequest, repo: IssuerAuthRepositoryDep):
+    """Resolves issuer existence and auth(i) for OPA Gatekeeper."""
     items = []
-    issuers = repo.query_issuers(req.request.keys)
-    issuers_dict = {issuer.name: issuer for issuer in issuers}
+    issuer_auths = repo.query(req.request.keys)
+    issuer_auths_dict = {issuer_auth.name: issuer_auth for issuer_auth in issuer_auths}
 
     for key in req.request.keys:
-        issuer = issuers_dict.get(key)
-        if issuer is None:
+        issuer_auth = issuer_auths_dict.get(key)
+        if issuer_auth is None:
             items.append(Item(key=key, error=f"Issuer '{key}' not found"))
             continue
 
-        items.append(Item(key=key, value={"contexts": issuer.contexts}))
+        value = {
+            "contexts": issuer_auth.contexts,
+        }
+
+        items.append(Item(key=key, value=value))
 
     return make_response(items)

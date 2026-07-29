@@ -1,4 +1,4 @@
-from sqlalchemy import Engine, create_engine, select, delete
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.pool import NullPool, StaticPool
 
 

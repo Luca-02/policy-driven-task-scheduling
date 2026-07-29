@@ -2,16 +2,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.dependencies import get_repository
+from src.config import Config
+from src.dependencies import get_dataset_repository
 from src.repositories import DatasetRepository
 from src.models import Dataset, DatasetBase, DatasetQuery
 from src.exceptions import NotFoundError, AlreadyExistsError
 
 _RESPONSE_MODEL_KWARGS = {"response_model_exclude_none": True}
 
+cfg = Config.from_env()
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
-DatasetRepositoryDep = Annotated[DatasetRepository, Depends(get_repository)]
+DatasetRepositoryDep = Annotated[DatasetRepository, Depends(get_dataset_repository)]
 
 
 @router.get("", response_model=list[Dataset], **_RESPONSE_MODEL_KWARGS)
@@ -56,7 +58,7 @@ def create_dataset(
 @router.post(
     "/batch", response_model=list[Dataset], status_code=201, **_RESPONSE_MODEL_KWARGS
 )
-def create_datasets(
+def create_datasets_batch(
     datasets: list[Dataset],
     repo: DatasetRepositoryDep,
 ):
@@ -70,17 +72,25 @@ def create_datasets(
             )
     return created
 
-
-@router.put("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
-def update_dataset(
-    name: str,
-    dataset: DatasetBase,
-    repo: DatasetRepositoryDep,
-):
-    try:
-        return repo.update(name, dataset)
-    except NotFoundError:
-        raise HTTPException(status_code=404, detail=f"Dataset not found: {name}")
+if cfg.debug_mode:
+    @router.put("/{name}", response_model=Dataset, **_RESPONSE_MODEL_KWARGS)
+    def update_dataset(
+        name: str,
+        dataset: DatasetBase,
+        repo: DatasetRepositoryDep,
+    ):
+        """
+        Debug-only endpoints. It ensure that the assumption of immutability of 
+        metadata is respected. These endpoints are not meant to be used in production, 
+        but only for testing and debugging purposes.
+        
+        This will mitigate the `Time-of-check to Time-of-use` race condition that can occur
+        when updating metadata.
+        """
+        try:
+            return repo.update(name, dataset)
+        except NotFoundError:
+            raise HTTPException(status_code=404, detail=f"Dataset not found: {name}")
 
 
 @router.delete("/{name}", status_code=204)

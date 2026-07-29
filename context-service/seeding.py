@@ -78,27 +78,28 @@ def main():
     # configuration precedes issuer/dataset onboarding in the prototype.
     conflicts = data.get("conflicts", [])
     logger.info(f"Seeding {len(conflicts)} context conflicts to {cfg.service_url}...")
-    for pair in conflicts:
-        try:
-            result = _post(f"{cfg.service_url}/conflicts", pair, ctx)
-            logger.info(f"Conflict seeded: {result}")
-        except urllib.error.HTTPError as e:
-            logger.error(
-                f"Conflict seeding error for {pair}: HTTP {e.code} - {e.read().decode()}"
-            )
-
-    issuers = data.get("issuers", [])
-    logger.info(f"Seeding {len(issuers)} issuers to {cfg.service_url}...")
     try:
-        result = _post(f"{cfg.service_url}/issuers/batch", issuers, ctx)
-        logger.info(f"Issuers seeded: {result}")
+        result = _post(f"{cfg.service_url}/conflicts/batch", conflicts, ctx)
+        logger.info(f"Conflicts seeded: {result}")
+    except urllib.error.HTTPError as e:
+        logger.error(f"Conflict seeding error: HTTP {e.code} - {e.read().decode()}")
+
+    issuer_auths = data.get("issuer_auths", [])
+    logger.info(
+        f"Seeding {len(issuer_auths)} issuer authorizations to {cfg.service_url}..."
+    )
+    try:
+        result = _post(f"{cfg.service_url}/issuer-auths/batch", issuer_auths, ctx)
+        logger.info(f"Issuer authorizations seeded: {result}")
     except urllib.error.HTTPError as e:
         logger.error(f"Issuer seeding error: HTTP {e.code} - {e.read().decode()}")
     except Exception as e:
         logger.error(f"Connection error: {e}")
         sys.exit(1)
 
-    logger.info("Completed! All conflicts and issuers processed successfully.")
+    logger.info(
+        "Completed! All conflicts and issuer authorizations processed successfully."
+    )
 
 
 if __name__ == "__main__":

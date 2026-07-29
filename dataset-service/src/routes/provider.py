@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from src.dependencies import get_repository
+from src.dependencies import get_dataset_repository
 from src.repositories import DatasetRepository
 from src.models import (
     Item,
@@ -13,7 +13,7 @@ from src.models import (
 
 router = APIRouter(tags=["provider"])
 
-DatasetRepositoryDep = Annotated[DatasetRepository, Depends(get_repository)]
+DatasetRepositoryDep = Annotated[DatasetRepository, Depends(get_dataset_repository)]
 
 
 def make_response(items: list[Item], system_error: str = "") -> ProviderResponse:
@@ -27,9 +27,7 @@ def validate(
     req: ProviderRequest,
     repo: DatasetRepositoryDep,
 ):
-    """
-    Resolves dataset existence and metadata for OPA Gatekeeper.
-    """
+    """Resolves dataset existence and metadata for OPA Gatekeeper."""
     items = []
     datasets = repo.query(req.request.keys)
     datasets_dict = {dataset.name: dataset for dataset in datasets}

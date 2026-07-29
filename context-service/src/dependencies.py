@@ -1,7 +1,7 @@
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
-from src.repositories import ContextRepository
+from src.repositories import ConflictRepository, IssuerAuthRepository
 
 
 def get_session(req: Request):
@@ -11,5 +11,13 @@ def get_session(req: Request):
         yield db
 
 
-def get_repository(db: Session = Depends(get_session)) -> ContextRepository:
-    return ContextRepository(db)
+def get_issuer_auth_repository(
+    db: Session = Depends(get_session),
+) -> IssuerAuthRepository:
+    return IssuerAuthRepository(db)
+
+
+def get_conflict_repository(
+    db: Session = Depends(get_session),
+) -> ConflictRepository:
+    return ConflictRepository(db)

@@ -61,7 +61,6 @@ spec:
             capabilities:
               drop: ["ALL"]
           env:
-            # Sostituiamo il secret con il percorso del file SQLite nel volume
             - name: DB_URL
               value: "sqlite:////data/dataset_catalog.db"
             - name: HOST

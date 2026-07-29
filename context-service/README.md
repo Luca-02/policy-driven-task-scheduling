@@ -26,7 +26,7 @@ Gatekeeper External Data requires the provider to be served over TLS.
 - **Concurrency**: every write that can affect the invariant
 
   ```
-  (auth(i) x auth(i)) ∩ X_conf = ∅   for every i in I
+  (auth(i) x auth(i)) intersect X_conf = empty   for every i in I
   ```
 
   (assigning/updating an issuer's contexts, or declaring a new conflict)
@@ -40,7 +40,7 @@ Gatekeeper External Data requires the provider to be served over TLS.
   issuer is checked against existing conflicts, and creating a conflict is
   checked against existing issuers — both enforced transactionally since
   they live in the same database. The equivalent check for datasets
-  (`(ctx(d) x ctx(d)) ∩ X_conf = ∅`) lives in `dataset-service`, a
+  (`(ctx(d) x ctx(d)) intersect X_conf = empty`) lives in `dataset-service`, a
   different service: only the "new dataset against existing conflicts"
   direction is enforced there (a synchronous HTTP call at write time); a
   new conflict retroactively invalidating an existing dataset's contexts is
@@ -50,37 +50,39 @@ Gatekeeper External Data requires the provider to be served over TLS.
 
 ## Endpoints
 
-| Method | Path                        | Description                          |
-| ------ | --------------------------- | ------------------------------------ |
-| GET    | `/healthz`                  | liveness/readiness                   |
-| POST   | `/validate`                 | Gatekeeper EDP (issuer existence + `auth(i)`) |
-| GET    | `/issuers`                  | list issuers                         |
-| GET    | `/issuers/{name}`           | issuer detail                        |
-| POST   | `/issuers/query`            | query issuers                        |
-| POST   | `/issuers`                  | create issuer                        |
-| POST   | `/issuers/batch`            | create multiple issuers (atomic)     |
-| PUT    | `/issuers/{name}`           | full replace issuer (debug only)     |
-| DELETE | `/issuers/{name}`           | delete issuer                        |
-| DELETE | `/issuers`                  | delete all issuers (debug only)      |
-| GET    | `/conflicts`                | list context conflicts (`X_conf`)    |
-| POST   | `/conflicts`                | create a conflict pair               |
-| DELETE | `/conflicts/{a}/{b}`        | delete a conflict pair               |
-| DELETE | `/conflicts`                | delete all conflicts (debug only)    |
+| Method | Path                   | Description                                    |
+| ------ | ---------------------- | ---------------------------------------------- |
+| GET    | `/healthz`             | liveness/readiness                             |
+| POST   | `/validate`            | Gatekeeper EDP (issuer existence + `auth(i)`)  |
+| GET    | `/issuer-auths`        | list issuer authorizations                     |
+| GET    | `/issuer-auths/{name}` | issuer authorization detail                    |
+| POST   | `/issuer-auths/query`  | query issuer authorizations                    |
+| POST   | `/issuer-auths`        | create issuer authorization                    |
+| POST   | `/issuer-auths/batch`  | create multiple issuer authorizations (atomic) |
+| PUT    | `/issuer-auths/{name}` | full replace issuer authorization (debug only) |
+| DELETE | `/issuer-auths/{name}` | delete issuer authorization                    |
+| DELETE | `/issuer-auths`        | delete all issuer authorizations (debug only)  |
+| GET    | `/conflicts`           | list context conflicts (`X_conf`)              |
+| GET    | `/conflicts/{context}` | list conflicts involving a context             |
+| POST   | `/conflicts`           | create a conflict pair                         |
+| POST   | `/conflicts/batch`     | create multiple conflict pairs (atomic)        |
+| DELETE | `/conflicts/{a}/{b}`   | delete a conflict pair                         |
+| DELETE | `/conflicts`           | delete all conflicts (debug only)              |
 
-Writes to `/issuers*` and `/conflicts` that would violate the
+Writes to `/issuer-auths*` and `/conflicts` that would violate the
 well-formedness invariant return `409 Conflict` with a `detail` payload
 naming the offending pairs or issuers.
 
 ## Configuration (env vars)
 
-| Variable                 | Default                              | Description               |
-| ------------------------ | ------------------------------------ | ------------------------- |
-| `DB_URL`                 | `sqlite://`                          | SQLAlchemy connection URI |
-| `HOST`                   | `127.0.0.1`                          | listen host               |
-| `PORT`                   | `8443`                               | listen port               |
-| `TLS_CERT_FILE`          | (unset)                              | server cert (enables TLS) |
-| `TLS_KEY_FILE`           | (unset)                              | server key (enables TLS)  |
-| `LOG_LEVEL`              | `INFO`                               | DEBUG/INFO/WARNING/ERROR  |
+| Variable        | Default     | Description               |
+| --------------- | ----------- | ------------------------- |
+| `DB_URL`        | `sqlite://` | SQLAlchemy connection URI |
+| `HOST`          | `127.0.0.1` | listen host               |
+| `PORT`          | `8443`      | listen port               |
+| `TLS_CERT_FILE` | (unset)     | server cert (enables TLS) |
+| `TLS_KEY_FILE`  | (unset)     | server key (enables TLS)  |
+| `LOG_LEVEL`     | `INFO`      | DEBUG/INFO/WARNING/ERROR  |
 
 When `TLS_CERT_FILE` / `TLS_KEY_FILE` are unset, the service runs in plain
 HTTP (used by tests).
@@ -108,7 +110,7 @@ kubectl wait -n context-service --for=condition=Ready cluster/context-db --timeo
 ### 2. Certificates & App Deployment
 
 ```bash
-# From this directory (context-service/); gen-certs.sh is shared at the repo root
+# From this directory (context-service/) generate TLS certs
 SVC="context-service" NS="context-service" TARGET_ENV="k8s" bash ../scripts/gen-certs.sh
 
 # Create the TLS Secret for the service
@@ -126,15 +128,9 @@ kind load docker-image context-service:latest --name <cluster-name>
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/provider.yaml
 
 kubectl -n context-service rollout status deployment/context-service --timeout=180s
 ```
-
-> **Nota:** `dataset-service`'s own `NetworkPolicy` deve essere aggiornato
-> per permettere l'egress verso `context-service:8443` (serve alla
-> validazione di `ctx(d)` sulla POST/PUT dei dataset) — non incluso in
-> questo servizio, va aggiornato nel manifest di `dataset-service`.
 
 ## Testing
 
@@ -143,6 +139,4 @@ pip install pytest pytest-cov
 pytest -v --cov=src
 ```
 
-Tests need **no external services**: the repository is tested on in-memory
-SQLite (where the concurrency lock is a documented no-op, see
-Architecture choices above).
+Tests need **no external services**: the repository is tested on in-memory SQLite.

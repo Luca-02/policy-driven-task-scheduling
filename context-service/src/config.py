@@ -1,6 +1,8 @@
 import os
 
-DB_URL_DEFAULT = "sqlite://" # Default to in-memory SQLite database for testing purposes
+DB_URL_DEFAULT = (
+    "sqlite://"  # Default to in-memory SQLite database for testing purposes
+)
 HOST_DEFAULT = "127.0.0.1"
 PORT_DEFAULT = 8443
 
@@ -16,6 +18,7 @@ class Config:
         tls_cert_file: str | None,
         tls_key_file: str | None,
         log_level: str,
+        debug_mode: bool = False,
     ):
         self.db_url = db_url
         self.host = host
@@ -23,6 +26,7 @@ class Config:
         self.tls_cert_file = tls_cert_file
         self.tls_key_file = tls_key_file
         self.log_level = log_level
+        self.debug_mode = debug_mode
 
     @property
     def tls_enabled(self) -> bool:
@@ -37,4 +41,5 @@ class Config:
             tls_cert_file=os.getenv("TLS_CERT_FILE"),
             tls_key_file=os.getenv("TLS_KEY_FILE"),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
+            debug_mode=os.getenv("DEBUG_MODE", "false").lower() == "true",
         )

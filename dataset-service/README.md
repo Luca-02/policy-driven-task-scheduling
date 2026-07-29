@@ -72,7 +72,7 @@ kubectl wait -n dataset-service --for=condition=Ready cluster/dataset-db --timeo
 
 `gen-certs.sh` lives at the repo root (`scripts/gen-certs.sh`, shared across all mock services) and, if executed with the env `TARGET_ENV=k8s`, automatically generates a self-signed CA, creates the server certificates, and automatically injects the base64 CA bundle into k8s/provider.yaml. Since it's shared, `SVC`/`NS` must always be passed explicitly.
 ```bash
-# From this directory (dataset-service/); generate TLS certs and update provider.yaml
+# From this directory (dataset-service/) generate TLS certs
 SVC="dataset-service" NS="dataset-service" TARGET_ENV="k8s" bash ../scripts/gen-certs.sh
 
 # Create the TLS Secret for the service
@@ -90,13 +90,10 @@ kind load docker-image dataset-service:latest --name <cluster-name>
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/provider.yaml
 
 # Wait for the service to be fully rolled out and ready
 kubectl -n dataset-service rollout status deployment/dataset-service --timeout=180s
 ```
-
-<!-- TODO: Add the seeding section procedure -->
 
 ## Testing
 

@@ -9,9 +9,12 @@ from fastapi.concurrency import asynccontextmanager
 from sqlalchemy.orm import sessionmaker
 
 from src.config import Config
-from src.orm import Base
+from src.orm import Base, LockORM
 from src.database import create_engine_factory
 from src.routes.healthz import router as health_router
+from src.routes.provider import router as provider_router
+from src.routes.issuer_auths import router as issuer_auths_router
+from src.routes.conflicts import router as conflicts_router
 
 load_dotenv()
 
@@ -37,6 +40,13 @@ async def lifespan(app: FastAPI):
         autocommit=False, autoflush=False, bind=engine
     )
 
+    # Seed the sentinel row used by ContextRepository._acquire_lock to
+    # serialize writes that must preserve the well-formedness invariant.
+    with app.state.session_factory() as db:
+        if db.get(LockORM, 1) is None:
+            db.add(LockORM(id=1))
+            db.commit()
+
     # --- running ---
     yield
 
@@ -52,14 +62,19 @@ def create_app(custom_cfg: Config | None = None) -> FastAPI:
     app = FastAPI(
         title="Mock Context Service",
         description=(
-            "Simulates an external context catalog. "
-            "Implements the Gatekeeper External Context Provider protocol."
+            "Simulates an external context/authorization catalog: issuer "
+            "authorizations (auth) and the context conflict-of-interest "
+            "relation (X_conf). Implements the Gatekeeper External Data "
+            "Provider protocol."
         ),
         version="0.1.0",
         lifespan=lifespan,
     )
 
     app.include_router(health_router)
+    app.include_router(provider_router)
+    app.include_router(issuer_auths_router)
+    app.include_router(conflicts_router)
 
     @app.middleware("http")
     async def log_requests_and_responses(request: Request, call_next):

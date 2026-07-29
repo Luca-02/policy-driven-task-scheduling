@@ -4,8 +4,8 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 
-class IssuerORM(Base):
-    __tablename__ = "issuers"
+class IssuerAuthORM(Base):
+    __tablename__ = "issuer_auths"
 
     name = Column(String(254), primary_key=True, nullable=False)
     contexts = Column(JSON, nullable=False, default=list)  # auth(i)
@@ -28,11 +28,10 @@ class ConflictORM(Base):
 class LockORM(Base):
     """
     A single sentinel row (id=1) used purely as a mutex: any write that
-    must (re)verify a well-formedness invariant spanning both `issuers`
-    and `context_conflicts` takes a row lock on it first, serializing
-    itself against every other such write. See
-    ContextRepository._acquire_lock for the rationale, and main.py for
-    where the row is seeded at startup.
+    must (re)verify a well-formedness invariant spanning both `issuer_auths`
+    and `context_conflicts` takes a row lock on it first, serializing itself
+    against every other such write. See `BaseRepository._acquire_lock` for
+    the rationale, and main.py for where the row is seeded at startup.
     """
 
     __tablename__ = "well_formedness_lock"

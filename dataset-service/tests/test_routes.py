@@ -21,7 +21,7 @@ D2 = {
     "size_mb": 2048,
     "nodes": ["kind-worker3"],
     "static": True,
-    "contexts": []
+    "contexts": [],
 }
 
 UPDATE_D1 = {
@@ -42,6 +42,7 @@ def make_cfg() -> Config:
         tls_cert_file=None,
         tls_key_file=None,
         log_level="WARNING",
+        debug_mode=True,
     )
 
 

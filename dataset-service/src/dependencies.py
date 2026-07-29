@@ -11,5 +11,7 @@ def get_session(req: Request):
         yield db
 
 
-def get_repository(db: Session = Depends(get_session)) -> DatasetRepository:
+def get_dataset_repository(
+    db: Session = Depends(get_session),
+) -> DatasetRepository:
     return DatasetRepository(db)
