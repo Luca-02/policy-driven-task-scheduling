@@ -46,6 +46,10 @@ class WellFormednessViolation(ContextServiceError):
         super().__init__(message)
 
     def details(self) -> dict:
+        """
+        HTTPException-ready payload: the message, plus whichever 
+        of `conflicts`/`issuers` is populated.
+        """
         detail = {"msg": str(self)}
         if self.conflicts:
             detail["conflicts"] = [list(pair) for pair in self.conflicts]

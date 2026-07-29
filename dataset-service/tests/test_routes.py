@@ -34,7 +34,7 @@ UPDATE_D1 = {
 }
 
 
-def make_cfg() -> Config:
+def make_cfg(debug_mode: bool = True) -> Config:
     return Config(
         db_url="sqlite://",  # in-memory
         host="0.0.0.0",
@@ -42,13 +42,15 @@ def make_cfg() -> Config:
         tls_cert_file=None,
         tls_key_file=None,
         log_level="WARNING",
-        debug_mode=True,
+        debug_mode=debug_mode,
     )
 
 
 class TestBase(unittest.TestCase):
+    cfg = staticmethod(make_cfg)
+
     def setUp(self):
-        self.app = create_app(make_cfg())
+        self.app = create_app(self.cfg())
         self.client = TestClient(self.app)
         self.client.__enter__()
 
@@ -192,3 +194,12 @@ class TestProvider(TestBase):
         r = self.client.post("/validate", json={"request": {"keys": []}})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["response"]["items"], [])
+
+
+class TestDatasetDebugModeOff(TestBase):
+    cfg = staticmethod(lambda: make_cfg(debug_mode=False))
+
+    def test_update_endpoint_hidden_when_debug_mode_off(self):
+        self._create_d1()
+        r = self.client.put("/datasets/d1", json=UPDATE_D1)
+        self.assertEqual(r.status_code, 404)

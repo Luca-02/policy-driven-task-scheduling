@@ -1,6 +1,7 @@
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
+from src.config import Config
 from src.repositories import ConflictRepository, IssuerAuthRepository
 
 
@@ -9,6 +10,10 @@ def get_session(req: Request):
     session_factory = req.app.state.session_factory
     with session_factory() as db:
         yield db
+
+
+def get_config(req: Request) -> Config:
+    return req.app.state.config
 
 
 def get_issuer_auth_repository(

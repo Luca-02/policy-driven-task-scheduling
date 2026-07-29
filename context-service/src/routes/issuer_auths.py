@@ -1,19 +1,31 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.config import Config
-from src.dependencies import get_issuer_auth_repository
+from src.dependencies import get_config, get_issuer_auth_repository
 from src.repositories import IssuerAuthRepository
 from src.models import IssuerAuth, IssuerAuthBase, IssuerAuthQuery
 from src.exceptions import AlreadyExistsError, NotFoundError, WellFormednessViolation
 
-cfg = Config.from_env()
 router = APIRouter(prefix="/issuer-auths", tags=["issuer-auths"])
 
 IssuerAuthRepositoryDep = Annotated[
     IssuerAuthRepository, Depends(get_issuer_auth_repository)
 ]
+
+
+def verify_debug_mode(config: Annotated[Config, Depends(get_config)]):
+    """
+    Verify that the application is running in debug mode.
+    If not, raise an HTTPException with a 404 status code
+    and a message indicating that the endpoint is not available.
+    """
+    if not config.debug_mode:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Endpoint not available.",
+        )
 
 
 @router.get("", response_model=list[IssuerAuth])
@@ -71,30 +83,34 @@ def create_issuer_auths(issuer_auths: list[IssuerAuth], repo: IssuerAuthReposito
         raise HTTPException(status_code=409, detail=exc.details())
 
 
-if cfg.debug_mode:
+@router.put(
+    "/{name}",
+    response_model=IssuerAuth,
+    dependencies=[Depends(verify_debug_mode)],
+)
+def update_issuer_auth(
+    name: str,
+    issuer_auth: IssuerAuthBase,
+    repo: IssuerAuthRepositoryDep,
+):
+    """
+    Debug-only endpoints. It ensure that the assumption of immutability of
+    metadata is respected. These endpoints are not meant to be used in production,
+    but only for testing and debugging purposes.
 
-    @router.put("/{name}", response_model=IssuerAuth)
-    def update_issuer_auth(
-        name: str, issuer_auth: IssuerAuthBase, repo: IssuerAuthRepositoryDep
-    ):
-        """
-        Debug-only endpoints. It ensure that the assumption of immutability of
-        metadata is respected. These endpoints are not meant to be used in production,
-        but only for testing and debugging purposes.
-
-        This will mitigate the `Time-of-check to Time-of-use` race condition that can occur
-        when updating metadata.
-        """
-        try:
-            updated = repo.update(name, issuer_auth)
-        except WellFormednessViolation as exc:
-            raise HTTPException(status_code=409, detail=exc.details())
-        if updated is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Issuer authorization not found: {name}",
-            )
-        return updated
+    This will mitigate the `Time-of-check to Time-of-use` race condition that can 
+    occur when updating metadata.
+    """
+    try:
+        updated = repo.update(name, issuer_auth)
+    except WellFormednessViolation as exc:
+        raise HTTPException(status_code=409, detail=exc.details())
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Issuer authorization not found: {name}",
+        )
+    return updated
 
 
 @router.delete("/{name}", status_code=204)

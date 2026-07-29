@@ -29,7 +29,8 @@ logger = logging.getLogger("dataset-service")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # --- startup ---
-    engine = create_engine_factory(cfg.db_url)
+    config: Config = app.state.config
+    engine = create_engine_factory(config.db_url)
 
     # Create tables if they don't exist
     Base.metadata.create_all(engine)
@@ -60,6 +61,8 @@ def create_app(custom_cfg: Config | None = None) -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    app.state.config = custom_cfg
 
     app.include_router(health_router)
     app.include_router(provider_router)
