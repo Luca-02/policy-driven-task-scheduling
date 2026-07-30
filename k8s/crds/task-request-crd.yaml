@@ -35,7 +35,7 @@ spec:
           properties:
             spec:
               type: object
-              required: [issuer]
+              required: [issuer, datasets]
               properties:
                 # iss(t): identity of the entity that issued the task request.
                 issuer:

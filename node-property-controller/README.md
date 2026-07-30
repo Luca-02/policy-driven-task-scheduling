@@ -52,8 +52,8 @@ kind load docker-image node-property-controller:latest --name <cluster-name>
 
 # Namespace, RBAC, network policy, deployment
 kubectl apply -f k8s/rbac.yaml
-kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/network-policy.yaml
 
 # Wait for the service to be fully rolled out and ready
 kubectl -n node-property-controller rollout status deployment/node-property-controller --timeout=180s

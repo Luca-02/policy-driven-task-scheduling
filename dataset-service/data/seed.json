@@ -125,7 +125,7 @@
         "kind-worker5"
       ],
       "static": false,
-      "contexts": ["ford"]
+      "contexts": ["Ford"]
     },
     {
       "name": "d2ctx",
@@ -138,7 +138,7 @@
         "kind-worker5"
       ],
       "static": false,
-      "contexts": ["ford"]
+      "contexts": ["Ford"]
     },
     {
       "name": "d3ctx",
@@ -151,7 +151,7 @@
         "kind-worker5"
       ],
       "static": false,
-      "contexts": ["ferrari", "finance"]
+      "contexts": ["Ferrari", "Finance"]
     },
     {
       "name": "d4ctx",

@@ -13,6 +13,7 @@ spec:
         package k8svalidatetaskrequestproperties
 
         requirements := input.review.object.spec.requirements
+        
         property_inventory := data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["NodeProperty"]
 
         valid_property_level(prop_name, req_level) {
@@ -22,7 +23,7 @@ spec:
         }
 
         # ---------------------------------------------------------------------
-        # Violation 1: invalid requested property in the TaskRequest 
+        # Violation: invalid requested property in the TaskRequest 
         # requirements
         # ---------------------------------------------------------------------
         violation[{"msg": msg}] {
@@ -37,7 +38,7 @@ spec:
         }
 
         # ---------------------------------------------------------------------
-        # Violation 2: invalid level for an existing property in the 
+        # Violation: invalid level for an existing property in the 
         # TaskRequest requirements
         # ---------------------------------------------------------------------
         violation[{"msg": msg}] {

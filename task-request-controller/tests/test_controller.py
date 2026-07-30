@@ -2,6 +2,7 @@ import json
 import unittest
 from unittest.mock import MagicMock
 
+from kopf import TemporaryError
 from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
@@ -175,12 +176,10 @@ class TestReconcile(ControllerTestBase):
         self.assertNotIn(SCHEDULED_PHASE, self.patched_phases())
 
     def test_dataset_service_error_raises_temporary(self):
-        import kopf
-
         self.dataset_service.get_all_datasets.side_effect = DatasetServiceError(
             "unreachable"
         )
-        with self.assertRaises(kopf.TemporaryError):
+        with self.assertRaises(TemporaryError):
             self.do_reconcile()
 
     def test_job_conflict_409_is_idempotent(self):
@@ -197,10 +196,8 @@ class TestReconcile(ControllerTestBase):
         self.assertNotIn(SCHEDULED_PHASE, self.patched_phases())
 
     def test_job_server_error_raises_temporary(self):
-        import kopf
-
         self.batch_v1.create_namespaced_job.side_effect = ApiException(status=500)
-        with self.assertRaises(kopf.TemporaryError):
+        with self.assertRaises(TemporaryError):
             self.do_reconcile()
 
 

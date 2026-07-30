@@ -4,14 +4,15 @@ metadata:
   name: invalid
   # no namespace 'compute'
 spec:
-  issuer: issuer
+  issuer: issuerford # issuer authorized for {Ford}
   requirements:
     security: 1
     computation: 99 # invalid level for 'computation' property
     dnotexist: 1 # non-existent property
   datasets:
-    - d1
-    - d2
+    - d1 # valid dataset
+    - d2 # valid dataset
+    - d3ctx # dataset with "contexts": {Ferrari, Finance} -> not authorized for issuer-ford
     - dnotexist1 # non-existent dataset
     - dnotexist2 # non-existent dataset
     - dnotexistprop # dataset with "requirements": {"badprop1": 1, "badprop2": 3}

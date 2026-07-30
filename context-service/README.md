@@ -126,8 +126,8 @@ kind load docker-image context-service:latest --name <cluster-name>
 
 # Apply all service manifests
 kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/network-policy.yaml
 
 kubectl -n context-service rollout status deployment/context-service --timeout=180s
 ```

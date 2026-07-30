@@ -13,6 +13,7 @@ spec:
         package k8svalidatetaskrequestgeographicalgroup
 
         geo := input.review.object.spec.geo
+        
         group_inventory := data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["GeographicalGroup"]
 
         # ---------------------------------------------------------------------

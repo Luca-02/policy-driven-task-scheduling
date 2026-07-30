@@ -9,43 +9,6 @@ spec:
 
 # Reponse example from the provider:
 # {
-#   "errors": [],
-#   "responses": [
-#     [
-#       "d1",
-#       {
-#         "nodes": [
-#           "kind-worker2",
-#           "kind-worker4",
-#           "kind-worker5"
-#         ],
-#         "requirements": {
-#           "computation": 1,
-#           "security": 2
-#         },
-#         "size_mb": 1024
-#       }
-#     ],
-#     [
-#       "d2",
-#       {
-#         "nodes": [
-#           "kind-worker1",
-#           "kind-worker4"
-#         ],
-#         "requirements": {
-#           "computation": 3,
-#           "security": 1
-#         },
-#         "size_mb": 2048
-#       }
-#     ]
-#   ],
-#   "status_code": 0,
-#   "system_error": ""
-# }
-
-# {
 #   "errors": [
 #     [
 #       "dnotexist",
@@ -56,6 +19,7 @@ spec:
 #     [
 #       "d1",
 #       {
+#         "size_mb": 1024,
 #         "nodes": [
 #           "kind-worker2",
 #           "kind-worker4",
@@ -65,26 +29,10 @@ spec:
 #           "computation": 1,
 #           "security": 2
 #         },
-#         "size_mb": 1024
+#         "contexts": ["Ford"]
 #       }
 #     ]
 #   ],
-#   "status_code": 200,
-#   "system_error": ""
-# }
-
-# {
-#   "errors": [
-#     [
-#       "dnotexist1",
-#       "Dataset not found"
-#     ],
-#     [
-#       "dnotexist2",
-#       "Dataset not found"
-#     ]
-#   ],
-#   "responses": [],
 #   "status_code": 200,
 #   "system_error": ""
 # }

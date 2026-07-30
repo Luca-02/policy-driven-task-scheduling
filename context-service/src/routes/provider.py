@@ -29,13 +29,14 @@ def validate(req: ProviderRequest, repo: IssuerAuthRepositoryDep):
     for key in req.request.keys:
         issuer_auth = issuer_auths_dict.get(key)
         if issuer_auth is None:
-            items.append(Item(key=key, error=f"Issuer '{key}' not found"))
+            items.append(Item(key=key, error=f"Issuer {key!r} not found"))
             continue
 
-        value = {
-            "contexts": issuer_auth.contexts,
-        }
-
-        items.append(Item(key=key, value=value))
+        items.append(
+            Item(
+                key=key,
+                value=issuer_auth.model_dump(exclude_none=True),
+            )
+        )
 
     return make_response(items)

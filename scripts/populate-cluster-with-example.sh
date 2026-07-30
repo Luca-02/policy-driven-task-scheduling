@@ -11,7 +11,35 @@ kubectl apply -f "${NODE_PROPERTY_DIR}"
 echo "Populate with geographical groups"
 kubectl apply -f "${GEOGRAPHICAL_GROUP_DIR}"
 
-echo "Seeding dataset-service"
+echo "Populate context-service"
+(
+    readonly CONTEXT_SERVICE_DIR="context-service"
+    readonly CONTEXT_SERVICE_NAMESPACE="context-service"
+    readonly SEED_FILE="data/seed.json"
+
+    cd "${CONTEXT_SERVICE_DIR}"
+
+    kubectl create configmap context-seed \
+        --from-file=seed.json="${SEED_FILE}" \
+        --namespace "${CONTEXT_SERVICE_NAMESPACE}" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    kubectl delete job context-seeding \
+        --namespace "${CONTEXT_SERVICE_NAMESPACE}" \
+        --ignore-not-found
+
+    kubectl apply -f k8s/seeding.yaml
+    kubectl wait --namespace context-service \
+        --for=condition=complete \
+        job/context-seeding \
+        --timeout=60s
+
+    kubectl delete configmap context-seed \
+        --namespace "${CONTEXT_SERVICE_NAMESPACE}" \
+        --ignore-not-found
+)
+
+echo "Populate dataset-service"
 (
     readonly DATASET_SERVICE_DIR="dataset-service"
     readonly DATASET_SERVICE_NAMESPACE="dataset-service"

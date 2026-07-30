@@ -148,14 +148,21 @@ class Controller:
 
         spec = body.get("spec", {})
 
-        issuer: str = spec.get("issuer", "")
+        issuer: str = spec.get(
+            "issuer", ""
+        )  # Cant be empty, otherwise the TaskRequest is invalid
         requirements: dict = spec.get("requirements", {})
-        datasets: set = spec.get("datasets", set())
+        datasets: set = spec.get(
+            "datasets", set()
+        )  # Cant be empty, otherwise the TaskRequest is invalid
         geo: str | None = spec.get("geo")
 
         # Issuer must be not empty to ensure that the TaskRequest is valid and can be processed
-        if not issuer:
-            message = "Missing issuer in spec"
+        if not issuer or not datasets:
+            if not issuer:
+                message = "spec.issuer is empty, cannot process"
+            else:
+                message = "spec.datasets is empty, cannot process"
             logger.error(f"TaskRequest {name!r}: {message}")
             self._set_status(
                 namespace=namespace,

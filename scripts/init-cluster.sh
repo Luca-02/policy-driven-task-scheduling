@@ -143,6 +143,39 @@ copy_ca_secret() {
     rm -f /tmp/ca.crt
 }
 
+setup_service_tls() {
+    local path="$1"
+    local svc="$2"
+    local ns="$3"
+    local secret="$4"
+    local target_env="${5:-k8s}"
+    local certs_dir="${6:-.certs}"
+
+    log "Generating TLS certificates for $svc"
+    (
+        cd "$path"
+
+        log "Creating TLS secret for $svc"
+        if kubectl get secret "$secret" -n "$ns" >/dev/null 2>&1; then
+            log "TLS secret for $svc already exists"
+        else
+            TARGET_ENV=$target_env SVC=$svc NS=$ns \
+                bash "$ROOT_DIR/scripts/gen-certs.sh" "$certs_dir"
+
+            kubectl create secret generic "$secret" \
+                --from-file=ca.crt="$certs_dir/${target_env}/ca.crt" \
+                --from-file=tls.crt="$certs_dir/${target_env}/tls.crt" \
+                --from-file=tls.key="$certs_dir/${target_env}/tls.key" \
+                -n "$ns" \
+                --dry-run=client -o yaml | kubectl apply -f -
+        fi
+
+        log "Rendering and applying $svc provider (caBundle injected at apply time)"
+        CA_B64=$(kubectl get secret "$secret" -n "$ns" -o jsonpath='{.data.ca\.crt}')
+        sed "s|<CA_BUNDLE>|${CA_B64}|" "k8s/provider.yaml" | kubectl apply -f -
+    )
+}
+
 #######################################
 # Preconditions
 #######################################
@@ -234,6 +267,7 @@ readonly TEMPLATE_CONSTRAINT_DIRS=(
     "k8s/policies/validate-task-request-properties"
     "k8s/policies/validate-task-request-geographical-group"
     "k8s/policies/validate-task-request-datasets"
+    "k8s/policies/validate-task-request-auth"
 )
 
 log "Installing Gatekeeper"
@@ -316,8 +350,8 @@ readonly NODE_PROPERTY_CONTROLLER_DEPLOYMENT="node-property-controller"
 
 log "Applying node-property-controller manifests"
 kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/rbac.yaml"
-kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/network-policy.yaml"
 kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/deployment.yaml"
+kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/network-policy.yaml"
 
 wait_for_deployment "$NODE_PROPERTY_CONTROLLER_NAMESPACE" "$NODE_PROPERTY_CONTROLLER_DEPLOYMENT"
 
@@ -345,32 +379,7 @@ readonly DATASET_SERVICE_NAMESPACE="dataset-service"
 readonly DATASET_SERVICE_DEPLOYMENT="dataset-service"
 readonly DATASET_SERVICE_TLS_SECRET="dataset-service-tls"
 
-TARGET_ENV="k8s"
-CERTS_DIR=".certs"
-
-log "Generating TLS certificates for dataset-service"
-(
-    cd "$DATASET_SERVICE_PATH"
-
-    log "Creating TLS secret for dataset-service"
-    if kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" >/dev/null 2>&1; then
-        log "TLS secret for dataset-service already exists"
-    else
-        TARGET_ENV=$TARGET_ENV SVC=$DATASET_SERVICE NS=$DATASET_SERVICE_NAMESPACE \
-            bash "$ROOT_DIR/scripts/gen-certs.sh" "$CERTS_DIR"
-
-        kubectl create secret generic "$DATASET_SERVICE_TLS_SECRET" \
-            --from-file=ca.crt="$CERTS_DIR/${TARGET_ENV}/ca.crt" \
-            --from-file=tls.crt="$CERTS_DIR/${TARGET_ENV}/tls.crt" \
-            --from-file=tls.key="$CERTS_DIR/${TARGET_ENV}/tls.key" \
-            -n "$DATASET_SERVICE_NAMESPACE" \
-            --dry-run=client -o yaml | kubectl apply -f -
-    fi
-
-    log "Rendering and applying dataset-service provider (caBundle injected at apply time)"
-    CA_B64=$(kubectl get secret "$DATASET_SERVICE_TLS_SECRET" -n "$DATASET_SERVICE_NAMESPACE" -o jsonpath='{.data.ca\.crt}')
-    sed "s|<CA_BUNDLE>|${CA_B64}|" "k8s/provider.yaml" | kubectl apply -f -
-)
+setup_service_tls "$DATASET_SERVICE_PATH" "$DATASET_SERVICE" "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_TLS_SECRET"
 
 readonly DATASET_SERVICE_IMAGE="dataset-service:latest"
 
@@ -379,14 +388,56 @@ load_image "$DATASET_SERVICE_PATH" "$DATASET_SERVICE_IMAGE"
 
 log "Applying dataset-service manifests"
 kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/service.yaml"
-kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/network-policy.yaml"
 if [[ "$DATASET_SERVICE_LIGHT_MODE" == "true" ]]; then
     kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/deployment-light.yaml"
 else
     kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/deployment.yaml"
 fi
+kubectl apply -f "${DATASET_SERVICE_PATH}/k8s/network-policy.yaml"
 
 wait_for_deployment "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_DEPLOYMENT"
+
+#######################################
+# context-service
+#######################################
+
+readonly CONTEXT_SERVICE_PATH="context-service"
+readonly CONTEXT_SERVICE_LIGHT_MODE="${CONTEXT_SERVICE_LIGHT_MODE:-false}"
+
+if [[ "$CONTEXT_SERVICE_LIGHT_MODE" == "true" ]]; then
+    log "Context service light mode enabled, skipping postgres cluster setup"
+else
+    log "Applying CloudNativePG postgres cluster manifest"
+    apply_with_retry "$CONTEXT_SERVICE_PATH/k8s/postgres-cluster.yaml" "CloudNativePG" "$MAX_RETRIES"
+
+    log "Waiting for CloudNativePG postgres cluster to be ready"
+    kubectl wait -n context-service \
+        --for=condition=Ready cluster/context-db \
+        --timeout=600s
+fi
+
+readonly CONTEXT_SERVICE="context-service"
+readonly CONTEXT_SERVICE_NAMESPACE="context-service"
+readonly CONTEXT_SERVICE_DEPLOYMENT="context-service"
+readonly CONTEXT_SERVICE_TLS_SECRET="context-service-tls"
+
+setup_service_tls "$CONTEXT_SERVICE_PATH" "$CONTEXT_SERVICE" "$CONTEXT_SERVICE_NAMESPACE" "$CONTEXT_SERVICE_TLS_SECRET"
+
+readonly CONTEXT_SERVICE_IMAGE="context-service:latest"
+
+log "Setting up context-service image"
+load_image "$CONTEXT_SERVICE_PATH" "$CONTEXT_SERVICE_IMAGE"
+
+log "Applying context-service manifests"
+kubectl apply -f "${CONTEXT_SERVICE_PATH}/k8s/service.yaml"
+if [[ "$CONTEXT_SERVICE_LIGHT_MODE" == "true" ]]; then
+    kubectl apply -f "${CONTEXT_SERVICE_PATH}/k8s/deployment-light.yaml"
+else
+    kubectl apply -f "${CONTEXT_SERVICE_PATH}/k8s/deployment.yaml"
+fi
+kubectl apply -f "${CONTEXT_SERVICE_PATH}/k8s/network-policy.yaml"
+
+wait_for_deployment "$CONTEXT_SERVICE_NAMESPACE" "$CONTEXT_SERVICE_DEPLOYMENT"
 
 #######################################
 # task-request-controller
@@ -405,8 +456,8 @@ copy_ca_secret "$DATASET_SERVICE_NAMESPACE" "$TASK_REQUEST_CONTROLLER_NAMESPACE"
 
 log "Applying task-request-controller manifests"
 kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/rbac.yaml"
-kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/network-policy.yaml"
 kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/deployment.yaml"
+kubectl apply -f "${TASK_REQUEST_CONTROLLER_PATH}/k8s/network-policy.yaml"
 
 wait_for_deployment "$TASK_REQUEST_CONTROLLER_NAMESPACE" "$TASK_REQUEST_CONTROLLER_DEPLOYMENT"
 
@@ -433,7 +484,7 @@ kubectl create configmap scheduler-config \
 
 log "Applying scheduler manifests"
 kubectl apply -f "${SCHEDULER_PATH}/k8s/rbac.yaml"
-kubectl apply -f "${SCHEDULER_PATH}/k8s/network-policy.yaml"
 kubectl apply -f "${SCHEDULER_PATH}/k8s/deployment.yaml"
+kubectl apply -f "${SCHEDULER_PATH}/k8s/network-policy.yaml"
 
 wait_for_deployment "$SCHEDULER_NAMESPACE" "$SCHEDULER_DEPLOYMENT"

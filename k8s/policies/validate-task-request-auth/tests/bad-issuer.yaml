@@ -1,0 +1,13 @@
+# This is an invalid TaskRequest used to test the validation webhook with external data provider.
+# IMPORTANT:
+# This task is based on the `dataset-service/data/seed.json` and `context-service/data/seed.json` 
+# data seeds.
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: bad-issuer
+  namespace: compute
+spec:
+  issuer: issuernotexist # non-existent issuer
+  datasets:
+    - d1ctx # dataset with "contexts": ["Ford"]

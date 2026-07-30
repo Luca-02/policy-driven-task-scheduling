@@ -5,7 +5,8 @@
     { "context_a": "BMW", "context_b": "Mercedes" }
   ],
   "issuer_auths": [
-    { "name": "issuer-ford", "contexts": ["Ford"] },
-    { "name": "issuer-ferrari", "contexts": ["Ferrari", "Finance"] }
+    { "name": "issuerpublic", "contexts": [] },
+    { "name": "issuerford", "contexts": ["Ford"] },
+    { "name": "issuerferrari", "contexts": ["Ferrari", "Finance"] }
   ]
 }

@@ -88,8 +88,8 @@ kind load docker-image dataset-service:latest --name <cluster-name>
 
 # Apply all service manifests
 kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/network-policy.yaml
 kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/network-policy.yaml
 
 # Wait for the service to be fully rolled out and ready
 kubectl -n dataset-service rollout status deployment/dataset-service --timeout=180s
