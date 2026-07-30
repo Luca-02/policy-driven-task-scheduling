@@ -49,8 +49,6 @@ class ControllerTestBase(unittest.TestCase):
             config=self.cfg,
         )
         self.logger = make_logger()
-        # By default, no datasets are requested and the dataset service is
-        # never contacted: _get_all_datasets([]) -> [].
         self.dataset_service.get_all_datasets.return_value = []
 
     def make_body(
@@ -68,7 +66,8 @@ class ControllerTestBase(unittest.TestCase):
             "spec": {
                 "issuer": issuer,
                 "requirements": requirements or {},
-                "datasets": datasets or [],
+                # spec.datasets is required and minItems: 1 at the CRD level
+                "datasets": datasets if datasets is not None else ["d"],
             },
             "status": {},
         }
@@ -133,7 +132,7 @@ class TestReconcile(ControllerTestBase):
         self.batch_v1.create_namespaced_job.assert_not_called()
 
     def test_full_reconcile_creates_job_and_sets_phases(self):
-        self.do_reconcile(requirements={"security": 1}, datasets=[])
+        self.do_reconcile(requirements={"security": 1})
         self.batch_v1.create_namespaced_job.assert_called_once()
         self.assertIsInstance(self.created_job(), client.V1Job)
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
@@ -161,7 +160,7 @@ class TestReconcile(ControllerTestBase):
         )
 
     def test_full_reconcile_annotation_reflects_issuer(self):
-        self.do_reconcile(issuer="bob", datasets=[])
+        self.do_reconcile(issuer="bob")
         self.assertEqual(
             json.loads(self.pod_annotation(ISSUER_ANNOTATION_DEFAULT)), "bob"
         )
@@ -200,16 +199,30 @@ class TestReconcile(ControllerTestBase):
         with self.assertRaises(TemporaryError):
             self.do_reconcile()
 
+    def test_empty_datasets_sets_failed_without_creating_job(self):
+        self.do_reconcile(datasets=[])
+        self.batch_v1.create_namespaced_job.assert_not_called()
+        self.assertIn(FAILURE_PHASE, self.patched_phases())
+        self.assertNotIn(SCHEDULED_PHASE, self.patched_phases())
+        self.assertIn("spec.datasets", self.last_failure_message())
+
+    def test_empty_issuer_sets_failed_without_creating_job(self):
+        self.do_reconcile(issuer="")
+        self.batch_v1.create_namespaced_job.assert_not_called()
+        self.assertIn(FAILURE_PHASE, self.patched_phases())
+        self.assertNotIn(SCHEDULED_PHASE, self.patched_phases())
+        self.assertIn("spec.issuer", self.last_failure_message())
+
 
 class TestReconcileGeo(ControllerTestBase):
     def test_geo_omega_creates_job_with_no_geo_annotation(self):
-        self.do_reconcile(geo=None, datasets=[])
+        self.do_reconcile(geo=None)
         self.assertIsNone(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
 
     def test_geo_t_resolved_against_registry(self):
         self.load_geo_groups(("EU", ["eu-west", "eu-north"], []))
-        self.do_reconcile(geo="EU", datasets=[])
+        self.do_reconcile(geo="EU")
         self.assertEqual(
             set(json.loads(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))),
             {"eu-west", "eu-north"},
@@ -249,21 +262,21 @@ class TestReconcileGeo(ControllerTestBase):
     def test_unknown_geo_group_is_skipped_not_failed(self):
         # No groups registered at all: "EU" is unresolved and skipped,
         # resulting in Omega (no constraint), not a failure.
-        self.do_reconcile(geo="EU", datasets=[])
+        self.do_reconcile(geo="EU")
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
         self.assertIsNone(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))
 
     def test_geo_group_deleted_no_longer_resolved(self):
         self.load_geo_groups(("EU", ["eu-west"], []))
         self.ctrl.on_geographical_group_deleted("EU", self.logger)
-        self.do_reconcile(geo="EU", datasets=[])
+        self.do_reconcile(geo="EU")
         # EU no longer in registry: skipped -> Omega -> Job still created.
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
         self.assertIsNone(self.pod_annotation(GEO_STAR_ANNOTATION_DEFAULT))
 
     def test_geo_affinity_present_on_job(self):
         self.load_geo_groups(("EU", ["eu-west", "eu-north"], []))
-        self.do_reconcile(geo="EU", datasets=[])
+        self.do_reconcile(geo="EU")
         job = self.created_job()
         terms = (
             job.spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms
@@ -276,10 +289,6 @@ class TestReconcileGeo(ControllerTestBase):
 
 
 class TestReconcileCtxStar(ControllerTestBase):
-    def test_no_datasets_no_ctx_annotation(self):
-        self.do_reconcile(datasets=[])
-        self.assertIsNone(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))
-
     def test_all_public_datasets_no_ctx_annotation(self):
         self.dataset_service.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": None, "contexts": []},

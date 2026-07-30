@@ -69,7 +69,7 @@ Gatekeeper External Data requires the provider to be served over TLS.
 | DELETE | `/conflicts/{a}/{b}`   | delete a conflict pair                         |
 | DELETE | `/conflicts`           | delete all conflicts (debug only)              |
 
-Writes to `/issuer-auths*` and `/conflicts` that would violate the
+Writes to `/issuer-auths` and `/conflicts` that would violate the
 well-formedness invariant return `409 Conflict` with a `detail` payload
 naming the offending pairs or issuers.
 
