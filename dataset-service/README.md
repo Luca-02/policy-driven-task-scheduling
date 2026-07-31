@@ -14,7 +14,7 @@ The service is intentionally a thin demo component, not a production system: no 
 | Method | Path               | Description                       |
 | ------ | ------------------ | --------------------------------- |
 | GET    | `/healthz`         | liveness/readiness                |
-| POST   | `/validate`        | Gatekeeper EDP                    |
+| POST   | `/datasets/validate` | Gatekeeper EDP                  |
 | GET    | `/datasets`        | list datasets                     |
 | GET    | `/datasets/{name}` | dataset detail                    |
 | POST   | `/datasets/query`  | query datasets                    |

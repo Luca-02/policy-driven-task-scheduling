@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 
-	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperty"
+	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperties"
 )
 
 // computePhiProp computes the property-based phi score for a candidate node.
@@ -48,7 +48,7 @@ import (
 //   - A float64 value representing phi_prop(n,t), normalized in the range
 //     [0, 1]. Higher values indicate a better match between node properties
 //     and task requirements.
-func computePhiProp(betaStar map[string]int, nodeLevels map[string]int, properties nodeproperty.Reader) float64 {
+func computePhiProp(betaStar map[string]int, nodeLevels map[string]int, properties nodeproperties.Reader) float64 {
 	delta := 0.0
 	deltaMax := 0.0
 	for prop, betaP := range betaStar {

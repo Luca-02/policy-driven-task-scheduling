@@ -1,4 +1,4 @@
-package nodeproperty
+package nodeproperties
 
 // NodePropertyInfo holds the information about a NodeProperty custom resource.
 type NodePropertyInfo struct {

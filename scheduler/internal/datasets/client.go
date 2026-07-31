@@ -43,6 +43,7 @@ func NewDatasetClient(baseURL string, caCertFile string) (*DatasetClient, error)
 	}, nil
 }
 
+// Query queries the dataset-service for the given keys.
 func (c *DatasetClient) Query(ctx context.Context, keys []string) ([]DatasetInfo, error) {
 	body, err := json.Marshal(QueryRequest{Keys: keys})
 	if err != nil {

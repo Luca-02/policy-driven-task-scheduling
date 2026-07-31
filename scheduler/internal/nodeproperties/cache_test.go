@@ -1,4 +1,4 @@
-package nodeproperty
+package nodeproperties
 
 import (
 	"context"

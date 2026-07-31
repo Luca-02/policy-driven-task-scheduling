@@ -5,7 +5,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from src.config import Config
 from src.dependencies import get_config, get_issuer_auth_repository
 from src.repositories import IssuerAuthRepository
-from src.models import IssuerAuth, IssuerAuthBase, IssuerAuthQuery
+from src.models import (
+    Item,
+    IssuerAuth,
+    IssuerAuthBase,
+    IssuerAuthQuery,
+    ProviderResponse,
+    WallCheckRequest,
+    WallCheckResponse,
+    ProviderRequest,
+    ProviderResponse,
+    ProviderResponseBody,
+)
 from src.exceptions import AlreadyExistsError, NotFoundError, WellFormednessViolation
 
 router = APIRouter(prefix="/issuer-auths", tags=["issuer-auths"])
@@ -57,6 +68,22 @@ def query_issuer_auths(query: IssuerAuthQuery, repo: IssuerAuthRepositoryDep):
     return result
 
 
+@router.post("/{name}/wall-check", response_model=WallCheckResponse)
+def check_wall_conflicts(
+    name: str,
+    body: WallCheckRequest,
+    repo: IssuerAuthRepositoryDep,
+):
+    try:
+        conflicts = repo.wall_conflicts(name, body.contexts)
+        return WallCheckResponse(conflicts=conflicts)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Issuer authorization not found: {name}",
+        )
+
+
 @router.post("", response_model=IssuerAuth, status_code=201)
 def create_issuer_auth(issuer_auth: IssuerAuth, repo: IssuerAuthRepositoryDep):
     try:
@@ -98,7 +125,7 @@ def update_issuer_auth(
     metadata is respected. These endpoints are not meant to be used in production,
     but only for testing and debugging purposes.
 
-    This will mitigate the `Time-of-check to Time-of-use` race condition that can 
+    This will mitigate the `Time-of-check to Time-of-use` race condition that can
     occur when updating metadata.
     """
     try:
@@ -132,3 +159,26 @@ def delete_all_issuer_auths(repo: IssuerAuthRepositoryDep):
             status_code=404,
             detail="No issuer authorizations to delete",
         )
+
+
+@router.post("/validate", response_model=ProviderResponse)
+def validate(req: ProviderRequest, repo: IssuerAuthRepositoryDep):
+    """Resolves issuer existence and auth(i) for OPA Gatekeeper."""
+    items = []
+    issuer_auths = repo.query(req.request.keys)
+    issuer_auths_dict = {issuer_auth.name: issuer_auth for issuer_auth in issuer_auths}
+
+    for key in req.request.keys:
+        issuer_auth = issuer_auths_dict.get(key)
+        if issuer_auth is None:
+            items.append(Item(key=key, error=f"Issuer {key!r} not found"))
+            continue
+
+        items.append(
+            Item(
+                key=key,
+                value=issuer_auth.model_dump(exclude_none=True),
+            )
+        )
+
+    return ProviderResponse(response=ProviderResponseBody(items=items, systemError=""))

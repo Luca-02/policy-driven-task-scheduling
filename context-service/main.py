@@ -12,7 +12,6 @@ from src.config import Config
 from src.orm import Base, LockORM
 from src.database import create_engine_factory
 from src.routes.healthz import router as health_router
-from src.routes.provider import router as provider_router
 from src.routes.issuer_auths import router as issuer_auths_router
 from src.routes.conflicts import router as conflicts_router
 
@@ -75,7 +74,6 @@ def create_app(custom_cfg: Config | None = None) -> FastAPI:
     app.state.config = custom_cfg
 
     app.include_router(health_router)
-    app.include_router(provider_router)
     app.include_router(issuer_auths_router)
     app.include_router(conflicts_router)
 

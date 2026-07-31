@@ -4,12 +4,12 @@ import (
 	"math"
 	"testing"
 
-	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperty"
+	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperties"
 )
 
-type fakeReader map[string]nodeproperty.NodePropertyInfo
+type fakeReader map[string]nodeproperties.NodePropertyInfo
 
-func (f fakeReader) Get(name string) (nodeproperty.NodePropertyInfo, bool) {
+func (f fakeReader) Get(name string) (nodeproperties.NodePropertyInfo, bool) {
 	info, ok := f[name]
 	return info, ok
 }

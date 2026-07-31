@@ -3,7 +3,7 @@ kind: Provider
 metadata:
   name: dataset-service
 spec:
-  url: https://dataset-service.dataset-service.svc.cluster.local/validate
+  url: https://dataset-service.dataset-service.svc.cluster.local/datasets/validate
   timeout: 5
   caBundle: <CA_BUNDLE>
 

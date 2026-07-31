@@ -4,7 +4,6 @@
 - [x] implement iss : T -> I
 - [x] implement ctx : D -> 2^X
 - [x] implement X_conf, pair of contexts in conflict
-- [ ] assume (ctx(d) x ctx(d)) intersection X_conf = empty, for each d in D
 - [x] implement auth : I -> 2^X
 - [x] assume (auth(i) x auth(i)) intersection X_conf = empty, for each i in I
 - [x] implement c_auth: for each d in req(t), ctx(d) subset of auth(iss(t))

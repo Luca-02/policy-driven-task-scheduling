@@ -3,7 +3,7 @@ kind: Provider
 metadata:
   name: context-service
 spec:
-  url: https://context-service.context-service.svc.cluster.local/validate
+  url: https://context-service.context-service.svc.cluster.local/issuer-auths/validate
   timeout: 5
   caBundle: <CA_BUNDLE>
 

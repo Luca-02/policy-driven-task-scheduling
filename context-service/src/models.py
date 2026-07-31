@@ -56,6 +56,27 @@ class Conflict(ConflictPair):
     model_config = ConfigDict(from_attributes=True)
 
 
+class WallCheckRequest(BaseModel):
+    """
+    A request to check `(auth(issuer) x contexts) intersect X_conf` for a
+    given issuer.
+    """
+
+    contexts: list[str] = Field(default_factory=list)
+
+
+class WallCheckResponse(BaseModel):
+    """
+    Result of checking `(auth(issuer) x contexts) intersect X_conf` for a
+    given issuer.
+    
+    Each entry is one specific pair found in X_conf, one side from the
+    issuer's authorization, the other from the given contexts.
+    """
+
+    conflicts: list[Conflict] = Field(default_factory=list)
+
+
 # -----------------------------------------------------------------------------
 # Gatekeeper External Data Provider protocol
 # -----------------------------------------------------------------------------

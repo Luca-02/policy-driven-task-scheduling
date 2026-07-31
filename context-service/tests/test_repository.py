@@ -1,5 +1,3 @@
-import threading
-import time
 import unittest
 
 from sqlalchemy.orm import sessionmaker
@@ -54,13 +52,13 @@ class TestConflictRepository(RepositoryTestCase):
     def test_get_for_context_either_side(self):
         self._conflict("Ford", "Ferrari")
         for context in ("Ford", "Ferrari"):
-            result = self.conflicts.get_for_context(context)
+            result = self.conflicts.get(context)
             self.assertEqual(
                 [(c.context_a, c.context_b) for c in result], [("Ferrari", "Ford")]
             )
 
     def test_get_for_context_no_match(self):
-        self.assertEqual(self.conflicts.get_for_context("Finance"), [])
+        self.assertEqual(self.conflicts.get("Finance"), [])
 
     def test_create_batch_atomic_on_failure(self):
         self._conflict("Ford", "Ferrari")
@@ -197,3 +195,32 @@ class TestIssuerAuthRepository(RepositoryTestCase):
         self.issuer_auths.create(IssuerAuth(name="i2", contexts=[]))
         self.assertEqual(self.issuer_auths.delete_all(), 2)
         self.assertEqual(self.issuer_auths.get_all(), [])
+
+    def test_wall_conflicts_missing_issuer_raises(self):
+        with self.assertRaises(NotFoundError):
+            self.issuer_auths.wall_conflicts("nope", ["Ford"])
+
+    def test_wall_conflicts_none_found(self):
+        self._conflict("Ford", "Ferrari")
+        self.issuer_auths.create(IssuerAuth(name="i1", contexts=["Ford"]))
+        # Lambda(n) = {Finance}: no conflict with auth(i1) = {Ford}.
+        self.assertEqual(self.issuer_auths.wall_conflicts("i1", ["Finance"]), [])
+
+    def test_wall_conflicts_found(self):
+        self._conflict("Ford", "Ferrari")
+        self.issuer_auths.create(IssuerAuth(name="i1", contexts=["Ford"]))
+        # Lambda(n) = {Ferrari}: conflicts with auth(i1) = {Ford}.
+        conflicts = self.issuer_auths.wall_conflicts("i1", ["Ferrari"])
+        self.assertEqual(
+            [(c.context_a, c.context_b) for c in conflicts], [("Ferrari", "Ford")]
+        )
+
+    def test_wall_conflicts_context_shared_by_both_sides_not_a_conflict(self):
+        self._conflict("Ford", "Ferrari")
+        self.issuer_auths.create(IssuerAuth(name="i1", contexts=["Ford"]))
+        self.assertEqual(self.issuer_auths.wall_conflicts("i1", ["Ford"]), [])
+
+    def test_wall_conflicts_empty_lambda(self):
+        self._conflict("Ford", "Ferrari")
+        self.issuer_auths.create(IssuerAuth(name="i1", contexts=["Ford"]))
+        self.assertEqual(self.issuer_auths.wall_conflicts("i1", []), [])

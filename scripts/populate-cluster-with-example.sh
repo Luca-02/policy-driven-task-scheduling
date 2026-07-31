@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-readonly NODE_PROPERTY_DIR="k8s/examples/node-property"
-readonly GEOGRAPHICAL_GROUP_DIR="k8s/examples/geographical-group"
+readonly NODE_PROPERTY_DIR="examples/node-property"
+readonly GEOGRAPHICAL_GROUP_DIR="examples/geographical-group"
 
 echo "Populate with node properties"
 kubectl apply -f "${NODE_PROPERTY_DIR}"

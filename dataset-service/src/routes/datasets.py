@@ -5,7 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from src.config import Config
 from src.dependencies import get_config, get_dataset_repository
 from src.repositories import DatasetRepository
-from src.models import Dataset, DatasetBase, DatasetQuery
+from src.models import (
+    Item,
+    Dataset,
+    DatasetBase,
+    DatasetQuery,
+    ProviderRequest,
+    ProviderResponse,
+    ProviderResponseBody,
+)
 from src.exceptions import NotFoundError, AlreadyExistsError
 
 _RESPONSE_MODEL_KWARGS = {"response_model_exclude_none": True}
@@ -127,3 +135,26 @@ def delete_all_datasets(repo: DatasetRepositoryDep):
         repo.delete_all()
     except NotFoundError:
         raise HTTPException(status_code=404, detail="No datasets to delete")
+
+
+@router.post("/validate", response_model=ProviderResponse)
+def validate(req: ProviderRequest, repo: DatasetRepositoryDep):
+    """Resolves dataset existence and metadata for OPA Gatekeeper."""
+    items = []
+    datasets = repo.query(req.request.keys)
+    datasets_dict = {dataset.name: dataset for dataset in datasets}
+
+    for key in req.request.keys:
+        dataset = datasets_dict.get(key)
+        if dataset is None:
+            items.append(Item(key=key, error=f"Dataset {key!r} not found"))
+            continue
+
+        items.append(
+            Item(
+                key=key,
+                value=dataset.model_dump(exclude_none=True),
+            )
+        )
+
+    return ProviderResponse(response=ProviderResponseBody(items=items, systemError=""))

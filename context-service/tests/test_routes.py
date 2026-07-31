@@ -125,6 +125,35 @@ class TestIssuerAuths(TestBase):
     def test_delete_all_no_issuer_auths(self):
         self.assertEqual(self.client.delete("/issuer-auths").status_code, 404)
 
+    def test_wall_check_missing_issuer_404(self):
+        r = self.client.post("/issuer-auths/nope/wall-check", json={"contexts": []})
+        self.assertEqual(r.status_code, 404)
+
+    def test_wall_check_no_conflict(self):
+        self._create_i1()  # auth(i1) = {Ford}
+        r = self.client.post(
+            "/issuer-auths/i1/wall-check", json={"contexts": ["Finance"]}
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"conflicts": []})
+
+    def test_wall_check_conflict_found(self):
+        self._create_conflict()  # Ford | Ferrari
+        self._create_i1()  # auth(i1) = {Ford}
+        r = self.client.post(
+            "/issuer-auths/i1/wall-check", json={"contexts": ["Ferrari"]}
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(), {"conflicts": [{"context_a": "Ferrari", "context_b": "Ford"}]}
+        )
+
+    def test_wall_check_empty_lambda_no_conflict(self):
+        self._create_i1()
+        r = self.client.post("/issuer-auths/i1/wall-check", json={"contexts": []})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"conflicts": []})
+
 
 class TestConflicts(TestBase):
     def test_create_and_list(self):
@@ -209,7 +238,7 @@ class TestProvider(TestBase):
     def test_validate_existing_and_missing(self):
         self._create_multiple()
         r = self.client.post(
-            "/validate",
+            "/issuer-auths/validate",
             json={
                 "apiVersion": "externaldata.gatekeeper.sh/v1beta1",
                 "kind": "ProviderRequest",
@@ -224,7 +253,7 @@ class TestProvider(TestBase):
         self.assertIn("not found", items["ix"]["error"])
 
     def test_validate_empty_keys(self):
-        r = self.client.post("/validate", json={"request": {"keys": []}})
+        r = self.client.post("/issuer-auths/validate", json={"request": {"keys": []}})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["response"]["items"], [])
 

@@ -1,4 +1,4 @@
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import Session
 
 from src.orm import IssuerAuthORM, ConflictORM, LockORM
@@ -69,7 +69,7 @@ class ConflictRepository(BaseRepository):
         rows = self._db.execute(select(ConflictORM)).scalars().all()
         return [Conflict.model_validate(row) for row in rows]
 
-    def get_for_context(self, context: str) -> list[Conflict]:
+    def get(self, context: str) -> list[Conflict]:
         rows = (
             self._db.execute(
                 select(ConflictORM).where(
@@ -182,8 +182,9 @@ class IssuerAuthRepository(BaseRepository):
 
     def _conflicting_pairs(self, contexts: list[str]) -> list[tuple[str, str]]:
         """
-        Returns every pair in X_conf that is fully contained in `contexts`.
-        i.e. (contexts x contexts) intersect X_conf.
+        Returns every pair in X_conf that is fully contained in `contexts`:
+
+            (contexts x contexts) intersect X_conf
 
         Read-only access to context_conflicts. Must be called while holding
         the lock (_acquire_lock).
@@ -197,6 +198,46 @@ class IssuerAuthRepository(BaseRepository):
                 select(ConflictORM).where(
                     ConflictORM.context_a.in_(unique),
                     ConflictORM.context_b.in_(unique),
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [(row.context_a, row.context_b) for row in rows]
+
+    def _cross_conflicting_pairs(
+        self,
+        set_a: list[str],
+        set_b: list[str],
+    ) -> list[tuple[str, str]]:
+        """
+        Returns every pair in X_conf with one side in `set_a` and the other in `set_b`:
+
+            (set_a x set_b) intersect X_conf
+         
+        Unlike `_conflicting_pairs`, this checks two distinct sets against each other 
+        rather than a single set against itself, so it also matches pairs that only 
+        conflict across the two sets (a context can appear in both without that alone 
+        being a conflict).
+        """
+        if not set_a or not set_b:
+            return []
+
+        unique_a = sorted(set(set_a))
+        unique_b = sorted(set(set_b))
+        rows = (
+            self._db.execute(
+                select(ConflictORM).where(
+                    or_(
+                        and_(
+                            ConflictORM.context_a.in_(unique_a),
+                            ConflictORM.context_b.in_(unique_b),
+                        ),
+                        and_(
+                            ConflictORM.context_a.in_(unique_b),
+                            ConflictORM.context_b.in_(unique_a),
+                        ),
+                    )
                 )
             )
             .scalars()
@@ -222,6 +263,18 @@ class IssuerAuthRepository(BaseRepository):
 
     def exists(self, name: str) -> bool:
         return self._db.get(IssuerAuthORM, name) is not None
+
+    def wall_conflicts(self, name: str, contexts: list[str]) -> list[Conflict] | None:
+        """
+        Checks `(auth(i) x contexts) intersect X_conf` for the issuer `name`
+        against an arbitrary set `contexts`.
+        """
+        issuer_auth = self.get(name)
+        if issuer_auth is None:
+            raise NotFoundError(name)
+
+        pairs = self._cross_conflicting_pairs(issuer_auth.contexts, contexts)
+        return [Conflict(context_a=a, context_b=b) for a, b in pairs]
 
     def create(self, issuer_auth: IssuerAuth) -> IssuerAuth:
         self._acquire_lock()

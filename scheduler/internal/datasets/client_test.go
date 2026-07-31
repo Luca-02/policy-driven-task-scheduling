@@ -88,3 +88,9 @@ func TestNewDatasetClientRejectsBadCA(t *testing.T) {
 		t.Error("expected error for missing CA file, got nil")
 	}
 }
+
+func TestNewDatasetClientRejectsEmptyBaseURL(t *testing.T) {
+	if _, err := NewDatasetClient("", "/nonexistent/ca.crt"); err == nil {
+		t.Error("expected error for empty base URL, got nil")
+	}
+}

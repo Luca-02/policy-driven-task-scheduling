@@ -189,7 +189,47 @@ require_command kubectl
 # Create cluster
 #######################################
 
-readonly CLUSTER_CONFIG_FILE="k8s/cluster-config.yaml"
+readonly DEFAULT_CLUSTER_CONFIG_FILE="k8s/cluster-config.yaml"
+readonly DEFAULT_CONTROL_PLANE_COUNT=1
+readonly DEFAULT_WORKER_COUNT=5
+readonly DEFAULT_NODE_IMAGE="kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256"
+readonly GENERATED_CLUSTER_CONFIG_FILE="/tmp/${CLUSTER_NAME}-cluster-config.generated.yaml"
+
+if [[ -n "${CLUSTER_CONFIG_FILE:-}" && -n "${CONTROL_PLANE_COUNT:-}${WORKER_COUNT:-}${NODE_IMAGE:-}" ]]; then
+    error "Set either CLUSTER_CONFIG_FILE or CONTROL_PLANE_COUNT/WORKER_COUNT/NODE_IMAGE, not both."
+    exit 1
+fi
+
+if [[ -n "${CONTROL_PLANE_COUNT:-}${WORKER_COUNT:-}${NODE_IMAGE:-}" ]]; then
+    readonly CONTROL_PLANE_COUNT="${CONTROL_PLANE_COUNT:-$DEFAULT_CONTROL_PLANE_COUNT}"
+    readonly WORKER_COUNT="${WORKER_COUNT:-$DEFAULT_WORKER_COUNT}"
+    readonly NODE_IMAGE="${NODE_IMAGE:-$DEFAULT_NODE_IMAGE}"
+
+    log "Generating kind cluster config: $CONTROL_PLANE_COUNT control-plane, $WORKER_COUNT worker(s), image '$NODE_IMAGE'"
+
+    NODES_YAML=""
+    for ((i = 0; i < CONTROL_PLANE_COUNT; i++)); do
+        NODES_YAML+="  - role: control-plane
+    image: ${NODE_IMAGE}
+"
+    done
+    for ((i = 0; i < WORKER_COUNT; i++)); do
+        NODES_YAML+="  - role: worker
+    image: ${NODE_IMAGE}
+"
+    done
+
+    cat >"$GENERATED_CLUSTER_CONFIG_FILE" <<EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+${NODES_YAML}
+EOF
+
+    readonly CLUSTER_CONFIG_FILE="$GENERATED_CLUSTER_CONFIG_FILE"
+else
+    readonly CLUSTER_CONFIG_FILE="${CLUSTER_CONFIG_FILE:-$DEFAULT_CLUSTER_CONFIG_FILE}"
+fi
 
 log "Checking for existing kind cluster '$CLUSTER_NAME'"
 if kind get clusters | grep -qx "$CLUSTER_NAME"; then
@@ -198,6 +238,8 @@ else
     log "Creating kind cluster '$CLUSTER_NAME' using config '$CLUSTER_CONFIG_FILE'"
     kind create cluster --name "$CLUSTER_NAME" --config "$CLUSTER_CONFIG_FILE"
 fi
+
+rm -f "$GENERATED_CLUSTER_CONFIG_FILE"
 
 #######################################
 # Ensure kubectl context

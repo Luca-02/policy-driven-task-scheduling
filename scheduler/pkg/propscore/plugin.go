@@ -14,7 +14,7 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 
 	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/config"
-	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperty"
+	"github.com/Luca-02/policy-driven-task-scheduling/scheduler/internal/nodeproperties"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 type PropScore struct {
 	cfg        config.Config
 	logger     klog.Logger
-	properties nodeproperty.Reader
+	properties nodeproperties.Reader
 }
 
 var _ framework.ScorePlugin = &PropScore{}
@@ -37,7 +37,7 @@ func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.P
 	logger := klog.FromContext(ctx).WithValues("plugin", Name)
 	cfg := config.Load()
 
-	cache, err := nodeproperty.NewCache(ctx, cfg)
+	cache, err := nodeproperties.NewCache(ctx, cfg)
 	if err != nil {
 		logger.Error(err, "failed to initialise NodeProperty cache")
 		return nil, fmt.Errorf("initialising NodeProperty cache: %w", err)

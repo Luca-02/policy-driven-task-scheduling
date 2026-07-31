@@ -171,7 +171,7 @@ class TestProvider(TestBase):
     def test_validate_existing_and_missing(self):
         self._create_multiple()
         r = self.client.post(
-            "/validate",
+            "/datasets/validate",
             json={
                 "apiVersion": "externaldata.gatekeeper.sh/v1beta1",
                 "kind": "ProviderRequest",
@@ -191,7 +191,7 @@ class TestProvider(TestBase):
         self.assertIn("not found", items["dx"]["error"])
 
     def test_validate_empty_keys(self):
-        r = self.client.post("/validate", json={"request": {"keys": []}})
+        r = self.client.post("/datasets/validate", json={"request": {"keys": []}})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["response"]["items"], [])
 

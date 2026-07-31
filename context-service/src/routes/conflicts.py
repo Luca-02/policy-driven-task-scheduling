@@ -19,7 +19,7 @@ def get_all_conflicts(repo: ConflictRepositoryDep):
 
 @router.get("/{context}", response_model=list[Conflict])
 def get_conflicts_for_context(context: str, repo: ConflictRepositoryDep):
-    return repo.get_for_context(context)
+    return repo.get(context)
 
 
 @router.post("", response_model=Conflict, status_code=201)

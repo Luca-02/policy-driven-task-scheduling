@@ -8,10 +8,13 @@ spec:
     matchLabels:
       app.kubernetes.io/name: dataset-service
   policyTypes: [Ingress, Egress]
-  # Allow ingress traffic from scheduler, gatekeeper-system, and 
+  # Allow ingress traffic from itself, scheduler, gatekeeper-system and 
   # task-request-controller namespaces on port 8443
   ingress:
     - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dataset-service
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: scheduler
@@ -21,9 +24,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: task-request-controller
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: dataset-service
       ports:
         - port: 8443
           protocol: TCP

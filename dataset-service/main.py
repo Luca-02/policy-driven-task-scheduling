@@ -12,7 +12,6 @@ from src.config import Config
 from src.orm import Base
 from src.database import create_engine_factory
 from src.routes.healthz import router as health_router
-from src.routes.provider import router as provider_router
 from src.routes.datasets import router as datasets_router
 
 load_dotenv()
@@ -65,7 +64,6 @@ def create_app(custom_cfg: Config | None = None) -> FastAPI:
     app.state.config = custom_cfg
 
     app.include_router(health_router)
-    app.include_router(provider_router)
     app.include_router(datasets_router)
 
     @app.middleware("http")

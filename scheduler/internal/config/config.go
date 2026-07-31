@@ -9,6 +9,7 @@ const (
 	DefaultCrdVersion                 = "v1alpha1"
 	DefaultNodePropertyResourcePlural = "nodeproperties"
 	DefaultDatasetServiceURL          = "https://127.0.0.1:8443"
+	DefaultContextServiceURL          = "https://127.0.0.1:8443"
 	DefaultNodePropertyLabelPrefix    = "property.node.policydriven.unimi.it"
 	DefaultDatasetsAnnotationKey      = "scheduling.task.policydriven.unimi.it/datasets"
 	DefaultBetaStarAnnotationKey      = "scheduling.task.policydriven.unimi.it/betaStar"
@@ -20,6 +21,8 @@ type Config struct {
 	NodePropertyResourcePlural string
 	DatasetServiceURL          string
 	DatasetServiceCAFile       string
+	ContextServiceURL          string
+	ContextServiceCAFile       string
 
 	// Key of the annotation carrying beta*(t), inherited by the Pod.
 	NodePropertyLabelPrefix string
@@ -45,6 +48,8 @@ func Load() Config {
 		NodePropertyResourcePlural: getEnv("NODE_PROPERTY_RESOURCE_PLURAL", DefaultNodePropertyResourcePlural),
 		DatasetServiceURL:          getEnv("DATASET_SERVICE_URL", DefaultDatasetServiceURL),
 		DatasetServiceCAFile:       getEnv("DATASET_SERVICE_CA_FILE", ""),
+		ContextServiceURL:          getEnv("CONTEXT_SERVICE_URL", DefaultContextServiceURL),
+		ContextServiceCAFile:       getEnv("CONTEXT_SERVICE_CA_FILE", ""),
 		NodePropertyLabelPrefix:    getEnv("NODE_PROPERTY_LABEL_PREFIX", DefaultNodePropertyLabelPrefix),
 		DatasetsAnnotationKey:      getEnv("DATASETS_ANNOTATION_KEY", DefaultDatasetsAnnotationKey),
 		BetaStarAnnotationKey:      getEnv("BETA_STAR_ANNOTATION_KEY", DefaultBetaStarAnnotationKey),
