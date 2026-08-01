@@ -1,4 +1,4 @@
-# Node Property Controller
+# Node Controller
 
 Kubernetes controller that classifies cluster nodes against property definitions (`NodePropertyDefinition` CRD) and writes the resulting levels as node labels.
 
@@ -43,12 +43,12 @@ kopf run main.py
 
 For `kind` environments, the entire deployment lifecycle is fully automated by the `init-cluster.sh` script. 
 
-To update the node-property-controller manually:
+To update the node-controller manually:
 
 ```bash
 # Build the image and load it into the cluster 
-docker build -t node-property-controller:latest .
-kind load docker-image node-property-controller:latest --name <cluster-name>
+docker build -t node-controller:latest .
+kind load docker-image node-controller:latest --name <cluster-name>
 
 # Namespace, RBAC, network policy, deployment
 kubectl apply -f k8s/rbac.yaml
@@ -56,7 +56,7 @@ kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/network-policy.yaml
 
 # Wait for the service to be fully rolled out and ready
-kubectl -n node-property-controller rollout status deployment/node-property-controller --timeout=180s
+kubectl -n node-controller rollout status deployment/node-controller --timeout=180s
 ```
 
 ## Testing

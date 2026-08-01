@@ -1,18 +1,22 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: node-property-controller-service-account
-  namespace: node-property-controller
+  name: node-controller-service-account
+  namespace: node-controller
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: node-property-controller-cluster-role
+  name: node-controller-cluster-role
 rules:
   # Read and patch nodes 
   - apiGroups: [""]
     resources: [nodes]
     verbs: [get, list, watch, patch]
+  # Read pods cluster-wide, to check for active pods on a node before sanitizing it
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
   # Watch NodeProperty CRs
   - apiGroups: [policydriven.unimi.it]
     resources: [nodeproperties]
@@ -37,12 +41,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: node-property-controller-cluster-role-binding
+  name: node-controller-cluster-role-binding
 subjects:
   - kind: ServiceAccount
-    name: node-property-controller-service-account
-    namespace: node-property-controller
+    name: node-controller-service-account
+    namespace: node-controller
 roleRef:
   kind: ClusterRole
-  name: node-property-controller-cluster-role
+  name: node-controller-cluster-role
   apiGroup: rbac.authorization.k8s.io

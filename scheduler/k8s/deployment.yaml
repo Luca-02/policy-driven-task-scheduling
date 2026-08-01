@@ -36,9 +36,15 @@ spec:
         - name: scheduler-config
           configMap:
             name: scheduler-config
-        - name: tls
+        - name: dataset-service-tls
           secret:
             secretName: dataset-service-tls
+            items:
+              - key: ca.crt
+                path: ca.crt
+        - name: context-service-tls
+          secret:
+            secretName: context-service-tls
             items:
               - key: ca.crt
                 path: ca.crt
@@ -57,7 +63,7 @@ spec:
             - --config=/etc/kubernetes/scheduler-config.yaml
             - --v=4
           env:
-            - name: CRD_GROUP
+            - name: GROUP
               value: "policydriven.unimi.it"
             - name: CRD_VERSION
               value: "v1alpha1"
@@ -66,13 +72,27 @@ spec:
             - name: DATASET_SERVICE_URL
               value: "https://dataset-service.dataset-service.svc.cluster.local"
             - name: DATASET_SERVICE_CA_FILE
-              value: "/tls/ca.crt"
+              value: "/tls/dataset-service/ca.crt"
+            - name: CONTEXT_SERVICE_URL
+              value: "https://context-service.context-service.svc.cluster.local"
+            - name: CONTEXT_SERVICE_CA_FILE
+              value: "/tls/context-service/ca.crt"
+            - name: TASK_POD_ANNOTATION_PREFIX
+              value: "scheduling.task.policydriven.unimi.it"
             - name: NODE_PROPERTY_LABEL_PREFIX
               value: "property.node.policydriven.unimi.it/"
+            - name: NODE_TRACE_ANNOTATION_PREFIX
+              value: "trace.node.policydriven.unimi.it"
             - name: DATASETS_ANNOTATION_KEY
-              value: "scheduling.task.policydriven.unimi.it/datasets"
+              value: "datasets"
             - name: BETA_STAR_ANNOTATION_KEY
-              value: "scheduling.task.policydriven.unimi.it/betaStar"
+              value: "betaStar"
+            - name: ISSUER_ANNOTATION_KEY
+              value: "issuer"
+            - name: CTX_STAR_ANNOTATION_KEY
+              value: "ctxStar"
+            - name: CONTEXTS_ANNOTATION_KEY
+              value: "contexts"
           ports:
             - name: healthz
               containerPort: 10259
@@ -108,6 +128,9 @@ spec:
             - name: scheduler-config
               mountPath: /etc/kubernetes
               readOnly: true
-            - name: tls
-              mountPath: /tls
+            - name: dataset-service-tls
+              mountPath: /tls/dataset-service
+              readOnly: true
+            - name: context-service-tls
+              mountPath: /tls/context-service
               readOnly: true

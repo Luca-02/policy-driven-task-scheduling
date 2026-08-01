@@ -57,10 +57,13 @@ func (p *PropScore) Score(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, no
 	logger := klog.FromContext(klog.NewContext(ctx, p.logger)).WithValues(
 		"ExtensionPoint", "Score", "node", nodeName, "pod", podName)
 
-	betaStar, err := readBetaStar(pod, p.cfg.BetaStarAnnotationKey)
+	logger.V(4).Info("Starting score computation", "node", nodeName, "pod", podName)
+
+	betaStarAnnotationKey := p.cfg.TaskPodAnnotationPrefix + "/" + p.cfg.BetaStarAnnotation
+
+	betaStar, err := readBetaStar(pod, betaStarAnnotationKey)
 	if err != nil {
-		logger.Error(err, "beta-star annotation malformed",
-			"betaStarAnnotationKey", p.cfg.BetaStarAnnotationKey)
+		logger.Error(err, "beta-star annotation malformed", "betaStarAnnotationKey", betaStarAnnotationKey)
 		return 0, fwk.AsStatus(fmt.Errorf("beta-star annotation malformed: %w", err))
 	}
 	logger.V(4).Info("beta-star read", "betaStar", betaStar)
@@ -71,6 +74,8 @@ func (p *PropScore) Score(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, no
 	phi := computePhiProp(betaStar, nodePropertiesLevel, p.properties)
 	score := FromPhi(phi)
 	logger.V(2).Info("phi_prop computed", "phi", phi, "score", score)
+
+	logger.V(4).Info("Score computation completed", "node", nodeName, "pod", podName)
 
 	return score, nil
 }

@@ -5,6 +5,9 @@ leaderElection:
 profiles:
   - schedulerName: policy-driven-scheduler
     plugins:
+      filter:
+        enabled:
+          - name: WallFilter
       preScore:
         enabled:
           - name: TransferScore
@@ -14,3 +17,6 @@ profiles:
             weight: 2
           - name: PropScore
             weight: 1
+      postBind:
+        enabled:
+          - name: WallFilter

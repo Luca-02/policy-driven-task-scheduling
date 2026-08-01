@@ -67,6 +67,7 @@ class Controller:
             body: The full body of the TaskRequest resource.
             logger: Logger object.
         """
+        logger.info(f"Reconciling TaskRequest {name!r} in namespace {namespace!r}")
         phase = body.get("status", {}).get("phase")
 
         if phase in (COMPLETE_PHASE, FAILURE_PHASE):
@@ -84,6 +85,7 @@ class Controller:
 
         # Phase is None or Pending, run full reconciliation.
         self._full_reconcile(name, namespace, body, logger)
+        logger.info(f"TaskRequest {name!r} reconciliation completed")
 
     @_synchronized
     def sync_job_status(
@@ -192,10 +194,13 @@ class Controller:
             raise kopf.TemporaryError(str(e), delay=10)
 
         dataset_requirements = [d.get("requirements") for d in datasets_data]
+
+        logger.info(f"TaskRequest {name!r}: computing beta*(t)")
         beta_star = compute_effective_beta(requirements, dataset_requirements)
         logger.info(f"TaskRequest {name!r}: computed beta*(t)={beta_star}")
 
         dataset_geos = [d.get("geo") for d in datasets_data]
+        logger.info(f"TaskRequest {name!r}: computing geo*(t)")
         geo_star = compute_effective_geo(geo, dataset_geos, self._geo_groups)
         logger.info(f"TaskRequest {name!r}: computed geo*(t)={geo_star}")
 
@@ -218,9 +223,13 @@ class Controller:
             return
 
         dataset_contexts = [d.get("contexts", []) for d in datasets_data]
+        logger.info(f"TaskRequest {name!r}: computing ctx*(t)")
         ctx_star = compute_ctx_star(dataset_contexts)
         logger.info(f"TaskRequest {name!r}: computed ctx*(t)={ctx_star}")
 
+        logger.info(
+            f"TaskRequest {name!r}: computing static dataset nodes intersection"
+        )
         static_nodes = compute_static_nodes(datasets_data)
         logger.info(
             f"TaskRequest {name!r}: computed static dataset nodes intersection {static_nodes}"

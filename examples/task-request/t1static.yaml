@@ -1,14 +1,42 @@
+# This is an invalid TaskRequest used to test the validation webhook with external data provider.
+# IMPORTANT:
+# This task is based on the `examples/data/seed_datasets.json` and `examples/data/seed_contexts.json`
+# data seeds.
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
   name: t1static
   namespace: compute
 spec:
-  issuer: issuer1
+  issuer: issuerpublic # auth(issuerpublic) = {}, fine here: both datasets are public
   requirements:
     security: 1
-    computation: 2
+    computation: 2 # beta(t1static) = [1,2], same as t1.yaml
   datasets:
-    - d1static
-    - d2static
+    - d1static # beta = [2,1], geo=oecd, static=true, lambda = [kind-worker, kind-worker2, kind-worker4]
+    - d2static # beta = [1,3], no geo, static=true, lambda = [kind-worker, kind-worker4]
   geo: eu
+# Same beta*(t1static) = [2,3] as t1.yaml (d1static/d2static mirror
+# d1v2/d2v2's property requirements exactly), so c_prop and c_geo give
+# the same admissible set {kind-worker, kind-worker4} as t1.yaml.
+#
+# c_static: F_cstatic(t) = lambda(d1static) intersect lambda(d2static)
+#   = {kind-worker,kind-worker2,kind-worker4} intersect {kind-worker,kind-worker4}
+#   = {kind-worker, kind-worker4}
+#
+# This is precisely the thesis's own worked c_static example
+# (Sec. Staticita dei Dataset), reproduced with the real seed data.
+# Combined with c_prop/c_geo, the admissible set is unchanged:
+# {kind-worker, kind-worker4}.
+#
+# Unlike t1.yaml, both requested datasets are static, so any node that
+# passes c_static already hosts them locally by construction:
+# remote(n, t1static) = {} for every admissible n, not just the winner.
+#   phi_transfer(kind-worker, t1static)  = 1
+#   phi_transfer(kind-worker4, t1static) = 1
+# phi_prop is unchanged from t1.yaml (0 for kind-worker, 1 for
+# kind-worker4, same beta*/alpha as before). With transfer tied, the
+# score is decided by phi_prop alone:
+#   score(kind-worker, t1static)  = 2*1 + 1*0 = 2
+#   score(kind-worker4, t1static) = 2*1 + 1*1 = 3
+# Expected: admitted, scheduled on kind-worker4 this time.

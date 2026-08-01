@@ -161,9 +161,7 @@ class TestReconcile(ControllerTestBase):
 
     def test_full_reconcile_annotation_reflects_issuer(self):
         self.do_reconcile(issuer="bob")
-        self.assertEqual(
-            json.loads(self.pod_annotation(ISSUER_ANNOTATION_DEFAULT)), "bob"
-        )
+        self.assertEqual(self.pod_annotation(ISSUER_ANNOTATION_DEFAULT), "bob")
 
     def test_dataset_not_found_sets_failed_without_creating_job(self):
         self.dataset_service.get_all_datasets.side_effect = DatasetNotFoundError(

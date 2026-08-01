@@ -1,14 +1,41 @@
+# This is an invalid TaskRequest used to test the validation webhook with external data provider.
+# IMPORTANT:
+# This task is based on the `examples/data/seed_datasets.json` and `examples/data/seed_contexts.json`
+# data seeds.
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
   name: t1
   namespace: compute
 spec:
-  issuer: issuer1
+  issuer: issuerpublic # auth(issuerpublic) = {}, fine here: ctx(d1v2)=ctx(d2v2)={}
   requirements:
     security: 1
-    computation: 2
+    computation: 2 # beta(t1) = [1,2]
   datasets:
-    - d1v2
-    - d2v2
+    - d1v2 # beta(d1v2) = [2,1], geo=oecd
+    - d2v2 # beta(d2v2) = [1,3], no geo (Omega)
   geo: eu
+# beta*(t1) = [max(1,2,1), max(2,1,3)] = [2,3]
+#
+# c_prop: only kind-worker (alpha=[3,3]) and kind-worker4 (alpha=[2,3])
+# dominate [2,3].
+#
+# c_geo: geo*(t1) = eu intersect oecd intersect Omega = eu (eu subset of
+# oecd subset of Omega). Of the two c_prop-admissible nodes, both are in
+# eu (kind-worker=eu-west, kind-worker4=eu-south), so c_geo does not
+# narrow the set further here.
+#
+# Combined admissible set: {kind-worker, kind-worker4}. This is the
+# thesis's own running example (Sec. Compatibilita delle Proprieta /
+# Ottimizzazione del Trasferimento), reproduced with the real cluster
+# data:
+#   phi_prop(kind-worker, t1)  = 0  (alpha=[3,3] saturates the excess on security)
+#   phi_prop(kind-worker4, t1) = 1  (alpha=[2,3] is the ideal node, matches beta* exactly)
+#   phi_transfer(kind-worker, t1)  = 1    (remote(kind-worker,t1)  = {}, both datasets local)
+#   phi_transfer(kind-worker4, t1) = 1/3  (remote(kind-worker4,t1) = {d2v2}, d2v2 lambda = [kind-worker] only)
+# score = 2*phi_transfer + 1*phi_prop (see scheduler/k8s/scheduler-config.yaml):
+#   score(kind-worker, t1)  = 2*1   + 1*0 = 2
+#   score(kind-worker4, t1) = 2*1/3 + 1*1 = 1.667
+# Expected: admitted, scheduled on kind-worker (higher score) -- transfer
+# cost outweighs the property excess, exactly as concluded in the thesis.

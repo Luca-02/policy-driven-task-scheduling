@@ -1,0 +1,20 @@
+# This is an invalid TaskRequest used to test the validation webhook with external data provider.
+# IMPORTANT:
+# This task is based on the `examples/data/seed_datasets.json` and `examples/data/seed_contexts.json`
+# data seeds.
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: wallford
+  namespace: compute
+spec:
+  issuer: issuerford # auth(issuerford) = {Ford}
+  requirements:
+    security: 3
+    computation: 3 # alpha(n) = [3,3] only for kind-worker (cert=certA, isolation=strict, gpu=a100, cpu=16):
+    # forces kind-worker as the only c_prop-admissible node, so the c_wall
+    # effect of this task on wallferrari.yaml below is unambiguous.
+  datasets:
+    - d1ctx # ctx(d1ctx) = {Ford}
+# Expected: admitted (c_auth ok, {Ford} subset of {Ford}), scheduled on
+# kind-worker, PostBind deposits Lambda(kind-worker) <- {Ford}.

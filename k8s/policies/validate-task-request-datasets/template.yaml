@@ -12,6 +12,7 @@ spec:
       rego: |
         package k8svalidatetaskrequestdatasets
 
+        issuer := input.review.object.spec.issuer
         dataset_list := input.review.object.spec.datasets
 
         property_inventory := data.inventory.cluster["policydriven.unimi.it/v1alpha1"]["NodeProperty"]
@@ -22,15 +23,28 @@ spec:
           "keys": dataset_list
         })
 
+        issuer_auth_response := external_data({
+          "provider": "context-service",
+          "keys": [issuer]
+        })
+
         not_empty_dataset_list {
           dataset_list != null
           count(dataset_list) > 0
+        }
+
+        not_null_issuer {
+          issuer != null
         }
 
         valid_property_level(prop_name, req_level) {
           prop := property_inventory[prop_name]
           some i
           prop.spec.levels[i].level == req_level
+        }
+
+        list_contains(list, x) {
+          list[_] == x
         }
 
         # ---------------------------------------------------------------------
@@ -151,4 +165,75 @@ spec:
           not group_inventory[geo]
 
           msg := sprintf("Dataset '%v': GeographicalGroup '%v' does not exist in the cluster", [key, geo])
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation: the context provider reported a system-wide failure.
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_null_issuer
+
+          issuer_auth_response.system_error != ""
+
+          msg := sprintf("Context provider system error: %v", [issuer_auth_response.system_error])
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation: the context provider reported a failure for at least one 
+        # issuer authorization.
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_null_issuer
+
+          issuer_auth_response.system_error == ""
+
+          some i
+          error := issuer_auth_response.errors[i]
+          error != null
+
+          msg := sprintf("Issuer authorization error: [issuer: '%v', error: '%v']", [error[0], error[1]])
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation: the context provider returned no data for the issuer 
+        # authorization (inconsistent response).
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_null_issuer
+
+          issuer_auth_response.system_error == ""
+
+          count(issuer_auth_response.errors) == 0
+          count(issuer_auth_response.responses) == 0
+
+          msg := sprintf("Context provider returned no data for issuer '%v' (inconsistent response)", [issuer])
+        }
+
+        # ---------------------------------------------------------------------
+        # Violation: c_auth validation.
+        # Some dataset d in req(t) has a context not covered by auth(iss(t)).
+        # ---------------------------------------------------------------------
+        violation[{"msg": msg}] {
+          not_null_issuer
+          not_empty_dataset_list
+
+          dataset_response.system_error == ""
+          issuer_auth_response.system_error == ""
+
+          count(dataset_response.errors) == 0
+          count(dataset_response.responses) > 0
+          count(issuer_auth_response.errors) == 0
+          count(issuer_auth_response.responses) > 0
+
+          auth := issuer_auth_response.responses[0][1].contexts
+
+          some i
+          item := dataset_response.responses[i]
+          key := item[0]
+          value := item[1]
+
+          ctx := value.contexts[_]
+          not list_contains(auth, ctx)
+
+          msg := sprintf("Dataset '%v': context '%v' is not authorized for issuer '%v'", [key, ctx, issuer])
         }

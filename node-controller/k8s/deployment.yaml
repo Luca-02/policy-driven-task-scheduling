@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-property-controller
-  namespace: node-property-controller
+  name: node-controller
+  namespace: node-controller
   labels:
-    app.kubernetes.io/name: node-property-controller
+    app.kubernetes.io/name: node-controller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: node-property-controller
+      app.kubernetes.io/name: node-controller
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,9 +18,9 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: node-property-controller
+        app.kubernetes.io/name: node-controller
     spec:
-      serviceAccountName: node-property-controller-service-account
+      serviceAccountName: node-controller-service-account
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
@@ -35,8 +35,8 @@ spec:
             medium: Memory
             sizeLimit: 32Mi
       containers:
-        - name: node-property-controller
-          image: node-property-controller:latest
+        - name: node-controller
+          image: node-controller:latest
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -55,6 +55,18 @@ spec:
               value: "attribute.node.policydriven.unimi.it"
             - name: PROPERTY_PREFIX
               value: "property.node.policydriven.unimi.it"
+            - name: TRACE_PREFIX
+              value: "trace.node.policydriven.unimi.it"
+            - name: CONTEXTS_ANNOTATION
+              value: "contexts"
+            - name: SANITIZING_TAINT
+              value: "sanitizing"
+            - name: SCHEDULER_NAME
+              value: "policy-driven-scheduler"
+            - name: SANITIZE_INTERVAL_SECONDS
+              value: "60"
+            - name: CLEAR_TRACES_SIMULATION_SECONDS
+              value: "0"
             - name: LOG_LEVEL
               value: "INFO"
           ports:

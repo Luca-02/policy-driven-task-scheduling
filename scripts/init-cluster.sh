@@ -184,6 +184,7 @@ log "k8s-init: starting cluster setup"
 
 require_command kind
 require_command kubectl
+require_command helm
 
 #######################################
 # Create cluster
@@ -254,7 +255,7 @@ if [[ "$CURRENT_CONTEXT" != "$EXPECTED_CONTEXT" ]]; then
 fi
 
 #######################################
-# Dashboard and tools
+# Headlamp
 #######################################
 
 readonly HEADLAMP_MANIFEST_URL="https://raw.githubusercontent.com/kinvolk/headlamp/main/kubernetes-headlamp.yaml"
@@ -280,6 +281,34 @@ if ! resource_exists get clusterrolebinding headlamp-admin; then
 else
     log "ClusterRoleBinding already exists"
 fi
+
+log "To access Headlamp, retrieve the token with: kubectl create token headlamp-admin -n kube-system"
+log "The port-forward with: kubectl port-forward -n kube-system svc/headlamp 8080:80"
+
+#######################################
+# PLG Stack (Promtail, Loki, Grafana)
+#######################################
+
+readonly LOKI_NAMESPACE="loki"
+readonly LOKI_STACK_RELEASE="loki"
+
+log "Setting up PLG Stack via Helm"
+
+log "Creating namespace '$LOKI_NAMESPACE' (if not exists)"
+kubectl create namespace "$LOKI_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+log "Adding and updating Grafana Helm repository"
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+log "Installing/Upgrading Loki Stack (Promtail, Loki, Grafana)"
+helm upgrade --install "$LOKI_STACK_RELEASE" grafana/loki-stack \
+    --namespace "$LOKI_NAMESPACE" \
+    --set grafana.enabled=true \
+    --set promtail.enabled=true
+
+log "To access Grafana, retrieve the admin password with: kubectl get secret --namespace $LOKI_NAMESPACE ${LOKI_STACK_RELEASE}-grafana -o jsonpath=\"{.data.admin-password}\" | base64 --decode"
+log "The port-forward with: kubectl port-forward -n $LOKI_NAMESPACE svc/${LOKI_STACK_RELEASE}-grafana 3000:80"
 
 #######################################
 # Namespaces and CRDs
@@ -309,7 +338,6 @@ readonly TEMPLATE_CONSTRAINT_DIRS=(
     "k8s/policies/validate-task-request-properties"
     "k8s/policies/validate-task-request-geographical-group"
     "k8s/policies/validate-task-request-datasets"
-    "k8s/policies/validate-task-request-auth"
 )
 
 log "Installing Gatekeeper"
@@ -378,24 +406,24 @@ log "Waiting for CloudNativePG CRDs to be established"
 kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=120s
 
 #######################################
-# node-property-controller 
+# node-controller
 #######################################
 
-readonly NODE_PROPERTY_CONTROLLER_PATH="node-property-controller"
-readonly NODE_PROPERTY_CONTROLLER_IMAGE="node-property-controller:latest"
+readonly NODE_CONTROLLER_PATH="node-controller"
+readonly NODE_CONTROLLER_IMAGE="node-controller:latest"
 
-log "Setting up node-property-controller image"
-load_image "$NODE_PROPERTY_CONTROLLER_PATH" "$NODE_PROPERTY_CONTROLLER_IMAGE"
+log "Setting up node-controller image"
+load_image "$NODE_CONTROLLER_PATH" "$NODE_CONTROLLER_IMAGE"
 
-readonly NODE_PROPERTY_CONTROLLER_NAMESPACE="node-property-controller"
-readonly NODE_PROPERTY_CONTROLLER_DEPLOYMENT="node-property-controller"
+readonly NODE_CONTROLLER_NAMESPACE="node-controller"
+readonly NODE_CONTROLLER_DEPLOYMENT="node-controller"
 
-log "Applying node-property-controller manifests"
-kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/rbac.yaml"
-kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/deployment.yaml"
-kubectl apply -f "${NODE_PROPERTY_CONTROLLER_PATH}/k8s/network-policy.yaml"
+log "Applying node-controller manifests"
+kubectl apply -f "${NODE_CONTROLLER_PATH}/k8s/rbac.yaml"
+kubectl apply -f "${NODE_CONTROLLER_PATH}/k8s/deployment.yaml"
+kubectl apply -f "${NODE_CONTROLLER_PATH}/k8s/network-policy.yaml"
 
-wait_for_deployment "$NODE_PROPERTY_CONTROLLER_NAMESPACE" "$NODE_PROPERTY_CONTROLLER_DEPLOYMENT"
+wait_for_deployment "$NODE_CONTROLLER_NAMESPACE" "$NODE_CONTROLLER_DEPLOYMENT"
 
 #######################################
 # dataset-service
@@ -517,6 +545,7 @@ readonly SCHEDULER_NAMESPACE="scheduler"
 readonly SCHEDULER_DEPLOYMENT="scheduler"
 
 copy_ca_secret "$DATASET_SERVICE_NAMESPACE" "$SCHEDULER_NAMESPACE" "$DATASET_SERVICE_TLS_SECRET"
+copy_ca_secret "$CONTEXT_SERVICE_NAMESPACE" "$SCHEDULER_NAMESPACE" "$CONTEXT_SERVICE_TLS_SECRET"
 
 log "Creating scheduler-config ConfigMap"
 kubectl create configmap scheduler-config \

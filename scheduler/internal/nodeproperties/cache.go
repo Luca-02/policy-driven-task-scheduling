@@ -33,7 +33,7 @@ var _ Reader = &Cache{}
 // same env vars/defaults as the rest of the scheduler.
 func gvrFrom(cfg config.Config) schema.GroupVersionResource {
 	return schema.GroupVersionResource{
-		Group:    cfg.CrdGroup,
+		Group:    cfg.Group,
 		Version:  cfg.CrdVersion,
 		Resource: cfg.NodePropertyResourcePlural,
 	}

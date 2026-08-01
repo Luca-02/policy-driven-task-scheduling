@@ -108,3 +108,22 @@ def on_node_deleted(body, logger, **kwargs):
 
     if ctrl is not None:
         ctrl.on_node_deleted(name, logger)
+
+
+@kopf.timer("", "v1", "nodes", interval=cfg.sanitize_interval_seconds)
+def sanitize_node(body, logger, **kwargs):
+    name = body["metadata"]["name"]
+    labels = body["metadata"].get("labels") or {}
+
+
+    # Control-plane nodes never run tasks, so Lambda(n) never applies to
+    # them; skip rather than let sanitize_node no-op on an empty
+    # annotation every single tick.
+    if any(l in labels for l in CONTROL_PLANE_LABELS):
+        logger.info(f"Skipping control-plane node {name} sanitization")
+        return
+
+    logger.info(f"🧹 Sanitizing node {name!r}")
+
+    if ctrl is not None:
+        ctrl.sanitize_node(name, logger)

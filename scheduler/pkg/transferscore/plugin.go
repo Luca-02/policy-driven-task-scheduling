@@ -54,9 +54,12 @@ func New(ctx context.Context, _ runtime.Object, _ framework.Handle) (framework.P
 // PreScore makes one call to the dataset-service for all datasets in req(t)
 // and stores their info in the cycle state, so Score does not per-node I/O.
 func (t *TransferScore) PreScore(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodes []fwk.NodeInfo) *fwk.Status {
-	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues("ExtensionPoint", "PreScore", "pod", pod.Name)
+	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues(
+		"ExtensionPoint", "PreScore", "pod", pod.Name)
 
-	raw, ok := pod.Annotations[t.cfg.DatasetsAnnotationKey]
+	datasetAnnotationKey := t.cfg.TaskPodAnnotationPrefix + "/" + t.cfg.DatasetsAnnotation
+
+	raw, ok := pod.Annotations[datasetAnnotationKey]
 	if !ok {
 		logger.V(4).Info("no datasets annotation found, req(t) is empty")
 		state.Write(preScoreStateKey, &preScoreState{})
@@ -95,6 +98,8 @@ func (t *TransferScore) Score(ctx context.Context, state fwk.CycleState, pod *v1
 	logger := klog.FromContext(klog.NewContext(ctx, t.logger)).WithValues(
 		"ExtensionPoint", "Score", "node", nodeName, "pod", podName)
 
+	logger.V(4).Info("Starting score computation", "node", nodeName, "pod", podName)
+
 	data, err := state.Read(preScoreStateKey)
 	if err != nil {
 		logger.Error(err, "failed to read transfer state")
@@ -112,6 +117,8 @@ func (t *TransferScore) Score(ctx context.Context, state fwk.CycleState, pod *v1
 	phi := computePhiTransfer(nodeName, status)
 	score := FromPhi(phi)
 	logger.V(2).Info("phi_transfer computed", "phi", phi, "score", score)
+
+	logger.V(4).Info("Score computation completed", "node", nodeName, "pod", podName)
 
 	return score, nil
 }

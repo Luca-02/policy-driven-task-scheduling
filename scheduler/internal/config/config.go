@@ -5,33 +5,54 @@ import (
 )
 
 const (
-	DefaultCrdGroup                   = "policydriven.unimi.it"
+	DefaultGroup = "policydriven.unimi.it"
+
 	DefaultCrdVersion                 = "v1alpha1"
 	DefaultNodePropertyResourcePlural = "nodeproperties"
-	DefaultDatasetServiceURL          = "https://127.0.0.1:8443"
-	DefaultContextServiceURL          = "https://127.0.0.1:8443"
-	DefaultNodePropertyLabelPrefix    = "property.node.policydriven.unimi.it"
-	DefaultDatasetsAnnotationKey      = "scheduling.task.policydriven.unimi.it/datasets"
-	DefaultBetaStarAnnotationKey      = "scheduling.task.policydriven.unimi.it/betaStar"
+
+	DefaultDatasetServiceURL = "https://127.0.0.1:8443"
+	DefaultContextServiceURL = "https://127.0.0.1:8443"
+
+	DefaultTaskPodAnnotationPrefix   = "scheduling.task." + DefaultGroup
+	DefaultNodePropertyLabelPrefix   = "property.node." + DefaultGroup
+	DefaultNodeTraceAnnotationPrefix = "trace.node." + DefaultGroup
+
+	DefaultDatasetsAnnotation = "datasets"
+	DefaultBetaStarAnnotation = "betaStar"
+	DefaultIssuerAnnotation   = "issuer"
+	DefaultCtxStarAnnotation  = "ctxStar"
+	DefaultContextsAnnotation = "contexts"
 )
 
 type Config struct {
-	CrdGroup                   string
+	Group string
+
 	CrdVersion                 string
 	NodePropertyResourcePlural string
-	DatasetServiceURL          string
-	DatasetServiceCAFile       string
-	ContextServiceURL          string
-	ContextServiceCAFile       string
 
-	// Key of the annotation carrying beta*(t), inherited by the Pod.
-	NodePropertyLabelPrefix string
+	DatasetServiceURL    string
+	DatasetServiceCAFile string
+	ContextServiceURL    string
+	ContextServiceCAFile string
 
-	// Key of the annotation carrying req(t), inherited by the Pod.
-	DatasetsAnnotationKey string
+	TaskPodAnnotationPrefix   string
+	NodePropertyLabelPrefix   string
+	NodeTraceAnnotationPrefix string
 
-	// Prefix of the node labels carrying alpha_p(n), one label per property.
-	BetaStarAnnotationKey string
+	// Annotation carrying req(t), inherited by the Pod.
+	DatasetsAnnotation string
+
+	// Annotation carrying beta*(t), inherited by the Pod.
+	BetaStarAnnotation string
+
+	// Annotation carrying iss(t), inherited by the Pod.
+	IssuerAnnotation string
+
+	// Annotation carrying ctx*(t), inherited by the Pod.
+	CtxStarAnnotation string
+
+	// Annotation carrying Lambda(n), inherited by the Node.
+	ContextsAnnotation string
 }
 
 func getEnv(key, defaultValue string) string {
@@ -43,16 +64,24 @@ func getEnv(key, defaultValue string) string {
 
 func Load() Config {
 	cfg := Config{
-		CrdGroup:                   getEnv("CRD_GROUP", DefaultCrdGroup),
+		Group:                      getEnv("GROUP", DefaultGroup),
 		CrdVersion:                 getEnv("CRD_VERSION", DefaultCrdVersion),
 		NodePropertyResourcePlural: getEnv("NODE_PROPERTY_RESOURCE_PLURAL", DefaultNodePropertyResourcePlural),
-		DatasetServiceURL:          getEnv("DATASET_SERVICE_URL", DefaultDatasetServiceURL),
-		DatasetServiceCAFile:       getEnv("DATASET_SERVICE_CA_FILE", ""),
-		ContextServiceURL:          getEnv("CONTEXT_SERVICE_URL", DefaultContextServiceURL),
-		ContextServiceCAFile:       getEnv("CONTEXT_SERVICE_CA_FILE", ""),
-		NodePropertyLabelPrefix:    getEnv("NODE_PROPERTY_LABEL_PREFIX", DefaultNodePropertyLabelPrefix),
-		DatasetsAnnotationKey:      getEnv("DATASETS_ANNOTATION_KEY", DefaultDatasetsAnnotationKey),
-		BetaStarAnnotationKey:      getEnv("BETA_STAR_ANNOTATION_KEY", DefaultBetaStarAnnotationKey),
+
+		DatasetServiceURL:    getEnv("DATASET_SERVICE_URL", DefaultDatasetServiceURL),
+		DatasetServiceCAFile: getEnv("DATASET_SERVICE_CA_FILE", ""),
+		ContextServiceURL:    getEnv("CONTEXT_SERVICE_URL", DefaultContextServiceURL),
+		ContextServiceCAFile: getEnv("CONTEXT_SERVICE_CA_FILE", ""),
+
+		TaskPodAnnotationPrefix:   getEnv("TASK_POD_ANNOTATION_PREFIX", DefaultTaskPodAnnotationPrefix),
+		NodePropertyLabelPrefix:   getEnv("NODE_PROPERTY_LABEL_PREFIX", DefaultNodePropertyLabelPrefix),
+		NodeTraceAnnotationPrefix: getEnv("NODE_TRACE_ANNOTATION_PREFIX", DefaultNodeTraceAnnotationPrefix),
+
+		DatasetsAnnotation: getEnv("DATASETS_ANNOTATION_KEY", DefaultDatasetsAnnotation),
+		BetaStarAnnotation: getEnv("BETA_STAR_ANNOTATION_KEY", DefaultBetaStarAnnotation),
+		IssuerAnnotation:   getEnv("ISSUER_ANNOTATION_KEY", DefaultIssuerAnnotation),
+		CtxStarAnnotation:  getEnv("CTX_STAR_ANNOTATION_KEY", DefaultCtxStarAnnotation),
+		ContextsAnnotation: getEnv("CONTEXTS_ANNOTATION_KEY", DefaultContextsAnnotation),
 	}
 
 	return cfg

@@ -13,6 +13,10 @@ rules:
   - apiGroups: [policydriven.unimi.it]
     resources: [nodeproperties]
     verbs: [get, list, watch]
+  # Read and update nodes 
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, patch, update]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -36,3 +36,11 @@ spec:
       ports:
         - port: 8443
           protocol: TCP
+    # Context service - actual container port (8443), not the Service port (443)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: context-service
+      ports:
+        - port: 8443
+          protocol: TCP

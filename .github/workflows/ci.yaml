@@ -45,12 +45,12 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
-  test-node-property-controller:
-    name: Test node-property-controller
+  test-node-controller:
+    name: Test node-controller
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: node-property-controller
+        working-directory: node-controller
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -58,7 +58,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: node-property-controller/requirements.txt
+          cache-dependency-path: node-controller/requirements.txt
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
       - name: Run tests

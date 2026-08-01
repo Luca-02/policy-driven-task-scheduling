@@ -15,7 +15,7 @@ import (
 
 func testConfig() config.Config {
 	return config.Config{
-		CrdGroup:                   config.DefaultCrdGroup,
+		Group:                      config.DefaultGroup,
 		CrdVersion:                 config.DefaultCrdVersion,
 		NodePropertyResourcePlural: config.DefaultNodePropertyResourcePlural,
 	}
@@ -33,7 +33,7 @@ func newNodeProperty(name string, weight *float64, levels ...int64) *unstructure
 	}
 
 	return &unstructured.Unstructured{Object: map[string]any{
-		"apiVersion": config.DefaultCrdGroup + "/" + config.DefaultCrdVersion,
+		"apiVersion": config.DefaultGroup + "/" + config.DefaultCrdVersion,
 		"kind":       "NodeProperty",
 		"metadata":   map[string]any{"name": name},
 		"spec":       spec,

@@ -1,0 +1,27 @@
+# This is an invalid TaskRequest used to test the validation webhook with external data provider.
+# IMPORTANT:
+# This task is based on the `examples/data/seed_datasets.json` and `examples/data/seed_contexts.json`
+# data seeds.
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: TaskRequest
+metadata:
+  name: wallferrari
+  namespace: compute
+spec:
+  issuer: issuerferrari # auth(issuerferrari) = {Ferrari, Finance}
+  requirements:
+    security: 3
+    computation: 3 # same pin: only kind-worker is c_prop-admissible
+  datasets:
+    - d3ctx # ctx(d3ctx) = {Ferrari, Finance}
+# Apply AFTER wallford.yaml.
+# Expected: ADMITTED at
+# Gatekeeper (c_auth holds: {Ferrari,Finance} subset of
+# auth(issuerferrari)), but left Pending/Unschedulable at the
+# scheduling stage. The only c_prop-admissible node is kind-worker,
+# whose Lambda now holds {Ford} (from wallford.yaml); c_wall checks
+# (auth(issuerferrari) x Lambda(kind-worker)) intersect X_conf =
+# ({Ferrari,Finance} x {Ford}) intersect X_conf, which contains
+# (Ferrari, Ford) in X_conf -> Filter excludes kind-worker -> zero
+# candidates remain, unlike a c_auth rejection this fails at
+# scheduling time, not at admission.

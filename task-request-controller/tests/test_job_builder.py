@@ -298,7 +298,7 @@ class TestPodTemplateAnnotations(JobBuilderTestBase):
     def test_issuer_on_pod_template(self):
         job = self._build(issuer=ISSUER_DEFAULT)
         key = f"{self.cfg.job_annotation_prefix}/{self.cfg.issuer_annotation}"
-        self.assertEqual(json.loads(self._pod_annotations(job)[key]), ISSUER_DEFAULT)
+        self.assertEqual(self._pod_annotations(job)[key], ISSUER_DEFAULT)
 
     def test_issuer_annotation_absent_when_empty(self):
         job = self._build(issuer="")

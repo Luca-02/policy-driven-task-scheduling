@@ -55,7 +55,7 @@ class JobBuilder:
     def set_datasets(self, datasets: set[str]) -> "JobBuilder":
         self._datasets = datasets
         return self
-    
+
     def set_beta_star(self, beta_star: dict[str, int]) -> "JobBuilder":
         self._beta_star = beta_star
         return self
@@ -110,8 +110,11 @@ class JobBuilder:
         )
 
         annotations = {}
+
+        if self._issuer:
+            annotations[issuer_key] = self._issuer
+
         for key, value in (
-            (issuer_key, self._issuer),
             (datasets_key, sorted(self._datasets) if self._datasets else None),
             (beta_star_key, self._beta_star),
             (geo_star_key, sorted(self._geo_star) if self._geo_star else None),
@@ -119,6 +122,7 @@ class JobBuilder:
         ):
             if value:
                 annotations[key] = json.dumps(value)
+
         return annotations
 
     def _build_metadata(self) -> client.V1ObjectMeta:
@@ -167,11 +171,11 @@ class JobBuilder:
                     restart_policy="Never",
                     affinity=self._build_affinity(),
                     scheduler_name=self._config.scheduler_name,
-                    containers=self._build_containers()
+                    containers=self._build_containers(),
                 ),
             ),
         )
-    
+
     def _build_containers(self) -> list[client.V1Container]:
         """
         Build the list of containers for the Job's pod template.

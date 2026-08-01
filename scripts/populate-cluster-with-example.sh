@@ -15,7 +15,7 @@ echo "Populate context-service"
 (
     readonly CONTEXT_SERVICE_DIR="context-service"
     readonly CONTEXT_SERVICE_NAMESPACE="context-service"
-    readonly SEED_FILE="data/seed.json"
+    readonly SEED_FILE="../examples/data/seed_contexts.json"
 
     cd "${CONTEXT_SERVICE_DIR}"
 
@@ -43,7 +43,7 @@ echo "Populate dataset-service"
 (
     readonly DATASET_SERVICE_DIR="dataset-service"
     readonly DATASET_SERVICE_NAMESPACE="dataset-service"
-    readonly SEED_FILE="data/seed.json"
+    readonly SEED_FILE="../examples/data/seed_datasets.json"
 
     cd "${DATASET_SERVICE_DIR}"
 
