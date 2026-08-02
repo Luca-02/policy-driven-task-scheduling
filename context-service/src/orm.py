@@ -12,7 +12,7 @@ class IssuerAuthORM(Base):
 
 
 class ConflictORM(Base):
-    __tablename__ = "context_conflicts"
+    __tablename__ = "context_conflicts"  # X_conf
 
     # Normalized so that context_a < context_b: this both enforces the
     # irreflexivity of X_conf (context_a == context_b is rejected by the

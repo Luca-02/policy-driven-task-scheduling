@@ -31,7 +31,7 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     settings.persistence.progress_storage = kopf.AnnotationsProgressStorage(
         prefix=cfg.group
     )
-    
+
     settings.peering.name = "node-property-controller"
     settings.peering.standalone = False
     settings.peering.priority = 100
@@ -110,11 +110,15 @@ def on_node_deleted(body, logger, **kwargs):
         ctrl.on_node_deleted(name, logger)
 
 
+# ------------------------------------------------------------------
+# Node sanitization timer
+# ------------------------------------------------------------------
+
+
 @kopf.timer("", "v1", "nodes", interval=cfg.sanitize_interval_seconds)
 def sanitize_node(body, logger, **kwargs):
     name = body["metadata"]["name"]
     labels = body["metadata"].get("labels") or {}
-
 
     # Control-plane nodes never run tasks, so Lambda(n) never applies to
     # them; skip rather than let sanitize_node no-op on an empty

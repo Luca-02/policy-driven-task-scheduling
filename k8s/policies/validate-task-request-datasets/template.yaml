@@ -100,7 +100,6 @@ spec:
 
           dataset_response.system_error == ""
 
-          count(dataset_response.errors) == 0
           count(dataset_response.responses) > 0
 
           some i
@@ -124,7 +123,6 @@ spec:
 
           dataset_response.system_error == ""
 
-          count(dataset_response.errors) == 0
           count(dataset_response.responses) > 0
 
           some i
@@ -151,7 +149,6 @@ spec:
 
           dataset_response.system_error == ""
 
-          count(dataset_response.errors) == 0
           count(dataset_response.responses) > 0
 
           some i
@@ -187,6 +184,8 @@ spec:
 
           issuer_auth_response.system_error == ""
 
+          count(issuer_auth_response.errors) > 0
+
           some i
           error := issuer_auth_response.errors[i]
           error != null
@@ -220,9 +219,7 @@ spec:
           dataset_response.system_error == ""
           issuer_auth_response.system_error == ""
 
-          count(dataset_response.errors) == 0
           count(dataset_response.responses) > 0
-          count(issuer_auth_response.errors) == 0
           count(issuer_auth_response.responses) > 0
 
           auth := issuer_auth_response.responses[0][1].contexts

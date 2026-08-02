@@ -202,7 +202,7 @@
       "nodes": [
         "kind-worker"
       ],
-      "geo": "doesnotexist",
+      "geo": "geonotexist",
       "static": false,
       "contexts": []
     }

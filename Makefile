@@ -22,7 +22,7 @@ delete:
 	@echo "Deleting cluster..."
 	@kind delete clusters $(CLUSTER_NAME)
 
-dashboard:
+headlamp:
 	@echo "Starting Kubernetes dashboard..."
 	@echo "Use the following token to log in to the Headlamp dashboard:"
 	@kubectl create token headlamp-admin -n kube-system
@@ -30,7 +30,7 @@ dashboard:
 	@echo "You can access the dashboard at http://localhost:8080 after port forwarding."
 	@kubectl port-forward -n kube-system svc/headlamp 8080:80
 
-dashboard-token:
+headlamp-token:
 	@echo "Use the following token to log in to the Headlamp dashboard:"
 	@kubectl create token headlamp-admin -n kube-system
 

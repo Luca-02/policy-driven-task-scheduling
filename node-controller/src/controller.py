@@ -311,8 +311,9 @@ class Controller:
 
     def _clear_residual_traces(self, node_name: str, logger):
         """
-        ClearResidualTraces(n): simulated in this prototype, as the actual implementation would depend on
-        the specific traces being cleared and the system's architecture.
+        ClearResidualTraces(n): simulated in this prototype, as the 
+        actual implementation  would depend on the specific traces 
+        being cleared and the system's architecture.
         """
         sleep(self._config.clear_traces_simulation_seconds)  # Simulate some work being done
         logger.info(f"Node {node_name!r}: clearing residual traces (simulated)")
