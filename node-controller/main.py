@@ -48,7 +48,10 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 
 @kopf.on.resume(cfg.group, cfg.version, cfg.node_properties_plural)
 @kopf.on.create(cfg.group, cfg.version, cfg.node_properties_plural)
-@kopf.on.update(cfg.group, cfg.version, cfg.node_properties_plural)
+# Ensure the assumption that assumption of immutability of metadata is respected.
+# This will mitigate the `Time-of-check to Time-of-use` race condition that can occur
+# when updating metadata.
+# @kopf.on.update(cfg.group, cfg.version, cfg.node_properties_plural)
 def on_property_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     spec = body.get("spec", {})
@@ -114,20 +117,21 @@ def on_node_deleted(body, logger, **kwargs):
 # Node sanitization timer
 # ------------------------------------------------------------------
 
+if cfg.sanitize_interval_seconds > 0:
 
-@kopf.timer("", "v1", "nodes", interval=cfg.sanitize_interval_seconds)
-def sanitize_node(body, logger, **kwargs):
-    name = body["metadata"]["name"]
-    labels = body["metadata"].get("labels") or {}
+    @kopf.timer("", "v1", "nodes", interval=cfg.sanitize_interval_seconds)
+    def sanitize_node(body, logger, **kwargs):
+        name = body["metadata"]["name"]
+        labels = body["metadata"].get("labels") or {}
 
-    # Control-plane nodes never run tasks, so Lambda(n) never applies to
-    # them; skip rather than let sanitize_node no-op on an empty
-    # annotation every single tick.
-    if any(l in labels for l in CONTROL_PLANE_LABELS):
-        logger.info(f"Skipping control-plane node {name} sanitization")
-        return
+        # Control-plane nodes never run tasks, so Lambda(n) never applies to
+        # them; skip rather than let sanitize_node no-op on an empty
+        # annotation every single tick.
+        if any(l in labels for l in CONTROL_PLANE_LABELS):
+            logger.info(f"Skipping control-plane node {name} sanitization")
+            return
 
-    logger.info(f"🧹 Sanitizing node {name!r}")
+        logger.info(f"🧹 Sanitizing node {name!r}")
 
-    if ctrl is not None:
-        ctrl.sanitize_node(name, logger)
+        if ctrl is not None:
+            ctrl.sanitize_node(name, logger)
