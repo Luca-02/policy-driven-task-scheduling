@@ -162,8 +162,8 @@ class Controller:
     @_synchronized
     def on_node_created_or_updated(self, name: str, labels: dict, logger):
         """
-        Handle creation or update of a Node by parsing its labels, storing it in the controller's state,
-        and relabeling it according to all defined properties.
+        Handle creation or update of a Node by parsing its labels, storing it in the 
+        controller's state, and relabeling it according to all defined properties.
 
         Args:
             name: Node name.
@@ -194,7 +194,7 @@ class Controller:
             logger.info(f"Node {name!r}: removing stale property label {label_key!r}")
             self._patch_node_level(name, label_key, None, logger)
 
-            # Relabel the node for all properties
+        # Relabel the node for all properties
         for prop in self._properties.values():
             label_key = f"{self._config.property_prefix}/{prop.name}"
             level = node.evaluate_property(prop)
@@ -254,9 +254,7 @@ class Controller:
         """
         node = self._v1.read_node(node_name)
         annotations = node.metadata.annotations or {}
-        key = (
-            f"{self._config.trace_prefix}/{self._config.contexts_annotation}"
-        )
+        key = f"{self._config.trace_prefix}/{self._config.contexts_annotation}"
         trace = annotations.get(key, None)
 
         if not trace or trace == "[]":
@@ -311,11 +309,13 @@ class Controller:
 
     def _clear_residual_traces(self, node_name: str, logger):
         """
-        ClearResidualTraces(n): simulated in this prototype, as the 
-        actual implementation  would depend on the specific traces 
+        ClearResidualTraces(n): simulated in this prototype, as the
+        actual implementation  would depend on the specific traces
         being cleared and the system's architecture.
         """
-        sleep(self._config.clear_traces_simulation_seconds)  # Simulate some work being done
+        sleep(
+            self._config.clear_traces_simulation_seconds
+        )  # Simulate some work being done
         logger.info(f"Node {node_name!r}: clearing residual traces (simulated)")
 
     def _clear_wall_contexts(
@@ -334,9 +334,9 @@ class Controller:
     def _set_sanitizing_taint(self, node_name: str, present: bool, logger):
         """
         Adds or removes the sanitizing taint on a node: the k8s-native
-        mechanism implementing sanitizing(n). 
-        
-        While present, no new Pod is bound to the node by any scheduler 
+        mechanism implementing sanitizing(n).
+
+        While present, no new Pod is bound to the node by any scheduler
         that honours standard taints, which is exactly:
         "n exits N for the duration of the operation".
         """
@@ -346,14 +346,16 @@ class Controller:
 
         already_present = any(t.key == key for t in existing)
         if present == already_present:
-            return
+            return  # The taint is already in the desired state
 
         if present:
+            # Add the sanitizing taint to the node's existing taints
             new_taints = [
                 {"key": t.key, "value": t.value, "effect": t.effect} for t in existing
             ]
             new_taints.append({"key": key, "effect": "NoSchedule"})
         else:
+            # Remove the sanitizing taint from the node's existing taints
             new_taints = [
                 {"key": t.key, "value": t.value, "effect": t.effect}
                 for t in existing

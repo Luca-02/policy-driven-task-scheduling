@@ -46,12 +46,6 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
 # --------------------------------------------------
 
 
-@kopf.on.resume(cfg.group, cfg.version, cfg.node_properties_plural)
-@kopf.on.create(cfg.group, cfg.version, cfg.node_properties_plural)
-# Ensure the assumption that assumption of immutability of metadata is respected.
-# This will mitigate the `Time-of-check to Time-of-use` race condition that can occur
-# when updating metadata.
-# @kopf.on.update(cfg.group, cfg.version, cfg.node_properties_plural)
 def on_property_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     spec = body.get("spec", {})
@@ -65,6 +59,29 @@ def on_property_created_or_updated(body, reason, logger, **kwargs):
 
     if ctrl is not None:
         ctrl.on_property_created_or_updated(name, spec, logger)
+
+
+kopf.on.resume(
+    cfg.group,
+    cfg.version,
+    cfg.node_properties_plural,
+)(on_property_created_or_updated)
+
+kopf.on.create(
+    cfg.group,
+    cfg.version,
+    cfg.node_properties_plural,
+)(on_property_created_or_updated)
+
+# Ensure that the assumption of immutability of metadata is respected.
+# This will mitigate the `Time-of-check to Time-of-use` race condition that can occur
+# when updating metadata.
+if cfg.debug_mode:
+    kopf.on.update(
+        cfg.group,
+        cfg.version,
+        cfg.node_properties_plural,
+    )(on_property_created_or_updated)
 
 
 @kopf.on.delete(cfg.group, cfg.version, cfg.node_properties_plural)
@@ -81,9 +98,6 @@ def on_property_deleted(body, logger, **kwargs):
 # ------------------------------------------------------------------
 
 
-@kopf.on.resume("", "v1", "nodes")
-@kopf.on.create("", "v1", "nodes")
-@kopf.on.update("", "v1", "nodes")
 def on_node_created_or_updated(body, reason, logger, **kwargs):
     name = body["metadata"]["name"]
     labels = body["metadata"].get("labels") or {}
@@ -102,6 +116,16 @@ def on_node_created_or_updated(body, reason, logger, **kwargs):
 
     if ctrl is not None:
         ctrl.on_node_created_or_updated(name, labels, logger)
+
+
+kopf.on.resume("", "v1", "nodes")(on_node_created_or_updated)
+kopf.on.create("", "v1", "nodes")(on_node_created_or_updated)
+
+# Ensure that the assumption of immutability of metadata is respected.
+# This will mitigate the `Time-of-check to Time-of-use` race condition that can occur
+# when updating metadata.
+if cfg.debug_mode:
+    kopf.on.update("", "v1", "nodes")(on_node_created_or_updated)
 
 
 @kopf.on.delete("", "v1", "nodes")

@@ -32,6 +32,7 @@ def make_config():
         sanitize_interval_seconds=SANITIZE_INTERVAL_SECONDS_DEFAULT,
         clear_traces_simulation_seconds=CLEAR_TRACES_SIMULATION_SECONDS_DEFAULT,
         log_level="DEBUG",
+        debug_mode=True,
     )
 
 
@@ -847,7 +848,7 @@ class TestSanitizeNode(unittest.TestCase):
         # 1st: taint applied
         self.assertEqual(
             patch_calls[0][0][1]["spec"]["taints"][-1]["key"],
-            f"{self.config.trace_prefix}/{self.config.sanitizing_taint}"
+            f"{self.config.trace_prefix}/{self.config.sanitizing_taint}",
         )
         # 2nd: Lambda(n) cleared
         self.assertIsNone(patch_calls[1][0][1]["metadata"]["annotations"][self.key])
@@ -897,19 +898,28 @@ class TestSetSanitizingTaint(unittest.TestCase):
         body = self.ctrl._v1.patch_node.call_args[0][1]
         self.assertEqual(
             body["spec"]["taints"],
-            [{"key": f"{self.config.trace_prefix}/{self.config.sanitizing_taint}", "effect": "NoSchedule"}],
+            [
+                {
+                    "key": f"{self.config.trace_prefix}/{self.config.sanitizing_taint}",
+                    "effect": "NoSchedule",
+                }
+            ],
         )
 
     def test_apply_when_already_present_is_noop(self):
         self.ctrl._v1.read_node.return_value = self._node(
-            taints=[make_taint(f"{self.config.trace_prefix}/{self.config.sanitizing_taint}")]
+            taints=[
+                make_taint(f"{self.config.trace_prefix}/{self.config.sanitizing_taint}")
+            ]
         )
         self.ctrl._set_sanitizing_taint("n1", True, self.logger)
         self.ctrl._v1.patch_node.assert_not_called()
 
     def test_remove_when_present(self):
         self.ctrl._v1.read_node.return_value = self._node(
-            taints=[make_taint(f"{self.config.trace_prefix}/{self.config.sanitizing_taint}")]
+            taints=[
+                make_taint(f"{self.config.trace_prefix}/{self.config.sanitizing_taint}")
+            ]
         )
         self.ctrl._set_sanitizing_taint("n1", False, self.logger)
         self.ctrl._v1.patch_node.assert_called_once()

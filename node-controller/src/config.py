@@ -30,6 +30,7 @@ class Config:
         sanitize_interval_seconds: int,
         clear_traces_simulation_seconds: int,
         log_level: str,
+        debug_mode: bool = False,
     ):
         self.group = group
         self.version = version
@@ -43,6 +44,7 @@ class Config:
         self.sanitize_interval_seconds = sanitize_interval_seconds
         self.clear_traces_simulation_seconds = clear_traces_simulation_seconds
         self.log_level = log_level
+        self.debug_mode = debug_mode
 
     @staticmethod
     def from_env() -> "Config":
@@ -75,4 +77,5 @@ class Config:
                 )
             ),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
+            debug_mode=os.getenv("DEBUG_MODE", "false").lower() == "true",
         )
