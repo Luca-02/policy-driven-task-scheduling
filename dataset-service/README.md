@@ -1,6 +1,6 @@
 # Dataset Service (mock data governor)
 
-Mock service simulating a data governor (e.g. Apache Atlas) for the policy-driven task scheduling system. Stores dataset **metadata**, the protection class `β(d)`, the size used for transfer cost, the placement `λ(d)` and the data sovereignty information `geo(d)`, and exposes them to OPA Gatekeeper via the **External Data Provider** protocol, plus a CRUD API to manage the datasets for the policy-driven task scheduling system.
+Mock data governance service (e.g. Apache Atlas) for the policy-driven task scheduling system. Stores dataset **metadata**, the protection class `β(d)`, the size used for transfer cost, the placement `λ(d)` and the data sovereignty information `geo(d)`, and exposes them to OPA Gatekeeper via the **External Data Provider** protocol, plus a CRUD API to manage the datasets for the policy-driven task scheduling system.
 
 The service is intentionally a thin demo component, not a production system: no authentication is enforced. Isolation is provided by the ClusterIP scope and a `NetworkPolicy` that restricts ingress to the namespaces of Gatekeeper, the TaskRequest controller and the Dataset Service namespace. TLS is kept because Gatekeeper External Data requires the provider to be served over TLS.
 
