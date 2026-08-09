@@ -5,7 +5,7 @@ from kubernetes import client, config
 
 from src.config import Config
 from src.controller import Controller
-from src.dataset_service import DatasetService
+from src.dataset_client import DatasetClient
 
 load_dotenv()
 
@@ -40,7 +40,7 @@ def startup(settings: kopf.OperatorSettings, logger, **kwargs):
     ctrl = Controller(
         batch_v1=client.BatchV1Api(),
         custom_api=client.CustomObjectsApi(),
-        dataset_service=DatasetService(
+        dataset_client=DatasetClient(
             base_url=cfg.dataset_service_url,
             ca_cert_file=cfg.dataset_service_ca_file,
         ),

@@ -394,16 +394,26 @@ done
 readonly CLOUDNATIVE_PG_NAMESPACE="cnpg-system"
 readonly CLOUDNATIVE_PG_MANIFEST_URL="https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.30/releases/cnpg-1.30.0.yaml"
 
-log "Installing CloudNativePG"
-kubectl apply --server-side -f "$CLOUDNATIVE_PG_MANIFEST_URL"
+readonly DATASET_SERVICE_LIGHT_MODE="${DATASET_SERVICE_LIGHT_MODE:-false}"
+readonly CONTEXT_SERVICE_LIGHT_MODE="${CONTEXT_SERVICE_LIGHT_MODE:-false}"
 
-wait_for_deployment "$CLOUDNATIVE_PG_NAMESPACE" "cnpg-controller-manager"
-kubectl wait -n "$CLOUDNATIVE_PG_NAMESPACE" \
-    --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg \
-    --timeout=120s
+if [[ "$DATASET_SERVICE_LIGHT_MODE" == "true" && "$CONTEXT_SERVICE_LIGHT_MODE" == "true" ]]; then
+    log "All services are in light mode, skipping CloudNativePG installation"
+else
+    log "At least one service is not in light mode, installing CloudNativePG"
 
-log "Waiting for CloudNativePG CRDs to be established"
-kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=120s
+    log "Installing CloudNativePG"
+    kubectl apply --server-side -f "$CLOUDNATIVE_PG_MANIFEST_URL"
+
+    wait_for_deployment "$CLOUDNATIVE_PG_NAMESPACE" "cnpg-controller-manager"
+
+    kubectl wait -n "$CLOUDNATIVE_PG_NAMESPACE" \
+        --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg \
+        --timeout=120s
+
+    log "Waiting for CloudNativePG CRDs to be established"
+    kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=120s
+fi
 
 #######################################
 # node-controller
@@ -430,7 +440,6 @@ wait_for_deployment "$NODE_CONTROLLER_NAMESPACE" "$NODE_CONTROLLER_DEPLOYMENT"
 #######################################
 
 readonly DATASET_SERVICE_PATH="dataset-service"
-readonly DATASET_SERVICE_LIGHT_MODE="${DATASET_SERVICE_LIGHT_MODE:-false}"
 
 if [[ "$DATASET_SERVICE_LIGHT_MODE" == "true" ]]; then
     log "Dataset service light mode enabled, skipping postgres cluster setup"
@@ -472,7 +481,6 @@ wait_for_deployment "$DATASET_SERVICE_NAMESPACE" "$DATASET_SERVICE_DEPLOYMENT"
 #######################################
 
 readonly CONTEXT_SERVICE_PATH="context-service"
-readonly CONTEXT_SERVICE_LIGHT_MODE="${CONTEXT_SERVICE_LIGHT_MODE:-false}"
 
 if [[ "$CONTEXT_SERVICE_LIGHT_MODE" == "true" ]]; then
     log "Context service light mode enabled, skipping postgres cluster setup"

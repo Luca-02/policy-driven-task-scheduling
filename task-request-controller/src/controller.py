@@ -7,10 +7,10 @@ from kubernetes import client
 from kubernetes.client.exceptions import ApiException
 
 from src.config import Config
-from src.dataset_service import (
-    DatasetService,
-    DatasetNotFoundError,
-    DatasetServiceError,
+from src.dataset_client import (
+    DatasetClient,
+    DatasetNotFoundException,
+    DatasetClientException,
 )
 from src.geo import GeographicGroup
 from src.annotation import (
@@ -41,12 +41,12 @@ class Controller:
         self,
         batch_v1: client.BatchV1Api,
         custom_api: client.CustomObjectsApi,
-        dataset_service: DatasetService,
+        dataset_client: DatasetClient,
         config: Config,
     ):
         self._batch_v1 = batch_v1
         self._custom_api = custom_api
-        self._dataset_service = dataset_service
+        self._dataset_client = dataset_client
         self._config = config
         self._geo_groups: dict[str, GeographicGroup] = {}
         self._lock = Lock()
@@ -177,8 +177,8 @@ class Controller:
             return
 
         try:
-            datasets_data = self._dataset_service.get_all_datasets(datasets)
-        except DatasetNotFoundError as e:
+            datasets_data = self._dataset_client.get_all_datasets(datasets)
+        except DatasetNotFoundException as e:
             logger.error(f"TaskRequest {name!r}: {e}")
             self._set_status(
                 namespace=namespace,
@@ -189,8 +189,8 @@ class Controller:
                 logger=logger,
             )
             return
-        except DatasetServiceError as e:
-            logger.warning(f"TaskRequest {name!r} transient dataset service error: {e}")
+        except DatasetClientException as e:
+            logger.warning(f"TaskRequest {name!r} dataset client error: {e}")
             raise kopf.TemporaryError(str(e), delay=10)
 
         dataset_requirements = [d.get("requirements") for d in datasets_data]

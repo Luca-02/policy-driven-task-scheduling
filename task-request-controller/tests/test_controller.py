@@ -21,7 +21,7 @@ from src.controller import (
     SCHEDULED_PHASE,
     PENDING_PHASE,
 )
-from src.dataset_service import DatasetNotFoundError, DatasetServiceError
+from src.dataset_client import DatasetNotFoundException, DatasetClientException
 
 
 def make_logger() -> MagicMock:
@@ -40,16 +40,16 @@ class ControllerTestBase(unittest.TestCase):
     def setUp(self):
         self.batch_v1 = MagicMock()
         self.custom_api = MagicMock()
-        self.dataset_service = MagicMock()
+        self.dataset_client = MagicMock()
         self.cfg = make_config()
         self.ctrl = Controller(
             batch_v1=self.batch_v1,
             custom_api=self.custom_api,
-            dataset_service=self.dataset_service,
+            dataset_client=self.dataset_client,
             config=self.cfg,
         )
         self.logger = make_logger()
-        self.dataset_service.get_all_datasets.return_value = []
+        self.dataset_client.get_all_datasets.return_value = []
 
     def make_body(
         self,
@@ -114,7 +114,7 @@ class ControllerTestBase(unittest.TestCase):
 class TestReconcile(ControllerTestBase):
     def setUp(self):
         super().setUp()
-        self.dataset_service.get_all_datasets.return_value = []
+        self.dataset_client.get_all_datasets.return_value = []
 
     def test_terminal_phases_are_no_op(self):
         for phase in (COMPLETE_PHASE, FAILURE_PHASE):
@@ -138,15 +138,15 @@ class TestReconcile(ControllerTestBase):
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
 
     def test_datasets_fetched_once_via_get_all_datasets(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {"security": 2}, "geo": None},
             {"name": "d2", "requirements": {"computation": 3}, "geo": None},
         ]
         self.do_reconcile(datasets=["d1", "d2"])
-        self.dataset_service.get_all_datasets.assert_called_once_with(["d1", "d2"])
+        self.dataset_client.get_all_datasets.assert_called_once_with(["d1", "d2"])
 
     def test_full_reconcile_annotations_reflect_beta_star_and_datasets(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {"security": 2}, "geo": None},
             {"name": "d2", "requirements": {"computation": 3}, "geo": None},
         ]
@@ -164,16 +164,16 @@ class TestReconcile(ControllerTestBase):
         self.assertEqual(self.pod_annotation(ISSUER_ANNOTATION_DEFAULT), "bob")
 
     def test_dataset_not_found_sets_failed_without_creating_job(self):
-        self.dataset_service.get_all_datasets.side_effect = DatasetNotFoundError(
-            "missing"
+        self.dataset_client.get_all_datasets.side_effect = DatasetNotFoundException(
+            "Dataset(s) not found: ['missing']"
         )
         self.do_reconcile(datasets=["missing"])
         self.batch_v1.create_namespaced_job.assert_not_called()
         self.assertIn(FAILURE_PHASE, self.patched_phases())
         self.assertNotIn(SCHEDULED_PHASE, self.patched_phases())
 
-    def test_dataset_service_error_raises_temporary(self):
-        self.dataset_service.get_all_datasets.side_effect = DatasetServiceError(
+    def test_dataset_client_error_raises_temporary(self):
+        self.dataset_client.get_all_datasets.side_effect = DatasetClientException(
             "unreachable"
         )
         with self.assertRaises(TemporaryError):
@@ -233,7 +233,7 @@ class TestReconcileGeo(ControllerTestBase):
             ("OECD", [], ["EU", "US"]),
             ("US", ["us-west"], []),
         )
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": "EU"},
         ]
         self.do_reconcile(geo="OECD", datasets=["d1"])
@@ -248,7 +248,7 @@ class TestReconcileGeo(ControllerTestBase):
             ("EU", ["eu-west"], []),
             ("US", ["us-west"], []),
         )
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": "US"},
         ]
         self.do_reconcile(geo="EU", datasets=["d1"])
@@ -288,14 +288,14 @@ class TestReconcileGeo(ControllerTestBase):
 
 class TestReconcileCtxStar(ControllerTestBase):
     def test_all_public_datasets_no_ctx_annotation(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": None, "contexts": []},
         ]
         self.do_reconcile(datasets=["d1"])
         self.assertIsNone(self.pod_annotation(CTX_STAR_ANNOTATION_DEFAULT))
 
     def test_ctx_star_is_union_of_dataset_contexts(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": None, "contexts": ["ford"]},
             {
                 "name": "d2",
@@ -312,7 +312,7 @@ class TestReconcileCtxStar(ControllerTestBase):
         self.assertEqual(self.patched_phases(), [PENDING_PHASE, SCHEDULED_PHASE])
 
     def test_ctx_star_deduplicates_overlapping_contexts(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": None, "contexts": ["ford"]},
             {"name": "d2", "requirements": {}, "geo": None, "contexts": ["ford"]},
         ]
@@ -323,7 +323,7 @@ class TestReconcileCtxStar(ControllerTestBase):
         )
 
     def test_missing_contexts_key_treated_as_empty(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {"name": "d1", "requirements": {}, "geo": None},
         ]
         self.do_reconcile(datasets=["d1"])
@@ -332,7 +332,7 @@ class TestReconcileCtxStar(ControllerTestBase):
 
 class TestReconcileStaticNodes(ControllerTestBase):
     def test_no_static_dataset_no_affinity_added(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {
                 "name": "d1",
                 "requirements": {},
@@ -347,7 +347,7 @@ class TestReconcileStaticNodes(ControllerTestBase):
         self.assertEqual(len(static_exprs), 0)
 
     def test_single_static_dataset_affinity_present(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {
                 "name": "d1",
                 "requirements": {},
@@ -363,7 +363,7 @@ class TestReconcileStaticNodes(ControllerTestBase):
         self.assertEqual(set(exprs[0].values), {"n1", "n2"})
 
     def test_disjoint_static_datasets_sets_failed_without_creating_job(self):
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {
                 "name": "d1",
                 "requirements": {},
@@ -385,7 +385,7 @@ class TestReconcileStaticNodes(ControllerTestBase):
 
     def test_static_and_geo_expressions_combined_in_same_term(self):
         self.load_geo_groups(("EU", ["eu-west"], []))
-        self.dataset_service.get_all_datasets.return_value = [
+        self.dataset_client.get_all_datasets.return_value = [
             {
                 "name": "d1",
                 "requirements": {},
