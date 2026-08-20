@@ -1,1 +1,2 @@
 # policy-driven-task-scheduling
+- [ ] TODO: modificare NodeProperty CRD in modo tale che non serva specificare esplicitamente il livello delle proprietà per ogni espressione, ma che venga dedotta dalla posizione dell'elemento nella lista levels, così da rispettare il fatto che i livelli di una proprietà sono un intervallo di N senza salti.
