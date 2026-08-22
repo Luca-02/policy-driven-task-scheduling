@@ -5,15 +5,13 @@
   spec:
     levels:
       # Level 1: cert = certC
-      - level: 1
-        disjunction:
+      - disjunction:
           - clause:
               - key: cert
                 operator: Eq
                 values: ["certC"]
       # Level 2: (cert = certB) OR (isolation = strict)
-      - level: 2
-        disjunction:
+      - disjunction:
           - clause:
               - key: cert
                 operator: Eq
@@ -23,8 +21,7 @@
                 operator: Eq
                 values: ["strict"]
       # Level 3: (cert in {certA, certB}) AND (isolation = strict)
-      - level: 3
-        disjunction:
+      - disjunction:
           - clause:
               - key: cert
                 operator: In

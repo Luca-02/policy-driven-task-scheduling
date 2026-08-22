@@ -141,22 +141,7 @@ func extractInfo(u *unstructured.Unstructured) NodePropertyInfo {
 		return info
 	}
 
-	for _, l := range rawLevels {
-		m, ok := l.(map[string]any)
-		if !ok {
-			continue
-		}
-
-		lvl, found, err := unstructured.NestedInt64(m, "level")
-		if err != nil || !found {
-			continue
-		}
-
-		info.Levels = append(info.Levels, lvl)
-		if lvl > info.MaxLevel {
-			info.MaxLevel = lvl
-		}
-	}
+	info.MaxLevel = int64(len(rawLevels))
 
 	weight, found, err := unstructured.NestedFloat64(u.Object, "spec", "weight")
 	if err == nil && found {

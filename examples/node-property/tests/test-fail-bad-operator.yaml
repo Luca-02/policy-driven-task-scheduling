@@ -4,8 +4,7 @@ metadata:
   name: test-fail-bad-operator
 spec:
   levels:
-    - level: 1
-      disjunction:
+    - disjunction:
         - clause:
             - key: some-key
               operator: InvalidOperator

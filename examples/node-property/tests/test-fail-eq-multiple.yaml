@@ -4,8 +4,7 @@ metadata:
   name: test-fail-eq-multiple
 spec:
   levels:
-    - level: 1
-      disjunction:
+    - disjunction:
         - clause:
             - key: some-key
               operator: Eq

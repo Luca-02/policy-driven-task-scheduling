@@ -32,7 +32,7 @@ echo "Populate context-service"
     kubectl wait --namespace context-service \
         --for=condition=complete \
         job/context-seeding \
-        --timeout=60s
+        --timeout=300s
 
     kubectl delete configmap context-seed \
         --namespace "${CONTEXT_SERVICE_NAMESPACE}" \
@@ -60,7 +60,7 @@ echo "Populate dataset-service"
     kubectl wait --namespace dataset-service \
         --for=condition=complete \
         job/dataset-seeding \
-        --timeout=60s
+        --timeout=300s
 
     kubectl delete configmap dataset-seed \
         --namespace "${DATASET_SERVICE_NAMESPACE}" \

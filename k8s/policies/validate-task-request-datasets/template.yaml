@@ -39,8 +39,8 @@ spec:
 
         valid_property_level(prop_name, req_level) {
           prop := property_inventory[prop_name]
-          some i
-          prop.spec.levels[i].level == req_level
+          req_level >= 0
+          req_level <= count(prop.spec.levels)
         }
 
         list_contains(list, x) {

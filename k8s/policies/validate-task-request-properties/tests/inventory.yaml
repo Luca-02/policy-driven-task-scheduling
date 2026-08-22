@@ -4,14 +4,12 @@ metadata:
   name: gpu-model
 spec:
   levels:
-    - level: 1
-      disjunction:
+    - disjunction:
         - clause:
             - key: "nvidia.com/gpu.product"
               operator: "In"
               values: ["Tesla-T4"]
-    - level: 2
-      disjunction:
+    - disjunction:
         - clause:
             - key: "nvidia.com/gpu.product"
               operator: "Eq"

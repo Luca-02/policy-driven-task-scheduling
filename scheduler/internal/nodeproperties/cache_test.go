@@ -21,10 +21,11 @@ func testConfig() config.Config {
 	}
 }
 
-func newNodeProperty(name string, weight *float64, levels ...int64) *unstructured.Unstructured {
-	var levelObjs []any
-	for _, l := range levels {
-		levelObjs = append(levelObjs, map[string]any{"level": l})
+func newNodeProperty(name string, weight *float64, levelCount int) *unstructured.Unstructured {
+	levelObjs := make([]any, levelCount)
+	for i := range levelObjs {
+		// Each level is represented as an empty object in the "levels" list
+		levelObjs[i] = map[string]any{}
 	}
 
 	spec := map[string]any{"levels": levelObjs}
@@ -56,8 +57,8 @@ func newFakeClient(objs ...*unstructured.Unstructured) *dynamicfake.FakeDynamicC
 
 func TestCacheSyncsExistingObjects(t *testing.T) {
 	client := newFakeClient(
-		newNodeProperty("security", floatPtr(2.0), 0, 1, 2, 3),
-		newNodeProperty("computation", nil, 0, 1, 2), // no weight -> defaults to 1
+		newNodeProperty("security", floatPtr(2.0), 3),
+		newNodeProperty("computation", nil, 2), // no weight -> defaults to 1
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -77,9 +78,6 @@ func TestCacheSyncsExistingObjects(t *testing.T) {
 	}
 	if info.Weight != 2.0 {
 		t.Errorf("security Weight = %v, want 2.0", info.Weight)
-	}
-	if len(info.Levels) != 4 {
-		t.Errorf("security Levels = %v, want 4 entries", info.Levels)
 	}
 
 	info, ok = c.Get("computation")
@@ -111,7 +109,7 @@ func TestCacheGetUnknownPropertyReturnsFalse(t *testing.T) {
 }
 
 func TestExtractInfoEmptyLevelsIsMaxZero(t *testing.T) {
-	info := extractInfo(newNodeProperty("empty", nil))
+	info := extractInfo(newNodeProperty("empty", nil, 0))
 	if info.Name != "empty" {
 		t.Errorf("Name = %q, want %q", info.Name, "empty")
 	}
@@ -120,8 +118,5 @@ func TestExtractInfoEmptyLevelsIsMaxZero(t *testing.T) {
 	}
 	if info.Weight != 1.0 {
 		t.Errorf("Weight = %v, want 1.0 (default)", info.Weight)
-	}
-	if len(info.Levels) != 0 {
-		t.Errorf("Levels = %v, want empty", info.Levels)
 	}
 }

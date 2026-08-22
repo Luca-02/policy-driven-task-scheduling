@@ -4,8 +4,7 @@ metadata:
   name: test-fail-gt-string
 spec:
   levels:
-    - level: 1
-      disjunction:
+    - disjunction:
         - clause:
             - key: some-key
               operator: Gt

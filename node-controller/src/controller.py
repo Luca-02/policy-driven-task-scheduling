@@ -70,6 +70,8 @@ class Controller:
     def _parse_property(name: str, spec: dict) -> Property:
         """
         Parse a NodePropertyDefinition spec into a Property object.
+        Each level of the property is inherit from its index in the 
+        spec's "levels" list, starting from 1.
 
         Args:
             name: Property name.
@@ -79,9 +81,9 @@ class Controller:
             A Property object representing the parsed specification.
         """
         levels = []
-        for level in spec.get("levels", []):
+        for level, level_spec in enumerate(spec.get("levels", []), start=1):
             clauses = []
-            for disjoint in level.get("disjunction", []):
+            for disjoint in level_spec.get("disjunction", []):
                 conditions = [
                     Condition(
                         key=cond["key"],
@@ -91,7 +93,7 @@ class Controller:
                     for cond in disjoint.get("clause", [])
                 ]
                 clauses.append(Clause(conditions))
-            levels.append(Level(level["level"], clauses))
+            levels.append(Level(level, clauses))
         return Property(name, levels)
 
     @staticmethod
@@ -162,7 +164,7 @@ class Controller:
     @_synchronized
     def on_node_created_or_updated(self, name: str, labels: dict, logger):
         """
-        Handle creation or update of a Node by parsing its labels, storing it in the 
+        Handle creation or update of a Node by parsing its labels, storing it in the
         controller's state, and relabeling it according to all defined properties.
 
         Args:

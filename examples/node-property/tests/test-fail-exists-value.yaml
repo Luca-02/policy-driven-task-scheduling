@@ -4,8 +4,7 @@ metadata:
   name: test-fail-exists-value
 spec:
   levels:
-    - level: 1
-      disjunction:
+    - disjunction:
         - clause:
             - key: some-key
               operator: Exists

@@ -4,8 +4,7 @@ metadata:
   name: test-fail-duplicated-atomic-type2
 spec:
   levels:
-    - level: 1
-      disjunction:
+    - disjunction:
         - clause:
             - key: some-key1
               operator: In

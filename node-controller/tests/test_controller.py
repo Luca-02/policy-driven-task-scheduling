@@ -70,13 +70,11 @@ def patched_labels(ctrl):
 SECURITY_SPEC = {
     "levels": [
         {
-            "level": 1,
             "disjunction": [
                 {"clause": [{"key": "cert", "operator": "Eq", "values": ["certC"]}]},
             ],
         },
         {
-            "level": 2,
             "disjunction": [
                 {"clause": [{"key": "cert", "operator": "Eq", "values": ["certB"]}]},
                 {
@@ -87,7 +85,6 @@ SECURITY_SPEC = {
             ],
         },
         {
-            "level": 3,
             "disjunction": [
                 {
                     "clause": [
@@ -103,20 +100,17 @@ SECURITY_SPEC = {
 COMPUTATION_SPEC = {
     "levels": [
         {
-            "level": 1,
             "disjunction": [
                 {"clause": [{"key": "cpu", "operator": "Gte", "values": [4]}]},
             ],
         },
         {
-            "level": 2,
             "disjunction": [
                 {"clause": [{"key": "gpu", "operator": "Eq", "values": ["t4"]}]},
                 {"clause": [{"key": "cpu", "operator": "Gte", "values": [8]}]},
             ],
         },
         {
-            "level": 3,
             "disjunction": [
                 {
                     "clause": [
