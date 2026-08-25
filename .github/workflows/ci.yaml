@@ -122,21 +122,52 @@ jobs:
       CONTROL_PLANE_COUNT: "1"
       WORKER_COUNT: "0"
       NODE_IMAGE: "kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256"
+      KIND_VERSION: "v0.32.0"
+      GATOR_VERSION: "v3.22.2"
     steps:
       - uses: actions/checkout@v6
+      - name: Cache CLI Tools
+        id: cache-tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/bin/kind
+            ~/go/bin/gator
+          key: ${{ runner.os }}-tools-kind-${{ env.KIND_VERSION }}-gator-${{ env.GATOR_VERSION }}
       - name: Set up Go
+        if: steps.cache-tools.outputs.cache-hit != 'true'
         uses: actions/setup-go@v5
         with:
           go-version: "1.24.4"
       - name: Install gator
-        run: go install github.com/open-policy-agent/gatekeeper/v3/cmd/gator@v3.22.2
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: go install github.com/open-policy-agent/gatekeeper/v3/cmd/gator@${{ env.GATOR_VERSION }}
+      - name: Install kind
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.local/bin
+          curl -Lo ~/.local/bin/kind https://kind.sigs.k8s.io/dl/${{ env.KIND_VERSION }}/kind-linux-amd64
+          chmod +x ~/.local/bin/kind
+      - name: Add local bin to PATH
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/go/bin" >> $GITHUB_PATH
       - uses: azure/setup-kubectl@v4
       - uses: azure/setup-helm@v5
-      - name: Install kind
+      - name: Cache Kind Node Image
+        id: cache-kind-image
+        uses: actions/cache@v4
+        with:
+          path: /tmp/kind-node-image.tar
+          key: kind-node-image-${{ env.NODE_IMAGE }}
+      - name: Preload Kind Node Image from Cache
+        if: steps.cache-kind-image.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/kind-node-image.tar
+      - name: Pull and Save Kind Node Image on Cache Miss
+        if: steps.cache-kind-image.outputs.cache-hit != 'true'
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+          docker pull ${{ env.NODE_IMAGE }}
+          docker save ${{ env.NODE_IMAGE }} -o /tmp/kind-node-image.tar
       - name: Initialize cluster
         run: bash scripts/init-cluster.sh
       - name: Populate cluster with example data
