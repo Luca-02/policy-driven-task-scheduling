@@ -1,14 +1,14 @@
 # This is an invalid TaskRequest used to test the validation webhook with external data provider.
 # IMPORTANT:
 # This task is based on the `examples/data/seed_datasets.json` and `examples/data/seed_contexts.json`
-# data seeds.
+# data seeds, and the `examples/cluster-config.yaml` cluster configuration.
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
   name: invalid
   # no namespace 'compute'
 spec:
-  issuer: issuernotexist # non-existent issuer
+  issuer: issuerford # issuer authorized for {Ford}
   requirements:
     security: 1
     computation: 99 # invalid level for 'computation' property
@@ -16,7 +16,7 @@ spec:
   datasets:
     - d1 # valid dataset
     - d2 # valid dataset
-    - d3ctx # dataset with "contexts": {Ferrari, Finance} -> not authorized for issuer-ford
+    - d3ctx # dataset with "contexts": {Ferrari, Finance} -> not authorized for issuerford
     - dnotexist1 # non-existent dataset
     - dnotexist2 # non-existent dataset
     - dnotexistprop # dataset with "requirements": {"propnotexist1": 1, "propnotexist2": 3}

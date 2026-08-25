@@ -1,0 +1,62 @@
+# Manual sanitization Job template. Runs Algorithm Sanitize(n) once for every
+# (non control-plane) node in the cluster, using the same code path as the
+# controller's periodic timer. Intended for manual/test use
+# (`kubectl apply -f k8s/sanitize.yaml`), not for regular cluster operation.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: node-sanitize-manual
+  namespace: node-controller
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: node-controller-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+      containers:
+        - name: sanitize
+          image: node-controller:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "sanitize.py"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: TRACE_PREFIX
+              value: "trace.node.policydriven.unimi.it"
+            - name: CONTEXTS_ANNOTATION
+              value: "contexts"
+            - name: SANITIZING_TAINT
+              value: "sanitizing"
+            - name: SCHEDULER_NAME
+              value: "policy-driven-scheduler"
+            - name: CLEAR_TRACES_SIMULATION_SECONDS
+              value: "0"
+            - name: LOG_LEVEL
+              value: "INFO"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

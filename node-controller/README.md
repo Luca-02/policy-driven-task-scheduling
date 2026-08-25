@@ -17,6 +17,8 @@ The controller watches two kinds of objects:
 
 Whenever either changes, the affected nodes are re-evaluated and their property labels updated.
 
+Node sanitization (Algorithm `Sanitize(n)`) is implemented in `src/sanitization.py` as a standalone `Sanitizer`, independent of `Controller`. The controller's periodic timer (`main.py`) delegates to it on every tick, and the same class backs the manual sanitization Job below.
+
 ## Configuration
 
 All configurable via environment variables (with defaults):
@@ -58,6 +60,17 @@ kubectl apply -f k8s/network-policy.yaml
 # Wait for the service to be fully rolled out and ready
 kubectl -n node-controller rollout status deployment/node-controller --timeout=180s
 ```
+
+## Manual node sanitization
+
+For testing or troubleshooting, every node can be sanitized on demand without waiting for the periodic timer, by running `sanitize.py` as a one-off Kubernetes Job. It runs the exact same `Sanitize(n)` logic used by the controller, once, for each node in the cluster (control-plane nodes are skipped, same as the timer).
+
+```bash
+kubectl apply -f k8s/sanitize.yaml
+kubectl -n node-controller logs job/node-sanitize-manual
+```
+
+Note that `Sanitize(n)` is not a blocking wait: for a node that still has active Pods scheduled by our scheduler, the Job applies the sanitizing taint and moves on without clearing that node's `Lambda(n)` — rerun the Job (`kubectl delete job node-sanitize-manual` first, Job names aren't reusable) once those Pods have completed.
 
 ## Testing
 
