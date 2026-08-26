@@ -5,7 +5,8 @@
 # Shared across services: SVC/NS must be passed explicitly, there is no
 # default that would silently point at the wrong service.
 #
-# Usage: SVC=<service> NS=<namespace> [TARGET_ENV=local|k8s] bash scripts/gen-certs.sh [dir]
+# Usage: SVC=<service> NS=<namespace> [TARGET_ENV=local|k8s] \
+#   bash scripts/gen-certs.sh [dir]
 
 export MSYS_NO_PATHCONV=1
 

@@ -112,15 +112,19 @@ jobs:
       - name: Run tests
         run: go test -v ./...
 
-  test-policies:
-    name: Test policies
+  test-cluster:
+    name: Test cluster (policies + examples)
     runs-on: ubuntu-latest
     env:
       CLUSTER_NAME: "kind-ci"
       DATASET_SERVICE_LIGHT_MODE: "true"
       CONTEXT_SERVICE_LIGHT_MODE: "true"
-      CONTROL_PLANE_COUNT: "1"
-      WORKER_COUNT: "0"
+      # test-examples.sh needs the exact 1 control-plane + 5 labeled-worker
+      # topology declared here, matching the seed data in examples/data/*.json.
+      CLUSTER_CONFIG_FILE: "examples/cluster-config.yaml"
+      # Only used to pre-pull/cache the kind node image below (cluster.sh
+      # ignores it once CLUSTER_CONFIG_FILE is set). Keep it in sync with
+      # the image(s) pinned in examples/cluster-config.yaml.
       NODE_IMAGE: "kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256"
       KIND_VERSION: "v0.32.0"
       GATOR_VERSION: "v3.22.2"
@@ -171,9 +175,11 @@ jobs:
       - name: Initialize cluster
         run: bash scripts/init-cluster.sh
       - name: Populate cluster with example data
-        run: bash scripts/populate-cluster-with-examples.sh
+        run: bash scripts/populate-examples.sh
       - name: Run policy tests
         run: bash scripts/test-policies.sh all
+      - name: Run example tests
+        run: bash scripts/test-examples.sh
       - name: Dump cluster state on failure
         if: failure()
         run: |

@@ -4,11 +4,24 @@ DATASET_SERVICE_LIGHT_MODE ?= true
 CONTEXT_SERVICE_LIGHT_MODE ?= true
 
 init: 
-	CLUSTER_NAME=$(CLUSTER_NAME) \
+	@echo "Initializing cluster..."
+	@CLUSTER_NAME=$(CLUSTER_NAME) \
 		CLUSTER_CONFIG_FILE=$(CLUSTER_CONFIG_FILE) \
 		DATASET_SERVICE_LIGHT_MODE=$(DATASET_SERVICE_LIGHT_MODE) \
 		CONTEXT_SERVICE_LIGHT_MODE=$(CONTEXT_SERVICE_LIGHT_MODE) \
 		bash ./scripts/init-cluster.sh
+
+populate-examples:
+	@echo "Populating example data..."
+	@bash ./scripts/populate-examples.sh
+
+test-policies:
+	@echo "Testing policies..."
+	@bash ./scripts/test-policies.sh
+
+test-examples:
+	@echo "Testing examples..."
+	@bash ./scripts/test-examples.sh
 
 start:
 	@echo "Starting cluster containers..."

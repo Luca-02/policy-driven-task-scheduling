@@ -4,6 +4,15 @@
 # in scripts/steps/. Every step is also executable on its own: see the
 # header of each file in scripts/steps/ for its prerequisites and the
 # optional variables it accepts.
+# 
+# Usage: CLUSTER_NAME=<cluster_name> \
+#   CLUSTER_CONFIG_FILE=<cluster_config_file> \
+#   CONTROL_PLANE_COUNT=<control_plane_count> \
+#   WORKER_COUNT=<worker_count> \
+#   NODE_IMAGE=<node_image> \
+#   DATASET_SERVICE_LIGHT_MODE=<true|false> \
+#   CONTEXT_SERVICE_LIGHT_MODE=<true|false> \
+#   ./scripts/init-cluster.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STEPS_DIR="$SCRIPT_DIR/steps"

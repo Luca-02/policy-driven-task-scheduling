@@ -11,7 +11,7 @@
 #     file under their tests/ directory against a live cluster and check
 #     that it is rejected, as described by the comments in that file.
 #     Requires an initialized and populated cluster
-#     (scripts/init-cluster.sh + scripts/populate-cluster-with-examples.sh).
+#     (scripts/init-cluster.sh + scripts/populate-examples.sh).
 #
 # Usage: ./scripts/test-policies.sh [gator|manual|all]
 
@@ -56,7 +56,7 @@ run_manual_tests() {
 
     log "Checking connectivity to the Kubernetes cluster"
     if ! kubectl cluster-info >/dev/null 2>&1; then
-        error "No reachable Kubernetes cluster. Run scripts/init-cluster.sh and scripts/populate-cluster-with-example.sh first."
+        error "No reachable Kubernetes cluster. Run scripts/init-cluster.sh and scripts/populate-examples.sh first."
         exit 1
     fi
 

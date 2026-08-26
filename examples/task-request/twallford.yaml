@@ -5,7 +5,7 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
-  name: wallford
+  name: twallford
   namespace: compute
 spec:
   issuer: issuerford # auth(issuerford) = {Ford}

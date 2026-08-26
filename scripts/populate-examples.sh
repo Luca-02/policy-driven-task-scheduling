@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+#
+# Populates the cluster with example resources (node properties, geographical
+# groups, context-service contexts, dataset-service datasets) so that the
+# example TaskRequests can be tested.
+# 
+# Requires an initialized cluster: 
+#   scripts/init-cluster.sh
+# 
+# Usage: ./scripts/populate-examples.sh
 
 set -euo pipefail
 

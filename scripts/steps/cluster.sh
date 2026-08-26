@@ -4,9 +4,15 @@
 # kubectl context. No prerequisites: this is the first step in the chain.
 #
 # Optional variables:
-#   CLUSTER_CONFIG_FILE kind config file to use as-is
+#   CLUSTER_CONFIG_FILE kind config file to use as-is. Takes priority over
+#       CONTROL_PLANE_COUNT/WORKER_COUNT/NODE_IMAGE: if set, those three are
+#       simply ignored (with a warning if any of them was also set) rather
+#       than generating a config, so callers can leave them in place (e.g.
+#       job-level CI env vars reused by other steps) without needing to
+#       blank them out just to let CLUSTER_CONFIG_FILE win.
 #   CONTROL_PLANE_COUNT / WORKER_COUNT / NODE_IMAGE
-#       mutually exclusive with CLUSTER_CONFIG_FILE: generate the config on the fly
+#       used only when CLUSTER_CONFIG_FILE is unset: generate the config on
+#       the fly, defaulting whichever of the three is not set.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"
@@ -18,13 +24,13 @@ step_cluster() {
     local default_node_image="kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256"
     local generated_cluster_config_file="/tmp/${CLUSTER_NAME}-cluster-config.generated.yaml"
 
-    if [[ -n "${CLUSTER_CONFIG_FILE:-}" && -n "${CONTROL_PLANE_COUNT:-}${WORKER_COUNT:-}${NODE_IMAGE:-}" ]]; then
-        error "Set either CLUSTER_CONFIG_FILE or CONTROL_PLANE_COUNT/WORKER_COUNT/NODE_IMAGE, not both."
-        exit 1
-    fi
-
     local cluster_config_file
-    if [[ -n "${CONTROL_PLANE_COUNT:-}${WORKER_COUNT:-}${NODE_IMAGE:-}" ]]; then
+    if [[ -n "${CLUSTER_CONFIG_FILE:-}" ]]; then
+        if [[ -n "${CONTROL_PLANE_COUNT:-}${WORKER_COUNT:-}${NODE_IMAGE:-}" ]]; then
+            warn "CLUSTER_CONFIG_FILE is set, ignoring CONTROL_PLANE_COUNT/WORKER_COUNT/NODE_IMAGE"
+        fi
+        cluster_config_file="$CLUSTER_CONFIG_FILE"
+    elif [[ -n "${CONTROL_PLANE_COUNT:-}${WORKER_COUNT:-}${NODE_IMAGE:-}" ]]; then
         local control_plane_count="${CONTROL_PLANE_COUNT:-$default_control_plane_count}"
         local worker_count="${WORKER_COUNT:-$default_worker_count}"
         local node_image="${NODE_IMAGE:-$default_node_image}"
@@ -52,7 +58,7 @@ EOF
 
         cluster_config_file="$generated_cluster_config_file"
     else
-        cluster_config_file="${CLUSTER_CONFIG_FILE:-$default_cluster_config_file}"
+        cluster_config_file="$default_cluster_config_file"
     fi
 
     log "Checking for existing kind cluster '$CLUSTER_NAME'"

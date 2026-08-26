@@ -5,7 +5,7 @@
 apiVersion: policydriven.unimi.it/v1alpha1
 kind: TaskRequest
 metadata:
-  name: wallfordreuse
+  name: twallfordreuse
   namespace: compute
 spec:
   issuer: issuerford # same issuer/context as wallford.yaml
