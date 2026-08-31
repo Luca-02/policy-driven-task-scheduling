@@ -116,13 +116,15 @@ jobs:
     name: Test cluster (policies + examples)
     runs-on: ubuntu-latest
     env:
-      CLUSTER_NAME: "kind"
-      DATASET_SERVICE_LIGHT_MODE: "true"
-      CONTEXT_SERVICE_LIGHT_MODE: "true"
-      CLUSTER_CONFIG_FILE: "examples/cluster-config.yaml"
-      NODE_IMAGE: "kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256"
       KIND_VERSION: "v0.32.0"
       GATOR_VERSION: "v3.22.2"
+      NODE_IMAGE: "kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256"
+      CLUSTER_NAME: "kind"
+      CLUSTER_CONFIG_FILE: "examples/cluster-config.yaml"
+      ENABLE_DASHBOARD: "false"
+      ENABLE_MONITORING: "false"
+      DATASET_SERVICE_LIGHT_MODE: "true"
+      CONTEXT_SERVICE_LIGHT_MODE: "true"
     steps:
       - uses: actions/checkout@v6
       - name: Cache CLI Tools

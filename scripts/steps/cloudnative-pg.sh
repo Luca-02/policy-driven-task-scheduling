@@ -15,16 +15,6 @@ step_cloudnative_pg() {
     local cloudnative_pg_namespace="cnpg-system"
     local cloudnative_pg_manifest_url="https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.30/releases/cnpg-1.30.0.yaml"
 
-    local dataset_service_light_mode="${DATASET_SERVICE_LIGHT_MODE:-false}"
-    local context_service_light_mode="${CONTEXT_SERVICE_LIGHT_MODE:-false}"
-
-    if [[ "$dataset_service_light_mode" == "true" && "$context_service_light_mode" == "true" ]]; then
-        log "All services are in light mode, skipping CloudNativePG installation"
-        return 0
-    fi
-
-    log "At least one service is not in light mode, installing CloudNativePG"
-
     log "Installing CloudNativePG"
     kubectl apply --server-side -f "$cloudnative_pg_manifest_url"
 
@@ -32,10 +22,10 @@ step_cloudnative_pg() {
 
     kubectl wait -n "$cloudnative_pg_namespace" \
         --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg \
-        --timeout=300s
+        --timeout=600s
 
     log "Waiting for CloudNativePG CRDs to be established"
-    kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=300s
+    kubectl wait --for=condition=Established crd/clusters.postgresql.cnpg.io --timeout=600s
 }
 
 # Run the step if this script is executed directly, not sourced

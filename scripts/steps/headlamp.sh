@@ -31,8 +31,11 @@ step_headlamp() {
         log "ClusterRoleBinding already exists"
     fi
 
-    log "To access Headlamp, retrieve the token with: kubectl create token headlamp-admin -n kube-system"
-    log "The port-forward with: kubectl port-forward -n kube-system svc/headlamp 8080:80"
+    log "To access Headlamp, retrieve the token with: \n 
+        kubectl create token headlamp-admin -n kube-system"
+        
+    log "The port-forward with: \n 
+        kubectl port-forward -n kube-system svc/headlamp 8080:80"
 }
 
 # Run the step if this script is executed directly, not sourced

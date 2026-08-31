@@ -10,9 +10,11 @@
 #   CONTROL_PLANE_COUNT=<control_plane_count> \
 #   WORKER_COUNT=<worker_count> \
 #   NODE_IMAGE=<node_image> \
+#   ENABLE_DASHBOARD=<true|false> \
+#   ENABLE_MONITORING=<true|false> \
 #   DATASET_SERVICE_LIGHT_MODE=<true|false> \
 #   CONTEXT_SERVICE_LIGHT_MODE=<true|false> \
-#   ./scripts/init-cluster.sh
+#   bash ./scripts/init-cluster.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STEPS_DIR="$SCRIPT_DIR/steps"
@@ -27,9 +29,12 @@ require_command kind
 require_command kubectl
 require_command helm
 
+ENABLE_MONITORING="${ENABLE_MONITORING:-true}"
+ENABLE_DASHBOARD="${ENABLE_DASHBOARD:-true}"
+
 source "$STEPS_DIR/cluster.sh"
 source "$STEPS_DIR/headlamp.sh"
-source "$STEPS_DIR/plg-stack.sh"
+source "$STEPS_DIR/monitoring-stack.sh"
 source "$STEPS_DIR/namespaces-crds.sh"
 source "$STEPS_DIR/gatekeeper.sh"
 source "$STEPS_DIR/cloudnative-pg.sh"
@@ -39,12 +44,34 @@ source "$STEPS_DIR/context-service.sh"
 source "$STEPS_DIR/task-request-controller.sh"
 source "$STEPS_DIR/scheduler.sh"
 
+#######################################
+# Run steps in order
+#######################################
+
 step_cluster
-step_headlamp
-step_plg_stack
+
+if [[ "${ENABLE_DASHBOARD}" == "true" ]]; then
+    step_headlamp
+else
+    log "Skipping Headlamp (dashboard) installation"
+fi
+
+if [[ "${ENABLE_MONITORING}" == "true" ]]; then
+    step_monitoring_stack
+else
+    log "Skipping Monitoring stack installation"
+fi
+
 step_namespaces_crds
 step_gatekeeper
-step_cloudnative_pg
+
+if [[ "$DATASET_SERVICE_LIGHT_MODE" == "true" && "$CONTEXT_SERVICE_LIGHT_MODE" == "true" ]]; then
+    log "All services are in light mode, skipping CloudNativePG installation"
+else
+    log "At least one service is not in light mode, installing CloudNativePG"
+    step_cloudnative_pg
+fi
+
 step_node_controller
 step_dataset_service
 step_context_service

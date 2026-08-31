@@ -1,5 +1,7 @@
 CLUSTER_NAME ?= kind
 CLUSTER_CONFIG_FILE ?= examples/cluster-config.yaml
+ENABLE_DASHBOARD ?= true
+ENABLE_MONITORING ?= true
 DATASET_SERVICE_LIGHT_MODE ?= true
 CONTEXT_SERVICE_LIGHT_MODE ?= true
 
@@ -36,7 +38,7 @@ delete:
 	@kind delete clusters $(CLUSTER_NAME)
 
 headlamp:
-	@echo "Starting Kubernetes dashboard..."
+	@echo "Starting headlamp..."
 	@echo "Use the following token to log in to the Headlamp dashboard:"
 	@kubectl create token headlamp-admin -n kube-system
 	@echo
@@ -47,11 +49,11 @@ headlamp-token:
 	@echo "Use the following token to log in to the Headlamp dashboard:"
 	@kubectl create token headlamp-admin -n kube-system
 
-loki: 
-	@echo "Starting Loki stack..."
+grafana: 
+	@echo "Starting Grafana..."
 	@echo "Use the following credentials to log in to the Grafana dashboard:"
 	@echo "Username: admin"
-	@echo "Password: $(shell kubectl get secret --namespace loki loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)"
+	@echo "Password: $(shell kubectl get secret --namespace monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)"
 	@echo
-	@echo "You can access the Grafana dashboard at http://localhost:3000 after port forwarding."
-	@kubectl port-forward -n loki svc/loki-grafana 3000:80
+	@echo "You can access the Grafana dashboard at http://localhost:3000."
+	@kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
