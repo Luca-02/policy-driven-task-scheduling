@@ -195,7 +195,13 @@ class JobBuilder:
                 command=[
                     "sh",
                     "-c",
-                    'echo "Task executed successfully" && sleep 5',
+                    'echo "Task executed successfully" && sleep "$TASK_SIMULATED_DURATION_SECONDS"',
+                ],
+                env=[
+                    client.V1EnvVar(
+                        name="TASK_SIMULATED_DURATION_SECONDS",
+                        value=str(self._config.task_simulated_duration_seconds),
+                    )
                 ],
             )
         ]

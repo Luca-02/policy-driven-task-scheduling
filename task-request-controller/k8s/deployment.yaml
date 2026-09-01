@@ -84,6 +84,8 @@ spec:
               value: "topology.node.policydriven.unimi.it/location"
             - name: SCHEDULER_NAME
               value: "policy-driven-scheduler"
+            - name: TASK_SIMULATED_DURATION_SECONDS
+              value: "5"
             - name: DATASET_SERVICE_URL
               value: "https://dataset-service.dataset-service.svc.cluster.local"
             - name: DATASET_SERVICE_CA_FILE

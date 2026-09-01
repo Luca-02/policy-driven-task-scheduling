@@ -18,6 +18,7 @@ NODE_PROPERTY_PREFIX_DEFAULT = f"property.node.{GROUP_DEFAULT}"
 SCHEDULER_NAME_DEFAULT = "policy-driven-scheduler"
 NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT = f"topology.node.{GROUP_DEFAULT}/location"
 DATASET_SERVICE_URL_DEFAULT = "https://127.0.0.1:8443"
+TASK_SIMULATED_DURATION_SECONDS_DEFAULT = 5
 
 
 class Config:
@@ -42,6 +43,7 @@ class Config:
         node_property_prefix: str,
         node_topology_location_label: str,
         scheduler_name: str,
+        task_simulated_duration_seconds: int,
         dataset_service_url: str,
         dataset_service_ca_file: str | None,
         log_level: str,
@@ -63,6 +65,7 @@ class Config:
         self.node_property_prefix = node_property_prefix
         self.node_topology_location_label = node_topology_location_label
         self.scheduler_name = scheduler_name
+        self.task_simulated_duration_seconds = task_simulated_duration_seconds
         self.dataset_service_url = dataset_service_url
         self.dataset_service_ca_file = dataset_service_ca_file
         self.log_level = log_level
@@ -110,6 +113,12 @@ class Config:
                 "NODE_TOPOLOGY_LOCATION_LABEL", NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT
             ),
             scheduler_name=os.getenv("SCHEDULER_NAME", SCHEDULER_NAME_DEFAULT),
+            task_simulated_duration_seconds=int(
+                os.getenv(
+                    "TASK_SIMULATED_DURATION_SECONDS",
+                    TASK_SIMULATED_DURATION_SECONDS_DEFAULT,
+                )
+            ),
             dataset_service_url=os.getenv(
                 "DATASET_SERVICE_URL", DATASET_SERVICE_URL_DEFAULT
             ),

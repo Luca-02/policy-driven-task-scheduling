@@ -90,6 +90,13 @@ class TestJobBuilderGeneral(JobBuilderTestBase):
         job = self._build()
         self.assertEqual(job.spec.template.spec.scheduler_name, self.cfg.scheduler_name)
 
+    def test_task_container_uses_configured_simulated_duration(self):
+        self.cfg.task_simulated_duration_seconds = 42
+        container = self._build().spec.template.spec.containers[0]
+        env = {e.name: e.value for e in container.env}
+        self.assertEqual(env["TASK_SIMULATED_DURATION_SECONDS"], "42")
+        self.assertIn('sleep "$TASK_SIMULATED_DURATION_SECONDS"', container.command[-1])
+
     def test_all_zero_beta_and_omega_geo_produces_no_affinity(self):
         for beta_star in ({}, {"security": 0}):
             with self.subTest(beta_star=beta_star):
