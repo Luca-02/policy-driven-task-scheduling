@@ -1,0 +1,80 @@
+{
+  "datasets": [
+    {
+      "name": "d1",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x1"
+      ]
+    },
+    {
+      "name": "d2",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x2"
+      ]
+    },
+    {
+      "name": "d3",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x3"
+      ]
+    },
+    {
+      "name": "d4",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x4"
+      ]
+    }
+  ]
+}

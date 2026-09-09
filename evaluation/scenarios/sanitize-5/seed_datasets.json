@@ -1,0 +1,194 @@
+{
+  "datasets": [
+    {
+      "name": "d01",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x01"
+      ]
+    },
+    {
+      "name": "d02",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x02"
+      ]
+    },
+    {
+      "name": "d03",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x03"
+      ]
+    },
+    {
+      "name": "d04",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x04"
+      ]
+    },
+    {
+      "name": "d05",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x05"
+      ]
+    },
+    {
+      "name": "d06",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x06"
+      ]
+    },
+    {
+      "name": "d07",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x07"
+      ]
+    },
+    {
+      "name": "d08",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x08"
+      ]
+    },
+    {
+      "name": "d09",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x09"
+      ]
+    },
+    {
+      "name": "d10",
+      "requirements": {
+        "evalprop": 1
+      },
+      "size_mb": 1024,
+      "nodes": [
+        "kind-worker",
+        "kind-worker2",
+        "kind-worker3",
+        "kind-worker4",
+        "kind-worker5"
+      ],
+      "geo": "evalgeo",
+      "static": false,
+      "contexts": [
+        "x10"
+      ]
+    }
+  ]
+}

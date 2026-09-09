@@ -1,0 +1,250 @@
+t_recv,kind,type,name,detail
+0.0242,Node,ADDED,kind-control-plane,taints=1
+0.0307,Node,ADDED,kind-worker,taints=0
+0.0313,TaskRequest,ADDED,eval-smoke-r0-0,phase=None job=None
+0.0335,Node,ADDED,kind-worker2,taints=0
+0.0353,Node,ADDED,kind-worker3,taints=0
+0.0377,Node,ADDED,kind-worker4,taints=0
+0.0402,Node,ADDED,kind-worker5,taints=0
+0.0404,TaskRequest,MODIFIED,eval-smoke-r0-0,phase=Pending job=None
+0.0566,Job,ADDED,eval-smoke-r0-0,
+0.0634,TaskRequest,MODIFIED,eval-smoke-r0-0,phase=Scheduled job=None
+0.0659,Pod,ADDED,eval-smoke-r0-0-hmcxb,phase=Pending node=None
+0.071,Job,MODIFIED,eval-smoke-r0-0,
+0.0755,TaskRequest,MODIFIED,eval-smoke-r0-0,phase=Scheduled job=None
+0.0762,Event,ADDED,eval-smoke-r0-0.18d3c4118440f51a,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-0-hmcxb
+0.0823,Job,MODIFIED,eval-smoke-r0-0,
+0.0854,Pod,MODIFIED,eval-smoke-r0-0-hmcxb,phase=Pending node=kind-worker2
+0.09,Event,ADDED,eval-smoke-r0-0-hmcxb.18d3c4118575708b,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-0-hmcxb to kind-worker2
+0.0973,Pod,MODIFIED,eval-smoke-r0-0-hmcxb,phase=Pending node=kind-worker2
+0.1121,Job,MODIFIED,eval-smoke-r0-0,
+0.1457,Node,MODIFIED,kind-worker2,taints=0
+0.1589,Node,MODIFIED,kind-worker2,taints=0
+0.5187,Event,ADDED,eval-smoke-r0-0-hmcxb.18d3c4119f0c4748,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+0.5361,Event,ADDED,eval-smoke-r0-0-hmcxb.18d3c411a0180900,reason=Created count=1 msg=Created container: task
+0.5699,Event,ADDED,eval-smoke-r0-0-hmcxb.18d3c411a207ca3a,reason=Started count=1 msg=Started container task
+0.765,Pod,MODIFIED,eval-smoke-r0-0-hmcxb,phase=Running node=kind-worker2
+1.0216,TaskRequest,ADDED,eval-smoke-r0-1,phase=None job=None
+1.0254,TaskRequest,MODIFIED,eval-smoke-r0-1,phase=Pending job=None
+1.0419,Job,ADDED,eval-smoke-r0-1,
+1.0485,Pod,ADDED,eval-smoke-r0-1-hwvfv,phase=Pending node=None
+1.0487,TaskRequest,MODIFIED,eval-smoke-r0-1,phase=Scheduled job=None
+1.0515,Job,MODIFIED,eval-smoke-r0-1,
+1.0539,Event,ADDED,eval-smoke-r0-1.18d3c411bed78340,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-1-hwvfv
+1.0567,TaskRequest,MODIFIED,eval-smoke-r0-1,phase=Scheduled job=None
+1.0673,Pod,MODIFIED,eval-smoke-r0-1-hwvfv,phase=Pending node=kind-worker4
+1.0725,Job,MODIFIED,eval-smoke-r0-0,
+1.0729,Event,ADDED,eval-smoke-r0-1-hwvfv.18d3c411bff869ce,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-1-hwvfv to kind-worker4
+1.0787,Pod,MODIFIED,eval-smoke-r0-1-hwvfv,phase=Pending node=kind-worker4
+1.0809,Node,MODIFIED,kind-worker4,taints=0
+1.0833,Job,MODIFIED,eval-smoke-r0-0,
+1.0915,Node,MODIFIED,kind-worker4,taints=0
+1.4972,Event,ADDED,eval-smoke-r0-1-hwvfv.18d3c411d95be00d,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+1.5138,Event,ADDED,eval-smoke-r0-1-hwvfv.18d3c411da650509,reason=Created count=1 msg=Created container: task
+1.5501,Event,ADDED,eval-smoke-r0-1-hwvfv.18d3c411dc86b7bb,reason=Started count=1 msg=Started container task
+1.5949,Pod,MODIFIED,eval-smoke-r0-1-hwvfv,phase=Running node=kind-worker4
+2.0124,TaskRequest,ADDED,eval-smoke-r0-2,phase=None job=None
+2.0167,TaskRequest,MODIFIED,eval-smoke-r0-2,phase=Pending job=None
+2.0348,Job,ADDED,eval-smoke-r0-2,
+2.0411,Pod,ADDED,eval-smoke-r0-2-94qm8,phase=Pending node=None
+2.0425,TaskRequest,MODIFIED,eval-smoke-r0-2,phase=Scheduled job=None
+2.0485,Job,MODIFIED,eval-smoke-r0-2,
+2.0515,Event,ADDED,eval-smoke-r0-2.18d3c411fa00bacd,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-2-94qm8
+2.0549,Job,MODIFIED,eval-smoke-r0-1,
+2.056,TaskRequest,MODIFIED,eval-smoke-r0-2,phase=Scheduled job=None
+2.0605,Pod,MODIFIED,eval-smoke-r0-2-94qm8,phase=Pending node=kind-worker
+2.0667,Job,MODIFIED,eval-smoke-r0-1,
+2.067,Event,ADDED,eval-smoke-r0-2-94qm8.18d3c411fb298606,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-2-94qm8 to kind-worker
+2.0726,Node,MODIFIED,kind-worker,taints=0
+2.0746,Pod,MODIFIED,eval-smoke-r0-2-94qm8,phase=Pending node=kind-worker
+2.0839,Node,MODIFIED,kind-worker,taints=0
+2.4905,Event,ADDED,eval-smoke-r0-2-94qm8.18d3c412148cfae5,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+2.5104,Event,ADDED,eval-smoke-r0-2-94qm8.18d3c41215a92a4f,reason=Created count=1 msg=Created container: task
+2.5451,Event,ADDED,eval-smoke-r0-2-94qm8.18d3c41217d472cb,reason=Started count=1 msg=Started container task
+2.596,Pod,MODIFIED,eval-smoke-r0-2-94qm8,phase=Running node=kind-worker
+3.0221,TaskRequest,ADDED,eval-smoke-r0-3,phase=None job=None
+3.028,TaskRequest,MODIFIED,eval-smoke-r0-3,phase=Pending job=None
+3.0436,Job,ADDED,eval-smoke-r0-3,
+3.046,Job,MODIFIED,eval-smoke-r0-2,
+3.0516,Pod,ADDED,eval-smoke-r0-3-j7nwp,phase=Pending node=None
+3.0518,TaskRequest,MODIFIED,eval-smoke-r0-3,phase=Scheduled job=None
+3.0546,Job,MODIFIED,eval-smoke-r0-3,
+3.0565,Event,ADDED,eval-smoke-r0-3.18d3c412363c6faf,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-3-j7nwp
+3.0615,TaskRequest,MODIFIED,eval-smoke-r0-3,phase=Scheduled job=None
+3.0665,Job,MODIFIED,eval-smoke-r0-2,
+3.0738,Pod,MODIFIED,eval-smoke-r0-3-j7nwp,phase=Pending node=kind-worker2
+3.0774,Event,ADDED,eval-smoke-r0-3-j7nwp.18d3c412378cc94f,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-3-j7nwp to kind-worker2
+3.0843,Pod,MODIFIED,eval-smoke-r0-3-j7nwp,phase=Pending node=kind-worker2
+3.5018,Event,ADDED,eval-smoke-r0-3-j7nwp.18d3c41250d9c043,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+3.5212,Event,ADDED,eval-smoke-r0-3-j7nwp.18d3c4125209ec24,reason=Created count=1 msg=Created container: task
+3.5572,Event,ADDED,eval-smoke-r0-3-j7nwp.18d3c4125417f738,reason=Started count=1 msg=Started container task
+3.7705,Pod,MODIFIED,eval-smoke-r0-3-j7nwp,phase=Running node=kind-worker2
+4.0166,TaskRequest,ADDED,eval-smoke-r0-4,phase=None job=None
+4.021,TaskRequest,MODIFIED,eval-smoke-r0-4,phase=Pending job=None
+4.038,Job,ADDED,eval-smoke-r0-4,
+4.0459,Pod,ADDED,eval-smoke-r0-4-jsvbm,phase=Pending node=None
+4.0465,TaskRequest,MODIFIED,eval-smoke-r0-4,phase=Scheduled job=None
+4.0475,Job,MODIFIED,eval-smoke-r0-4,
+4.0503,Event,ADDED,eval-smoke-r0-4.18d3c4127178d4ca,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-4-jsvbm
+4.0581,Job,MODIFIED,eval-smoke-r0-3,
+4.0583,TaskRequest,MODIFIED,eval-smoke-r0-4,phase=Scheduled job=None
+4.0673,Pod,MODIFIED,eval-smoke-r0-4-jsvbm,phase=Pending node=kind-worker4
+4.0698,Job,MODIFIED,eval-smoke-r0-3,
+4.0742,Event,ADDED,eval-smoke-r0-4-jsvbm.18d3c41272c9ef92,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-4-jsvbm to kind-worker4
+4.0809,Node,MODIFIED,kind-worker4,taints=0
+4.0848,Pod,MODIFIED,eval-smoke-r0-4-jsvbm,phase=Pending node=kind-worker4
+4.0927,Node,MODIFIED,kind-worker4,taints=0
+4.4943,Event,ADDED,eval-smoke-r0-4-jsvbm.18d3c4128c026f2d,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+4.5122,Event,ADDED,eval-smoke-r0-4-jsvbm.18d3c4128d188baf,reason=Created count=1 msg=Created container: task
+4.543,Event,ADDED,eval-smoke-r0-4-jsvbm.18d3c4128eeaa7d4,reason=Started count=1 msg=Started container task
+4.6016,Pod,MODIFIED,eval-smoke-r0-4-jsvbm,phase=Running node=kind-worker4
+5.0184,TaskRequest,ADDED,eval-smoke-r0-5,phase=None job=None
+5.0225,TaskRequest,MODIFIED,eval-smoke-r0-5,phase=Pending job=None
+5.0402,Job,ADDED,eval-smoke-r0-5,
+5.0449,TaskRequest,MODIFIED,eval-smoke-r0-5,phase=Scheduled job=None
+5.0481,Pod,ADDED,eval-smoke-r0-5-l69rv,phase=Pending node=None
+5.0502,Job,MODIFIED,eval-smoke-r0-5,
+5.0511,Job,MODIFIED,eval-smoke-r0-4,
+5.0545,Event,ADDED,eval-smoke-r0-5.18d3c412ad414c88,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-5-l69rv
+5.0547,TaskRequest,MODIFIED,eval-smoke-r0-5,phase=Scheduled job=None
+5.0606,Job,MODIFIED,eval-smoke-r0-4,
+5.0682,Pod,MODIFIED,eval-smoke-r0-5-l69rv,phase=Pending node=kind-worker3
+5.0721,Event,ADDED,eval-smoke-r0-5-l69rv.18d3c412ae7590e2,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-5-l69rv to kind-worker3
+5.0794,Pod,MODIFIED,eval-smoke-r0-5-l69rv,phase=Pending node=kind-worker3
+5.0814,Node,MODIFIED,kind-worker3,taints=0
+5.0922,Node,MODIFIED,kind-worker3,taints=0
+5.4955,Event,ADDED,eval-smoke-r0-5-l69rv.18d3c412c7abbd94,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+5.5126,Event,ADDED,eval-smoke-r0-5-l69rv.18d3c412c8bc35c6,reason=Created count=1 msg=Created container: task
+5.552,Event,ADDED,eval-smoke-r0-5-l69rv.18d3c412cb0f8aee,reason=Started count=1 msg=Started container task
+5.5999,Pod,MODIFIED,eval-smoke-r0-5-l69rv,phase=Running node=kind-worker3
+5.7752,Pod,MODIFIED,eval-smoke-r0-0-hmcxb,phase=Running node=kind-worker2
+6.0227,TaskRequest,ADDED,eval-smoke-r0-6,phase=None job=None
+6.0294,TaskRequest,MODIFIED,eval-smoke-r0-6,phase=Pending job=None
+6.0452,Job,ADDED,eval-smoke-r0-6,
+6.052,TaskRequest,MODIFIED,eval-smoke-r0-6,phase=Scheduled job=None
+6.0531,Pod,ADDED,eval-smoke-r0-6-b8j9r,phase=Pending node=None
+6.0562,Job,MODIFIED,eval-smoke-r0-5,
+6.0569,Job,MODIFIED,eval-smoke-r0-6,
+6.059,Event,ADDED,eval-smoke-r0-6.18d3c412e9269201,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-6-b8j9r
+6.0604,TaskRequest,MODIFIED,eval-smoke-r0-6,phase=Scheduled job=None
+6.068,Job,MODIFIED,eval-smoke-r0-5,
+6.0862,Pod,MODIFIED,eval-smoke-r0-6-b8j9r,phase=Pending node=kind-worker
+6.0897,Event,ADDED,eval-smoke-r0-6-b8j9r.18d3c412eb1dc0e4,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-6-b8j9r to kind-worker
+6.0962,Pod,MODIFIED,eval-smoke-r0-6-b8j9r,phase=Pending node=kind-worker
+6.5456,Event,ADDED,eval-smoke-r0-6-b8j9r.18d3c4130646a149,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+6.5681,Event,ADDED,eval-smoke-r0-6-b8j9r.18d3c4130799c73c,reason=Created count=1 msg=Created container: task
+6.6123,Pod,MODIFIED,eval-smoke-r0-1-hwvfv,phase=Running node=kind-worker4
+6.6753,Event,ADDED,eval-smoke-r0-6-b8j9r.18d3c4130e045765,reason=Started count=1 msg=Started container task
+6.7804,Job,MODIFIED,eval-smoke-r0-0,
+6.7904,Job,MODIFIED,eval-smoke-r0-0,
+6.8747,Pod,MODIFIED,eval-smoke-r0-0-hmcxb,phase=Succeeded node=kind-worker2
+7.0275,TaskRequest,ADDED,eval-smoke-r0-7,phase=None job=None
+7.0313,TaskRequest,MODIFIED,eval-smoke-r0-7,phase=Pending job=None
+7.0478,Job,ADDED,eval-smoke-r0-7,
+7.0549,Pod,ADDED,eval-smoke-r0-7-wdjzd,phase=Pending node=None
+7.055,TaskRequest,MODIFIED,eval-smoke-r0-7,phase=Scheduled job=None
+7.0573,Job,MODIFIED,eval-smoke-r0-7,
+7.06,Job,MODIFIED,eval-smoke-r0-6,
+7.0603,Event,ADDED,eval-smoke-r0-7.18d3c41324d901d0,reason=SuccessfulCreate count=1 msg=Created pod: eval-smoke-r0-7-wdjzd
+7.075,TaskRequest,MODIFIED,eval-smoke-r0-7,phase=Scheduled job=None
+7.0806,Job,MODIFIED,eval-smoke-r0-6,
+7.1409,Pod,MODIFIED,eval-smoke-r0-7-wdjzd,phase=Pending node=kind-worker5
+7.1449,Event,ADDED,eval-smoke-r0-7-wdjzd.18d3c4132a01f5fb,reason=Scheduled count=None msg=Successfully assigned compute/eval-smoke-r0-7-wdjzd to kind-worker5
+7.1513,Node,MODIFIED,kind-worker5,taints=0
+7.1528,Pod,MODIFIED,eval-smoke-r0-7-wdjzd,phase=Pending node=kind-worker5
+7.1609,Node,MODIFIED,kind-worker5,taints=0
+7.5666,Event,ADDED,eval-smoke-r0-7-wdjzd.18d3c413431b26d7,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+7.5858,Event,ADDED,eval-smoke-r0-7-wdjzd.18d3c413443f19d1,reason=Created count=1 msg=Created container: task
+7.6055,Pod,MODIFIED,eval-smoke-r0-2-94qm8,phase=Running node=kind-worker
+7.6125,Pod,MODIFIED,eval-smoke-r0-6-b8j9r,phase=Running node=kind-worker
+7.6168,Job,MODIFIED,eval-smoke-r0-1,
+7.6283,Job,MODIFIED,eval-smoke-r0-1,
+7.7682,Event,ADDED,eval-smoke-r0-7-wdjzd.18d3c4134f174156,reason=Started count=1 msg=Started container task
+7.7854,Job,MODIFIED,eval-smoke-r0-0,
+7.794,Pod,MODIFIED,eval-smoke-r0-0-hmcxb,phase=Succeeded node=kind-worker2
+7.7952,Job,MODIFIED,eval-smoke-r0-0,
+7.8804,Pod,MODIFIED,eval-smoke-r0-1-hwvfv,phase=Succeeded node=kind-worker4
+8.0633,Job,MODIFIED,eval-smoke-r0-7,
+8.0653,Job,MODIFIED,eval-smoke-r0-6,
+8.075,Job,MODIFIED,eval-smoke-r0-7,
+8.0775,Job,MODIFIED,eval-smoke-r0-6,
+8.6105,Pod,MODIFIED,eval-smoke-r0-7-wdjzd,phase=Running node=kind-worker5
+8.6126,Job,MODIFIED,eval-smoke-r0-2,
+8.6235,Job,MODIFIED,eval-smoke-r0-2,
+8.6256,Job,MODIFIED,eval-smoke-r0-1,
+8.6355,Pod,MODIFIED,eval-smoke-r0-1-hwvfv,phase=Succeeded node=kind-worker4
+8.6367,Job,MODIFIED,eval-smoke-r0-1,
+8.7109,Pod,MODIFIED,eval-smoke-r0-2-94qm8,phase=Succeeded node=kind-worker
+8.7849,Pod,MODIFIED,eval-smoke-r0-3-j7nwp,phase=Running node=kind-worker2
+8.7904,Job,MODIFIED,eval-smoke-r0-0,
+8.7942,Job,MODIFIED,eval-smoke-r0-0,
+8.7987,Event,ADDED,eval-smoke-r0-0.18d3c4138c91f693,reason=Completed count=1 msg=Job completed
+8.8067,Job,MODIFIED,eval-smoke-r0-0,
+8.8115,TaskRequest,MODIFIED,eval-smoke-r0-0,phase=Complete job=None
+8.8212,Job,MODIFIED,eval-smoke-r0-0,
+9.0731,Job,MODIFIED,eval-smoke-r0-7,
+9.0817,Job,MODIFIED,eval-smoke-r0-7,
+9.6155,Pod,MODIFIED,eval-smoke-r0-4-jsvbm,phase=Running node=kind-worker4
+9.6171,Job,MODIFIED,eval-smoke-r0-2,
+9.6259,Pod,MODIFIED,eval-smoke-r0-2-94qm8,phase=Succeeded node=kind-worker
+9.6268,Job,MODIFIED,eval-smoke-r0-2,
+9.6311,Job,MODIFIED,eval-smoke-r0-1,
+9.6355,Job,MODIFIED,eval-smoke-r0-1,
+9.641,Event,ADDED,eval-smoke-r0-1.18d3c413beb6390c,reason=Completed count=1 msg=Job completed
+9.6459,Job,MODIFIED,eval-smoke-r0-1,
+9.6496,TaskRequest,MODIFIED,eval-smoke-r0-1,phase=Complete job=None
+9.6585,Job,MODIFIED,eval-smoke-r0-1,
+9.7934,Job,MODIFIED,eval-smoke-r0-3,
+9.8023,Job,MODIFIED,eval-smoke-r0-3,
+9.8959,Pod,MODIFIED,eval-smoke-r0-3-j7nwp,phase=Succeeded node=kind-worker2
+10.6129,Pod,MODIFIED,eval-smoke-r0-5-l69rv,phase=Running node=kind-worker3
+10.6211,Job,MODIFIED,eval-smoke-r0-4,
+10.623,Job,MODIFIED,eval-smoke-r0-2,
+10.6281,Job,MODIFIED,eval-smoke-r0-2,
+10.6317,Job,MODIFIED,eval-smoke-r0-4,
+10.6336,Event,ADDED,eval-smoke-r0-2.18d3c413f9d96899,reason=Completed count=1 msg=Job completed
+10.6417,Job,MODIFIED,eval-smoke-r0-2,
+10.6484,TaskRequest,MODIFIED,eval-smoke-r0-2,phase=Complete job=None
+10.6588,Job,MODIFIED,eval-smoke-r0-2,
+10.7359,Pod,MODIFIED,eval-smoke-r0-4-jsvbm,phase=Succeeded node=kind-worker4
+10.799,Job,MODIFIED,eval-smoke-r0-3,
+10.8068,Pod,MODIFIED,eval-smoke-r0-3-j7nwp,phase=Succeeded node=kind-worker2
+10.8078,Job,MODIFIED,eval-smoke-r0-3,
+11.6191,Job,MODIFIED,eval-smoke-r0-5,
+11.6269,Job,MODIFIED,eval-smoke-r0-4,
+11.6296,Job,MODIFIED,eval-smoke-r0-5,
+11.6375,Pod,MODIFIED,eval-smoke-r0-4-jsvbm,phase=Succeeded node=kind-worker4
+11.6385,Job,MODIFIED,eval-smoke-r0-4,
+11.6983,Pod,MODIFIED,eval-smoke-r0-5-l69rv,phase=Succeeded node=kind-worker3
+11.8062,Job,MODIFIED,eval-smoke-r0-3,
+11.8109,Job,MODIFIED,eval-smoke-r0-3,
+11.8152,Event,ADDED,eval-smoke-r0-3.18d3c41440611f72,reason=Completed count=1 msg=Job completed
+11.8255,Job,MODIFIED,eval-smoke-r0-3,
+11.8311,TaskRequest,MODIFIED,eval-smoke-r0-3,phase=Complete job=None
+11.8401,Job,MODIFIED,eval-smoke-r0-3,
+12.6167,Pod,MODIFIED,eval-smoke-r0-6-b8j9r,phase=Running node=kind-worker
+12.6244,Job,MODIFIED,eval-smoke-r0-5,
+12.6309,Job,MODIFIED,eval-smoke-r0-4,
+12.6359,Pod,MODIFIED,eval-smoke-r0-5-l69rv,phase=Succeeded node=kind-worker3
+12.6371,Job,MODIFIED,eval-smoke-r0-5,
+12.6385,Job,MODIFIED,eval-smoke-r0-4,
+12.6417,Event,ADDED,eval-smoke-r0-4.18d3c41471ae551c,reason=Completed count=1 msg=Job completed
+12.6465,Job,MODIFIED,eval-smoke-r0-4,
+12.6523,TaskRequest,MODIFIED,eval-smoke-r0-4,phase=Complete job=None
+12.6628,Job,MODIFIED,eval-smoke-r0-4,
+13.6196,Pod,MODIFIED,eval-smoke-r0-7-wdjzd,phase=Running node=kind-worker5
+13.6218,Job,MODIFIED,eval-smoke-r0-6,
+13.6311,Job,MODIFIED,eval-smoke-r0-5,
+13.6337,Job,MODIFIED,eval-smoke-r0-6,
+13.6377,Job,MODIFIED,eval-smoke-r0-5,
+13.6412,Event,ADDED,eval-smoke-r0-5.18d3c414ad4543fb,reason=Completed count=1 msg=Job completed
+13.6477,Job,MODIFIED,eval-smoke-r0-5,
+13.6532,TaskRequest,MODIFIED,eval-smoke-r0-5,phase=Complete job=None
+13.6622,Job,MODIFIED,eval-smoke-r0-5,
+13.7927,Pod,MODIFIED,eval-smoke-r0-6-b8j9r,phase=Succeeded node=kind-worker
+14.6257,Job,MODIFIED,eval-smoke-r0-7,
+14.6279,Job,MODIFIED,eval-smoke-r0-6,
+14.6371,Pod,MODIFIED,eval-smoke-r0-6-b8j9r,phase=Succeeded node=kind-worker
+14.6391,Job,MODIFIED,eval-smoke-r0-7,
+14.6401,Job,MODIFIED,eval-smoke-r0-6,
+14.768,Pod,MODIFIED,eval-smoke-r0-7-wdjzd,phase=Succeeded node=kind-worker5

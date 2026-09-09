@@ -1,0 +1,11 @@
+task_id,name,issuer,context,context_degree,datasets,requirements,geo,submit_offset_s
+0,eval-smoke-r0-00,issuer1,x1,3,"[""d1""]","{""evalprop"": 1}",evalgeo,0.0
+1,eval-smoke-r0-01,issuer4,x4,3,"[""d4""]","{""evalprop"": 1}",evalgeo,1.0
+2,eval-smoke-r0-02,issuer4,x4,3,"[""d4""]","{""evalprop"": 1}",evalgeo,2.0
+3,eval-smoke-r0-03,issuer1,x1,3,"[""d1""]","{""evalprop"": 1}",evalgeo,3.0
+4,eval-smoke-r0-04,issuer2,x2,3,"[""d2""]","{""evalprop"": 1}",evalgeo,4.0
+5,eval-smoke-r0-05,issuer4,x4,3,"[""d4""]","{""evalprop"": 1}",evalgeo,5.0
+6,eval-smoke-r0-06,issuer4,x4,3,"[""d4""]","{""evalprop"": 1}",evalgeo,6.0
+7,eval-smoke-r0-07,issuer3,x3,3,"[""d3""]","{""evalprop"": 1}",evalgeo,7.0
+8,eval-smoke-r0-08,issuer2,x2,3,"[""d2""]","{""evalprop"": 1}",evalgeo,8.0
+9,eval-smoke-r0-09,issuer1,x1,3,"[""d1""]","{""evalprop"": 1}",evalgeo,9.0

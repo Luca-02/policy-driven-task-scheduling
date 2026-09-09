@@ -1,0 +1,11 @@
+task_id,name,issuer,context,context_degree,datasets,requirements,geo,submit_offset_s
+0,eval-wallcheck-r0-00,issuer1,x01,9,"[""d01""]","{""evalprop"": 1}",evalgeo,0.0
+1,eval-wallcheck-r0-01,issuer2,x02,9,"[""d02""]","{""evalprop"": 1}",evalgeo,1.0
+2,eval-wallcheck-r0-02,issuer3,x03,9,"[""d03""]","{""evalprop"": 1}",evalgeo,2.0
+3,eval-wallcheck-r0-03,issuer4,x04,9,"[""d04""]","{""evalprop"": 1}",evalgeo,3.0
+4,eval-wallcheck-r0-04,issuer5,x05,9,"[""d05""]","{""evalprop"": 1}",evalgeo,4.0
+5,eval-wallcheck-r0-05,issuer6,x06,9,"[""d06""]","{""evalprop"": 1}",evalgeo,5.0
+6,eval-wallcheck-r0-06,issuer7,x07,9,"[""d07""]","{""evalprop"": 1}",evalgeo,6.0
+7,eval-wallcheck-r0-07,issuer8,x08,9,"[""d08""]","{""evalprop"": 1}",evalgeo,7.0
+8,eval-wallcheck-r0-08,issuer9,x09,9,"[""d09""]","{""evalprop"": 1}",evalgeo,8.0
+9,eval-wallcheck-r0-09,issuer10,x10,9,"[""d10""]","{""evalprop"": 1}",evalgeo,9.0

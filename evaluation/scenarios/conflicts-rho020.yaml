@@ -1,0 +1,48 @@
+# Example scenario definition for the "impact of conflicts" experiment.
+#
+# One point of the conflict sweep: rho = 0.20 over K = 10 contexts.
+# Pass this to generate.py with:
+#
+#     python generate.py --scenario-file scenarios-example/conflicts-rho020.yaml \
+#         --out scenarios --replicas 5
+#
+# Any field here can be overridden on the command line. The whole conflict
+# sweep is just this file re-emitted with different conflict_density values
+# (0, 0.05, 0.1, 0.2, 0.3, 0.5, 1.0), keeping every other field fixed.
+
+name: conflicts-rho020
+
+# Reproducibility: master seed fixes the conflict graph and the base of the
+# per-replica task sequences. Same seed => identical scenario.
+seed: 10
+
+# Contexts and conflicts.
+contexts: 10 # K
+conflict_density: 0.20 # rho in [0, 1]
+
+# Workload: 100 tasks, one per second (~100s of submission, several sanitize
+# windows at 30s). Timings scaled down 2x from a 60s/2s baseline: the ratios
+# (30 tasks per sanitize window, task_duration/interval = 1/6) are unchanged,
+# so the curves are the same at half the wall-clock.
+tasks: 100
+rate_seconds: 1.0
+
+# Runtime knobs (applied by setup.py, carried here so the scenario is
+# self-describing). For the conflict experiment the sanitize interval is fixed.
+sanitize_interval_seconds: 30
+clear_traces_seconds: 0
+task_duration_seconds: 5
+scheduler_backoff_seconds: 1
+
+# Full pipeline (TaskRequest -> Gatekeeper -> controller -> custom scheduler).
+mode: system
+
+# Worker node names in the running cluster (10-worker kind cluster).
+nodes:
+  [
+    kind-worker,
+    kind-worker2,
+    kind-worker3,
+    kind-worker4,
+    kind-worker5
+  ]

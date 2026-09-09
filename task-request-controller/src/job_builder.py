@@ -191,11 +191,18 @@ class JobBuilder:
         return [
             client.V1Container(
                 name="task",
-                image="busybox:latest",
+                image="busybox:musl",
                 command=[
                     "sh",
                     "-c",
-                    'echo "Task executed successfully" && sleep "$TASK_SIMULATED_DURATION_SECONDS"',
+                    'echo "Task started"; '
+                    "i=0; "
+                    'while [ "$i" -lt "$TASK_SIMULATED_DURATION_SECONDS" ]; do '
+                    "i=$((i+1)); "
+                    'echo "Task executing... ($i/$TASK_SIMULATED_DURATION_SECONDS)"; '
+                    "sleep 1; "
+                    "done; "
+                    'echo "Task ended"',
                 ],
                 env=[
                     client.V1EnvVar(

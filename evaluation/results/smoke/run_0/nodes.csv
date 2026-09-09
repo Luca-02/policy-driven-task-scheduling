@@ -1,0 +1,19 @@
+t_recv,node,sanitizing,lambda_size,lambda
+0.0242,kind-control-plane,False,0,[]
+0.0307,kind-worker,False,0,[]
+0.0335,kind-worker2,False,0,[]
+0.0353,kind-worker3,False,0,[]
+0.0377,kind-worker4,False,0,[]
+0.0402,kind-worker5,False,0,[]
+0.1457,kind-worker2,False,1,"[""x1""]"
+0.1589,kind-worker2,False,1,"[""x1""]"
+1.0809,kind-worker4,False,1,"[""x4""]"
+1.0915,kind-worker4,False,1,"[""x4""]"
+2.0726,kind-worker,False,1,"[""x4""]"
+2.0839,kind-worker,False,1,"[""x4""]"
+4.0809,kind-worker4,False,2,"[""x2"", ""x4""]"
+4.0927,kind-worker4,False,2,"[""x2"", ""x4""]"
+5.0814,kind-worker3,False,1,"[""x4""]"
+5.0922,kind-worker3,False,1,"[""x4""]"
+7.1513,kind-worker5,False,1,"[""x3""]"
+7.1609,kind-worker5,False,1,"[""x3""]"

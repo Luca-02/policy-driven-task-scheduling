@@ -1,0 +1,362 @@
+t_recv,kind,type,name,detail
+0.0249,Node,ADDED,kind-control-plane,taints=1
+0.0286,Node,ADDED,kind-worker,taints=0
+0.0299,Node,ADDED,kind-worker2,taints=0
+0.0311,Node,ADDED,kind-worker3,taints=0
+0.0323,Node,ADDED,kind-worker4,taints=0
+0.0339,Node,ADDED,kind-worker5,taints=0
+0.0485,TaskRequest,ADDED,eval-wallcheck-r0-00,phase=None job=None
+0.0568,TaskRequest,MODIFIED,eval-wallcheck-r0-00,phase=Pending job=None
+0.078,Job,ADDED,eval-wallcheck-r0-00,
+0.0847,TaskRequest,MODIFIED,eval-wallcheck-r0-00,phase=Scheduled job=None
+0.089,Pod,ADDED,eval-wallcheck-r0-00-pwbpx,phase=Pending node=None
+0.0924,Job,MODIFIED,eval-wallcheck-r0-00,
+0.0972,TaskRequest,MODIFIED,eval-wallcheck-r0-00,phase=Scheduled job=None
+0.1003,Event,ADDED,eval-wallcheck-r0-00.18d3c564ff4919a7,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-00-pwbpx
+0.1065,Pod,MODIFIED,eval-wallcheck-r0-00-pwbpx,phase=Pending node=kind-worker4
+0.1145,Event,ADDED,eval-wallcheck-r0-00-pwbpx.18d3c565005648f2,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-00-pwbpx to kind-worker4
+0.1186,Pod,MODIFIED,eval-wallcheck-r0-00-pwbpx,phase=Pending node=kind-worker4
+0.12,Node,MODIFIED,kind-worker4,taints=0
+0.1412,Node,MODIFIED,kind-worker4,taints=0
+0.5217,Event,ADDED,eval-wallcheck-r0-00-pwbpx.18d3c56518d81d1b,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+0.5413,Event,ADDED,eval-wallcheck-r0-00-pwbpx.18d3c5651a0178b0,reason=Created count=1 msg=Created container: task
+0.6073,Event,ADDED,eval-wallcheck-r0-00-pwbpx.18d3c5651df5f3e1,reason=Started count=1 msg=Started container task
+0.9468,Pod,MODIFIED,eval-wallcheck-r0-00-pwbpx,phase=Running node=kind-worker4
+1.0138,TaskRequest,ADDED,eval-wallcheck-r0-01,phase=None job=None
+1.019,TaskRequest,MODIFIED,eval-wallcheck-r0-01,phase=Pending job=None
+1.0368,Job,ADDED,eval-wallcheck-r0-01,
+1.0413,TaskRequest,MODIFIED,eval-wallcheck-r0-01,phase=Scheduled job=None
+1.0447,Pod,ADDED,eval-wallcheck-r0-01-nd9n9,phase=Pending node=None
+1.0468,Job,MODIFIED,eval-wallcheck-r0-01,
+1.0506,Event,ADDED,eval-wallcheck-r0-01.18d3c56538434932,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-01-nd9n9
+1.0507,TaskRequest,MODIFIED,eval-wallcheck-r0-01,phase=Scheduled job=None
+1.0634,Pod,MODIFIED,eval-wallcheck-r0-01-nd9n9,phase=Pending node=kind-worker2
+1.0661,Event,ADDED,eval-wallcheck-r0-01-nd9n9.18d3c56539523986,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-01-nd9n9 to kind-worker2
+1.0724,Pod,MODIFIED,eval-wallcheck-r0-01-nd9n9,phase=Pending node=kind-worker2
+1.0746,Node,MODIFIED,kind-worker2,taints=0
+1.086,Node,MODIFIED,kind-worker2,taints=0
+1.094,Job,MODIFIED,eval-wallcheck-r0-00,
+1.103,Job,MODIFIED,eval-wallcheck-r0-00,
+1.4865,Event,ADDED,eval-wallcheck-r0-01-nd9n9.18d3c565524b0b54,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+1.5057,Event,ADDED,eval-wallcheck-r0-01-nd9n9.18d3c56553657ee4,reason=Created count=1 msg=Created container: task
+1.5406,Event,ADDED,eval-wallcheck-r0-01-nd9n9.18d3c5655581e101,reason=Started count=1 msg=Started container task
+2.0175,TaskRequest,ADDED,eval-wallcheck-r0-02,phase=None job=None
+2.0227,TaskRequest,MODIFIED,eval-wallcheck-r0-02,phase=Pending job=None
+2.0388,Job,ADDED,eval-wallcheck-r0-02,
+2.0427,TaskRequest,MODIFIED,eval-wallcheck-r0-02,phase=Scheduled job=None
+2.0473,Pod,ADDED,eval-wallcheck-r0-02-vg94s,phase=Pending node=None
+2.0488,Job,MODIFIED,eval-wallcheck-r0-02,
+2.0517,Job,MODIFIED,eval-wallcheck-r0-01,
+2.0523,Event,ADDED,eval-wallcheck-r0-02.18d3c56573de2ba2,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-02-vg94s
+2.0524,TaskRequest,MODIFIED,eval-wallcheck-r0-02,phase=Scheduled job=None
+2.0603,Job,MODIFIED,eval-wallcheck-r0-01,
+2.0639,Pod,MODIFIED,eval-wallcheck-r0-02-vg94s,phase=Pending node=kind-worker
+2.0668,Event,ADDED,eval-wallcheck-r0-02-vg94s.18d3c56574e5755c,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-02-vg94s to kind-worker
+2.0732,Pod,MODIFIED,eval-wallcheck-r0-02-vg94s,phase=Pending node=kind-worker
+2.0757,Node,MODIFIED,kind-worker,taints=0
+2.0861,Node,MODIFIED,kind-worker,taints=0
+2.2996,Pod,MODIFIED,eval-wallcheck-r0-01-nd9n9,phase=Running node=kind-worker2
+2.4694,Event,ADDED,eval-wallcheck-r0-02-vg94s.18d3c5658cde49ea,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+2.4872,Event,ADDED,eval-wallcheck-r0-02-vg94s.18d3c5658de6e01d,reason=Created count=1 msg=Created container: task
+2.5191,Event,ADDED,eval-wallcheck-r0-02-vg94s.18d3c5658fd697d9,reason=Started count=1 msg=Started container task
+2.9784,Pod,MODIFIED,eval-wallcheck-r0-02-vg94s,phase=Running node=kind-worker
+3.0136,TaskRequest,ADDED,eval-wallcheck-r0-03,phase=None job=None
+3.0189,TaskRequest,MODIFIED,eval-wallcheck-r0-03,phase=Pending job=None
+3.0349,Job,ADDED,eval-wallcheck-r0-03,
+3.0428,Pod,ADDED,eval-wallcheck-r0-03-hrqs8,phase=Pending node=None
+3.0429,TaskRequest,MODIFIED,eval-wallcheck-r0-03,phase=Scheduled job=None
+3.0454,Job,MODIFIED,eval-wallcheck-r0-03,
+3.0474,Event,ADDED,eval-wallcheck-r0-03.18d3c565af3c57d3,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-03-hrqs8
+3.0513,Job,MODIFIED,eval-wallcheck-r0-02,
+3.0515,TaskRequest,MODIFIED,eval-wallcheck-r0-03,phase=Scheduled job=None
+3.0585,Job,MODIFIED,eval-wallcheck-r0-01,
+3.0629,Job,MODIFIED,eval-wallcheck-r0-02,
+3.0656,Pod,MODIFIED,eval-wallcheck-r0-03-hrqs8,phase=Pending node=kind-worker3
+3.0714,Job,MODIFIED,eval-wallcheck-r0-01,
+3.0722,Event,ADDED,eval-wallcheck-r0-03-hrqs8.18d3c565b09f6a32,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-03-hrqs8 to kind-worker3
+3.0767,Node,MODIFIED,kind-worker3,taints=0
+3.0782,Pod,MODIFIED,eval-wallcheck-r0-03-hrqs8,phase=Pending node=kind-worker3
+3.0877,Node,MODIFIED,kind-worker3,taints=0
+3.5048,Event,ADDED,eval-wallcheck-r0-03-hrqs8.18d3c565ca86b28b,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+3.5219,Event,ADDED,eval-wallcheck-r0-03-hrqs8.18d3c565cba68104,reason=Created count=1 msg=Created container: task
+3.5563,Event,ADDED,eval-wallcheck-r0-03-hrqs8.18d3c565cda6a9ac,reason=Started count=1 msg=Started container task
+3.9579,Pod,MODIFIED,eval-wallcheck-r0-03-hrqs8,phase=Running node=kind-worker3
+4.0125,TaskRequest,ADDED,eval-wallcheck-r0-04,phase=None job=None
+4.0178,TaskRequest,MODIFIED,eval-wallcheck-r0-04,phase=Pending job=None
+4.0338,Job,ADDED,eval-wallcheck-r0-04,
+4.0393,TaskRequest,MODIFIED,eval-wallcheck-r0-04,phase=Scheduled job=None
+4.0423,Pod,ADDED,eval-wallcheck-r0-04-qkjkp,phase=Pending node=None
+4.0444,Job,MODIFIED,eval-wallcheck-r0-04,
+4.0491,Event,ADDED,eval-wallcheck-r0-04.18d3c565eadf38a9,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-04-qkjkp
+4.0493,TaskRequest,MODIFIED,eval-wallcheck-r0-04,phase=Scheduled job=None
+4.0501,Job,MODIFIED,eval-wallcheck-r0-03,
+4.0601,Job,MODIFIED,eval-wallcheck-r0-03,
+4.1195,Pod,MODIFIED,eval-wallcheck-r0-04-qkjkp,phase=Pending node=kind-worker5
+4.1233,Event,ADDED,eval-wallcheck-r0-04-qkjkp.18d3c565ef6ff9eb,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-04-qkjkp to kind-worker5
+4.1286,Pod,MODIFIED,eval-wallcheck-r0-04-qkjkp,phase=Pending node=kind-worker5
+4.1313,Node,MODIFIED,kind-worker5,taints=0
+4.1434,Node,MODIFIED,kind-worker5,taints=0
+4.5493,Event,ADDED,eval-wallcheck-r0-04-qkjkp.18d3c56608d5a343,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+4.5668,Event,ADDED,eval-wallcheck-r0-04-qkjkp.18d3c56609ea0bcd,reason=Created count=1 msg=Created container: task
+4.6002,Event,ADDED,eval-wallcheck-r0-04-qkjkp.18d3c5660bd15567,reason=Started count=1 msg=Started container task
+4.958,Pod,MODIFIED,eval-wallcheck-r0-04-qkjkp,phase=Running node=kind-worker5
+5.0147,TaskRequest,ADDED,eval-wallcheck-r0-05,phase=None job=None
+5.0204,TaskRequest,MODIFIED,eval-wallcheck-r0-05,phase=Pending job=None
+5.037,Job,ADDED,eval-wallcheck-r0-05,
+5.0451,Pod,ADDED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=None
+5.0452,TaskRequest,MODIFIED,eval-wallcheck-r0-05,phase=Scheduled job=None
+5.0481,Job,MODIFIED,eval-wallcheck-r0-05,
+5.0506,Job,MODIFIED,eval-wallcheck-r0-04,
+5.0511,Event,ADDED,eval-wallcheck-r0-05.18d3c566269b33dc,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-05-l8vqq
+5.0533,TaskRequest,MODIFIED,eval-wallcheck-r0-05,phase=Scheduled job=None
+5.0597,Job,MODIFIED,eval-wallcheck-r0-04,
+5.1252,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=None
+5.1255,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c5662ad81d66,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+5.2219,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c56630dfce23,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+5.9563,Pod,MODIFIED,eval-wallcheck-r0-00-pwbpx,phase=Running node=kind-worker4
+5.9813,Event,MODIFIED,eval-wallcheck-r0-05-l8vqq.18d3c56630dfce23,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+6.0137,TaskRequest,ADDED,eval-wallcheck-r0-06,phase=None job=None
+6.023,TaskRequest,MODIFIED,eval-wallcheck-r0-06,phase=Pending job=None
+6.0408,Job,ADDED,eval-wallcheck-r0-06,
+6.0472,TaskRequest,MODIFIED,eval-wallcheck-r0-06,phase=Scheduled job=None
+6.0507,Job,MODIFIED,eval-wallcheck-r0-05,
+6.0525,Pod,ADDED,eval-wallcheck-r0-06-jkmmc,phase=Pending node=None
+6.0536,Job,MODIFIED,eval-wallcheck-r0-06,
+6.0562,Event,ADDED,eval-wallcheck-r0-06.18d3c56662900bab,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-06-jkmmc
+6.0572,TaskRequest,MODIFIED,eval-wallcheck-r0-06,phase=Scheduled job=None
+6.0635,Job,MODIFIED,eval-wallcheck-r0-05,
+6.1199,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Pending node=None
+6.1204,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c566664c85d4,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+6.2191,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c5666c558601,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+6.9635,Job,MODIFIED,eval-wallcheck-r0-00,
+6.9748,Job,MODIFIED,eval-wallcheck-r0-00,
+7.015,TaskRequest,ADDED,eval-wallcheck-r0-07,phase=None job=None
+7.0193,TaskRequest,MODIFIED,eval-wallcheck-r0-07,phase=Pending job=None
+7.0374,Job,ADDED,eval-wallcheck-r0-07,
+7.0426,TaskRequest,MODIFIED,eval-wallcheck-r0-07,phase=Scheduled job=None
+7.046,Pod,ADDED,eval-wallcheck-r0-07-k7drx,phase=Pending node=None
+7.0483,Job,MODIFIED,eval-wallcheck-r0-07,
+7.0549,Pod,MODIFIED,eval-wallcheck-r0-00-pwbpx,phase=Succeeded node=kind-worker4
+7.0554,Event,ADDED,eval-wallcheck-r0-07.18d3c5669de373e6,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-07-k7drx
+7.0555,TaskRequest,MODIFIED,eval-wallcheck-r0-07,phase=Scheduled job=None
+7.0578,Job,MODIFIED,eval-wallcheck-r0-06,
+7.0691,Job,MODIFIED,eval-wallcheck-r0-06,
+7.1209,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Pending node=None
+7.1214,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c566a1fe1b5b,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+7.3133,Pod,MODIFIED,eval-wallcheck-r0-01-nd9n9,phase=Running node=kind-worker2
+7.3259,Event,MODIFIED,eval-wallcheck-r0-06-jkmmc.18d3c5666c558601,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+7.6167,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c566bf998788,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+7.971,Job,MODIFIED,eval-wallcheck-r0-00,
+7.98,Pod,MODIFIED,eval-wallcheck-r0-00-pwbpx,phase=Succeeded node=kind-worker4
+7.9816,Job,MODIFIED,eval-wallcheck-r0-00,
+7.9901,Pod,MODIFIED,eval-wallcheck-r0-02-vg94s,phase=Running node=kind-worker
+8.0186,Event,MODIFIED,eval-wallcheck-r0-07-k7drx.18d3c566bf998788,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+8.0539,Job,MODIFIED,eval-wallcheck-r0-07,
+8.0627,Job,MODIFIED,eval-wallcheck-r0-07,
+8.112,TaskRequest,ADDED,eval-wallcheck-r0-08,phase=None job=None
+8.1178,TaskRequest,MODIFIED,eval-wallcheck-r0-08,phase=Pending job=None
+8.1333,Job,ADDED,eval-wallcheck-r0-08,
+8.1404,TaskRequest,MODIFIED,eval-wallcheck-r0-08,phase=Scheduled job=None
+8.1421,Pod,ADDED,eval-wallcheck-r0-08-h29xr,phase=Pending node=None
+8.1449,Job,MODIFIED,eval-wallcheck-r0-08,
+8.1483,Event,ADDED,eval-wallcheck-r0-08.18d3c566df423fd8,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-08-h29xr
+8.225,TaskRequest,MODIFIED,eval-wallcheck-r0-08,phase=Scheduled job=None
+8.3184,Job,MODIFIED,eval-wallcheck-r0-01,
+8.329,Job,MODIFIED,eval-wallcheck-r0-01,
+8.4148,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Pending node=None
+8.4152,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c566ef1c6446,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+8.4558,Pod,MODIFIED,eval-wallcheck-r0-01-nd9n9,phase=Succeeded node=kind-worker2
+8.5166,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c566f52f8e65,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+8.9167,Event,MODIFIED,eval-wallcheck-r0-08-h29xr.18d3c566f52f8e65,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+8.9637,Pod,MODIFIED,eval-wallcheck-r0-03-hrqs8,phase=Running node=kind-worker3
+8.9761,Job,MODIFIED,eval-wallcheck-r0-00,
+8.9801,Job,MODIFIED,eval-wallcheck-r0-00,
+8.9848,Event,ADDED,eval-wallcheck-r0-00.18d3c5671133a81d,reason=Completed count=1 msg=Job completed
+8.9951,Job,MODIFIED,eval-wallcheck-r0-02,
+8.9971,Job,MODIFIED,eval-wallcheck-r0-00,
+9.0026,TaskRequest,MODIFIED,eval-wallcheck-r0-00,phase=Complete job=None
+9.0076,Job,MODIFIED,eval-wallcheck-r0-02,
+9.0145,Job,MODIFIED,eval-wallcheck-r0-00,
+9.1084,TaskRequest,ADDED,eval-wallcheck-r0-09,phase=None job=None
+9.1138,TaskRequest,MODIFIED,eval-wallcheck-r0-09,phase=Pending job=None
+9.1314,Job,ADDED,eval-wallcheck-r0-09,
+9.1389,Pod,MODIFIED,eval-wallcheck-r0-02-vg94s,phase=Succeeded node=kind-worker
+9.139,TaskRequest,MODIFIED,eval-wallcheck-r0-09,phase=Scheduled job=None
+9.14,Pod,ADDED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=None
+9.1423,Job,MODIFIED,eval-wallcheck-r0-09,
+9.1446,Event,ADDED,eval-wallcheck-r0-09.18d3c5671ab6ff50,reason=SuccessfulCreate count=1 msg=Created pod: eval-wallcheck-r0-09-ftzjf
+9.1472,Job,MODIFIED,eval-wallcheck-r0-08,
+9.1481,TaskRequest,MODIFIED,eval-wallcheck-r0-09,phase=Scheduled job=None
+9.1569,Job,MODIFIED,eval-wallcheck-r0-08,
+9.321,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=None
+9.3213,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c5672517509b,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+9.3235,Job,MODIFIED,eval-wallcheck-r0-01,
+9.3316,Pod,MODIFIED,eval-wallcheck-r0-01-nd9n9,phase=Succeeded node=kind-worker2
+9.3334,Job,MODIFIED,eval-wallcheck-r0-01,
+9.8208,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c56742d1c673,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+9.9677,Pod,MODIFIED,eval-wallcheck-r0-04-qkjkp,phase=Running node=kind-worker5
+9.975,Job,MODIFIED,eval-wallcheck-r0-03,
+9.9858,Job,MODIFIED,eval-wallcheck-r0-03,
+10.0015,Job,MODIFIED,eval-wallcheck-r0-02,
+10.0107,Pod,MODIFIED,eval-wallcheck-r0-02-vg94s,phase=Succeeded node=kind-worker
+10.0132,Job,MODIFIED,eval-wallcheck-r0-02,
+10.0519,Pod,MODIFIED,eval-wallcheck-r0-03-hrqs8,phase=Succeeded node=kind-worker3
+10.1457,Job,MODIFIED,eval-wallcheck-r0-09,
+10.1549,Job,MODIFIED,eval-wallcheck-r0-09,
+10.3289,Job,MODIFIED,eval-wallcheck-r0-01,
+10.3329,Job,MODIFIED,eval-wallcheck-r0-01,
+10.3375,Event,ADDED,eval-wallcheck-r0-01.18d3c56761d96ef4,reason=Completed count=1 msg=Job completed
+10.3441,Job,MODIFIED,eval-wallcheck-r0-01,
+10.3489,TaskRequest,MODIFIED,eval-wallcheck-r0-01,phase=Complete job=None
+10.3584,Job,MODIFIED,eval-wallcheck-r0-01,
+10.4253,Event,MODIFIED,eval-wallcheck-r0-09-ftzjf.18d3c56742d1c673,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 node(s) had untolerated taint(s), 5 c_wall violated: 1 conflicting context pair(s) with node memory. no new claims to deallocate, preemption: 0/6 nodes are available: 1 Preemption is not helpful for scheduling, 5 No preemption victims found for incoming pod."
+10.9736,Job,MODIFIED,eval-wallcheck-r0-04,
+10.9808,Job,MODIFIED,eval-wallcheck-r0-03,
+10.9864,Job,MODIFIED,eval-wallcheck-r0-04,
+10.9895,Pod,MODIFIED,eval-wallcheck-r0-03-hrqs8,phase=Succeeded node=kind-worker3
+10.9908,Job,MODIFIED,eval-wallcheck-r0-03,
+11.0063,Job,MODIFIED,eval-wallcheck-r0-02,
+11.0105,Job,MODIFIED,eval-wallcheck-r0-02,
+11.0156,Event,ADDED,eval-wallcheck-r0-02.18d3c5678a3e13f4,reason=Completed count=1 msg=Job completed
+11.0221,Job,MODIFIED,eval-wallcheck-r0-02,
+11.0281,TaskRequest,MODIFIED,eval-wallcheck-r0-02,phase=Complete job=None
+11.0385,Job,MODIFIED,eval-wallcheck-r0-02,
+11.1153,Pod,MODIFIED,eval-wallcheck-r0-04-qkjkp,phase=Succeeded node=kind-worker5
+11.9827,Job,MODIFIED,eval-wallcheck-r0-04,
+11.9862,Job,MODIFIED,eval-wallcheck-r0-03,
+11.9902,Job,MODIFIED,eval-wallcheck-r0-03,
+11.9934,Pod,MODIFIED,eval-wallcheck-r0-04-qkjkp,phase=Succeeded node=kind-worker5
+11.9949,Job,MODIFIED,eval-wallcheck-r0-04,
+11.9972,Event,ADDED,eval-wallcheck-r0-03.18d3c567c4a1ef86,reason=Completed count=1 msg=Job completed
+12.0126,Job,MODIFIED,eval-wallcheck-r0-03,
+12.0191,TaskRequest,MODIFIED,eval-wallcheck-r0-03,phase=Complete job=None
+12.0306,Job,MODIFIED,eval-wallcheck-r0-03,
+12.9908,Job,MODIFIED,eval-wallcheck-r0-04,
+12.9965,Job,MODIFIED,eval-wallcheck-r0-04,
+13.0016,Event,ADDED,eval-wallcheck-r0-04.18d3c568009218b2,reason=Completed count=1 msg=Job completed
+13.0071,Job,MODIFIED,eval-wallcheck-r0-04,
+13.0131,TaskRequest,MODIFIED,eval-wallcheck-r0-04,phase=Complete job=None
+13.0246,Job,MODIFIED,eval-wallcheck-r0-04,
+16.3578,Node,MODIFIED,kind-worker,taints=1
+16.3761,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Pending node=None
+16.4148,Node,MODIFIED,kind-worker2,taints=1
+16.4165,Node,MODIFIED,kind-worker3,taints=1
+16.4224,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=None
+16.517,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=None
+16.5243,Node,MODIFIED,kind-worker4,taints=1
+16.5285,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Pending node=None
+16.5366,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Pending node=None
+16.5441,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Pending node=None
+16.5444,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c568d3cdd67e,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 c_wall violated: 1 conflicting context pair(s) with node memory, 5 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 1 No preemption victims found for incoming pod, 5 Preemption is not helpful for scheduling."
+16.552,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=None
+16.5529,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c568d44535b4,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 c_wall violated: 1 conflicting context pair(s) with node memory, 5 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 1 No preemption victims found for incoming pod, 5 Preemption is not helpful for scheduling."
+16.6126,Node,MODIFIED,kind-worker5,taints=1
+16.6136,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=None
+16.6152,Node,MODIFIED,kind-worker,taints=1
+16.6156,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c568d7dfb050,"reason=FailedScheduling count=None msg=0/6 nodes are available: 1 c_wall violated: 1 conflicting context pair(s) with node memory, 5 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 1 No preemption victims found for incoming pod, 5 Preemption is not helpful for scheduling."
+16.618,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Pending node=None
+16.6183,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c568d83a8496,"reason=FailedScheduling count=None msg=0/6 nodes are available: 6 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 6 Preemption is not helpful for scheduling."
+16.6224,Node,MODIFIED,kind-worker,taints=1
+16.623,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c568d882fc34,"reason=FailedScheduling count=None msg=0/6 nodes are available: 6 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 6 Preemption is not helpful for scheduling."
+16.6239,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Pending node=None
+16.629,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Pending node=None
+16.6301,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c568d8daaf6b,"reason=FailedScheduling count=None msg=0/6 nodes are available: 6 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 6 Preemption is not helpful for scheduling."
+16.6321,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=None
+16.6333,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c568d927e463,"reason=FailedScheduling count=None msg=0/6 nodes are available: 6 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 6 Preemption is not helpful for scheduling."
+16.6364,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=None
+16.6366,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c568d9591148,"reason=FailedScheduling count=None msg=0/6 nodes are available: 6 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 6 Preemption is not helpful for scheduling."
+16.8075,Node,MODIFIED,kind-worker3,taints=1
+16.8089,Node,MODIFIED,kind-worker,taints=0
+16.8133,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Pending node=kind-worker
+16.8159,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Pending node=kind-worker
+16.8178,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=kind-worker
+16.8184,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c568e41f0c0f,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-08-h29xr to kind-worker
+16.8195,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Pending node=kind-worker
+16.8207,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=kind-worker
+16.8225,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c568e44437cf,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-06-jkmmc to kind-worker
+16.8284,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c568e4438a66,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-09-ftzjf to kind-worker
+16.8288,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c568e4447d35,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-05-l8vqq to kind-worker
+16.829,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c568e442e3e2,reason=Scheduled count=None msg=Successfully assigned compute/eval-wallcheck-r0-07-k7drx to kind-worker
+16.8302,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Pending node=kind-worker
+16.8333,Node,MODIFIED,kind-worker,taints=0
+16.8383,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Pending node=kind-worker
+16.8443,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Pending node=kind-worker
+16.8495,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Pending node=kind-worker
+16.8556,Node,MODIFIED,kind-worker,taints=0
+16.8571,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Pending node=kind-worker
+16.9076,Node,MODIFIED,kind-worker2,taints=1
+16.9588,Node,MODIFIED,kind-worker,taints=0
+17.013,Node,MODIFIED,kind-worker4,taints=1
+17.0149,Node,MODIFIED,kind-worker,taints=0
+17.0167,Node,MODIFIED,kind-worker3,taints=1
+17.0187,Node,MODIFIED,kind-worker5,taints=1
+17.0263,Node,MODIFIED,kind-worker4,taints=1
+17.12,Node,MODIFIED,kind-worker,taints=0
+17.1218,Node,MODIFIED,kind-worker4,taints=1
+17.1232,Node,MODIFIED,kind-worker3,taints=1
+17.2273,Node,MODIFIED,kind-worker,taints=0
+17.2673,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c568fee3d394,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+17.2879,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c569001ac658,reason=Created count=1 msg=Created container: task
+17.2934,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c5690060fbb1,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+17.2981,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c5690097531c,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+17.3047,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c56900ba89e2,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+17.3125,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c56900e2ea45,"reason=Pulled count=1 msg=Container image ""busybox:musl"" already present on machine"
+17.327,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c56902802fb2,reason=Created count=1 msg=Created container: task
+17.3388,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c569032b8daa,reason=Created count=1 msg=Created container: task
+17.3498,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c56903835c36,reason=Created count=1 msg=Created container: task
+17.3545,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c56903d3c8d3,reason=Created count=1 msg=Created container: task
+17.3589,Event,ADDED,eval-wallcheck-r0-08-h29xr.18d3c5690444feb9,reason=Started count=1 msg=Started container task
+17.3681,Event,ADDED,eval-wallcheck-r0-09-ftzjf.18d3c56904fc0b6d,reason=Started count=1 msg=Started container task
+17.3769,Event,ADDED,eval-wallcheck-r0-05-l8vqq.18d3c569057fea95,reason=Started count=1 msg=Started container task
+17.3841,Event,ADDED,eval-wallcheck-r0-06-jkmmc.18d3c56905e0795f,reason=Started count=1 msg=Started container task
+17.3881,Event,ADDED,eval-wallcheck-r0-07-k7drx.18d3c569061c3782,reason=Started count=1 msg=Started container task
+17.6251,Node,MODIFIED,kind-worker,taints=0
+17.9207,Node,MODIFIED,kind-worker3,taints=0
+18.0108,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Running node=kind-worker
+18.0136,Node,MODIFIED,kind-worker3,taints=0
+18.0189,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Running node=kind-worker
+18.0214,Node,MODIFIED,kind-worker4,taints=0
+18.0271,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Running node=kind-worker
+18.0347,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Running node=kind-worker
+18.0411,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Running node=kind-worker
+18.1091,Node,MODIFIED,kind-worker5,taints=1
+18.1108,Node,MODIFIED,kind-worker4,taints=0
+18.2116,Node,MODIFIED,kind-worker5,taints=1
+18.4149,Node,MODIFIED,kind-worker5,taints=0
+18.4163,Node,MODIFIED,kind-worker2,taints=1
+18.5092,Node,MODIFIED,kind-worker2,taints=0
+18.5108,Node,MODIFIED,kind-worker5,taints=0
+18.5173,Node,MODIFIED,kind-worker2,taints=0
+18.5263,Node,MODIFIED,kind-worker2,taints=0
+19.0211,Job,MODIFIED,eval-wallcheck-r0-07,
+19.0238,Job,MODIFIED,eval-wallcheck-r0-08,
+19.0309,Job,MODIFIED,eval-wallcheck-r0-06,
+19.0332,Job,MODIFIED,eval-wallcheck-r0-07,
+19.0355,Job,MODIFIED,eval-wallcheck-r0-08,
+19.0388,Job,MODIFIED,eval-wallcheck-r0-05,
+19.0407,Job,MODIFIED,eval-wallcheck-r0-06,
+19.0455,Job,MODIFIED,eval-wallcheck-r0-09,
+19.0481,Job,MODIFIED,eval-wallcheck-r0-05,
+19.0549,Job,MODIFIED,eval-wallcheck-r0-09,
+23.0281,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Running node=kind-worker
+23.0352,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Running node=kind-worker
+23.0419,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Running node=kind-worker
+23.0457,Node,MODIFIED,kind-worker4,taints=0
+23.0495,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Running node=kind-worker
+23.0564,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Running node=kind-worker
+23.5548,Node,MODIFIED,kind-worker3,taints=0
+24.0394,Job,MODIFIED,eval-wallcheck-r0-07,
+24.0412,Job,MODIFIED,eval-wallcheck-r0-08,
+24.0482,Job,MODIFIED,eval-wallcheck-r0-06,
+24.0513,Job,MODIFIED,eval-wallcheck-r0-07,
+24.0536,Job,MODIFIED,eval-wallcheck-r0-08,
+24.0558,Job,MODIFIED,eval-wallcheck-r0-05,
+24.06,Job,MODIFIED,eval-wallcheck-r0-06,
+24.0617,Job,MODIFIED,eval-wallcheck-r0-09,
+24.0652,Job,MODIFIED,eval-wallcheck-r0-05,
+24.0722,Job,MODIFIED,eval-wallcheck-r0-09,
+24.2012,Pod,MODIFIED,eval-wallcheck-r0-09-ftzjf,phase=Succeeded node=kind-worker
+24.2444,Pod,MODIFIED,eval-wallcheck-r0-05-l8vqq,phase=Succeeded node=kind-worker
+24.2504,Pod,MODIFIED,eval-wallcheck-r0-08-h29xr,phase=Succeeded node=kind-worker
+24.257,Pod,MODIFIED,eval-wallcheck-r0-06-jkmmc,phase=Succeeded node=kind-worker
+24.2628,Pod,MODIFIED,eval-wallcheck-r0-07-k7drx,phase=Succeeded node=kind-worker

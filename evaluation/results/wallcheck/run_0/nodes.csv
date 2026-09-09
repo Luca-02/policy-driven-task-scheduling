@@ -1,0 +1,54 @@
+t_recv,node,sanitizing,lambda_size,lambda
+0.0249,kind-control-plane,False,0,[]
+0.0286,kind-worker,False,0,[]
+0.0299,kind-worker2,False,0,[]
+0.0311,kind-worker3,False,0,[]
+0.0323,kind-worker4,False,0,[]
+0.0339,kind-worker5,False,0,[]
+0.12,kind-worker4,False,1,"[""x01""]"
+0.1412,kind-worker4,False,1,"[""x01""]"
+1.0746,kind-worker2,False,1,"[""x02""]"
+1.086,kind-worker2,False,1,"[""x02""]"
+2.0757,kind-worker,False,1,"[""x03""]"
+2.0861,kind-worker,False,1,"[""x03""]"
+3.0767,kind-worker3,False,1,"[""x04""]"
+3.0877,kind-worker3,False,1,"[""x04""]"
+4.1313,kind-worker5,False,1,"[""x05""]"
+4.1434,kind-worker5,False,1,"[""x05""]"
+16.3578,kind-worker,True,1,"[""x03""]"
+16.4148,kind-worker2,True,1,"[""x02""]"
+16.4165,kind-worker3,True,1,"[""x04""]"
+16.5243,kind-worker4,True,1,"[""x01""]"
+16.6126,kind-worker5,True,1,"[""x05""]"
+16.6152,kind-worker,True,0,[]
+16.6224,kind-worker,True,0,[]
+16.8075,kind-worker3,True,0,[]
+16.8089,kind-worker,False,0,[]
+16.8333,kind-worker,False,1,"[""x09""]"
+16.8556,kind-worker,False,2,"[""x06"", ""x09""]"
+16.9076,kind-worker2,True,1,"[""x02""]"
+16.9588,kind-worker,False,3,"[""x06"", ""x09"", ""x10""]"
+17.013,kind-worker4,True,0,[]
+17.0149,kind-worker,False,3,"[""x06"", ""x09"", ""x10""]"
+17.0167,kind-worker3,True,0,[]
+17.0187,kind-worker5,True,1,"[""x05""]"
+17.0263,kind-worker4,True,0,[]
+17.12,kind-worker,False,3,"[""x06"", ""x09"", ""x10""]"
+17.1218,kind-worker4,True,0,[]
+17.1232,kind-worker3,True,0,[]
+17.2273,kind-worker,False,4,"[""x06"", ""x07"", ""x09"", ""x10""]"
+17.6251,kind-worker,False,4,"[""x06"", ""x07"", ""x09"", ""x10""]"
+17.9207,kind-worker3,False,0,[]
+18.0136,kind-worker3,False,0,[]
+18.0214,kind-worker4,False,0,[]
+18.1091,kind-worker5,True,0,[]
+18.1108,kind-worker4,False,0,[]
+18.2116,kind-worker5,True,0,[]
+18.4149,kind-worker5,False,0,[]
+18.4163,kind-worker2,True,0,[]
+18.5092,kind-worker2,False,0,[]
+18.5108,kind-worker5,False,0,[]
+18.5173,kind-worker2,False,0,[]
+18.5263,kind-worker2,False,0,[]
+23.0457,kind-worker4,False,0,[]
+23.5548,kind-worker3,False,0,[]

@@ -1,0 +1,54 @@
+{
+  "conflicts": [
+    {
+      "context_a": "x1",
+      "context_b": "x4"
+    },
+    {
+      "context_a": "x3",
+      "context_b": "x4"
+    },
+    {
+      "context_a": "x1",
+      "context_b": "x3"
+    },
+    {
+      "context_a": "x2",
+      "context_b": "x3"
+    },
+    {
+      "context_a": "x1",
+      "context_b": "x2"
+    },
+    {
+      "context_a": "x2",
+      "context_b": "x4"
+    }
+  ],
+  "issuer_auths": [
+    {
+      "name": "issuer1",
+      "contexts": [
+        "x1"
+      ]
+    },
+    {
+      "name": "issuer2",
+      "contexts": [
+        "x2"
+      ]
+    },
+    {
+      "name": "issuer3",
+      "contexts": [
+        "x3"
+      ]
+    },
+    {
+      "name": "issuer4",
+      "contexts": [
+        "x4"
+      ]
+    }
+  ]
+}
