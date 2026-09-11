@@ -14,11 +14,11 @@
     "node_location": "eval-loc",
     "contexts": 10,
     "conflict_density": 0.5,
-    "tasks": 30,
+    "tasks": 100,
     "rate_seconds": 1.0,
     "sanitize_interval_seconds": 10,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 5,
+    "task_duration_seconds": 10,
     "scheduler_backoff_seconds": 1,
     "mode": "system"
   },
@@ -39,7 +39,7 @@
     "conflict_pairs_max": 45,
     "conflict_density_effective": 0.5111,
     "mean_context_degree": 4.6,
-    "replicas": 1
+    "replicas": 5
   },
   "conventions": {
     "api_version": "policydriven.unimi.it/v1alpha1",
@@ -51,12 +51,16 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks.csv": "cedb7dddf4d1a604985acbadb2f3d0c2eb967f039a574dec8ce4f60d413d04e5"
+      "tasks_r0.csv": "72d0bb55ff736c25a5c18b0b4dae513d89c87557a1da53cdff3055f649a6b49a",
+      "tasks_r1.csv": "154c1205b28ed3d86dab2cf46c634c1fc16ad81a4f8d31ad507beef010a1e8b5",
+      "tasks_r2.csv": "666f3170f23da21d689637b5e3e99e84a7d5a667fb8e80c6de44064854ef063e",
+      "tasks_r3.csv": "42e81c753562920b2c314876ec06dfe996618818337400b53cd0f7b7a1933c05",
+      "tasks_r4.csv": "146f5bd4c204e627713259f3e82ccbdd4d7281cc9ada60fb6754337d576e5985"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-09T22:48:29.999074+00:00",
-    "git_revision": "27f82f7",
+    "generated_at": "2026-09-10T15:25:27.052592+00:00",
+    "git_revision": "dbbf4e7",
     "generator": "generate.py"
   }
 }

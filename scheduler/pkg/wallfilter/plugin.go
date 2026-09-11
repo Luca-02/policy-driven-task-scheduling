@@ -23,10 +23,12 @@ type WallFilter struct {
 	logger    klog.Logger
 	client    contexts.WallChecker
 	clientset kubernetes.Interface
+	assumed   *assumedLambda
 }
 
 var (
 	_ framework.FilterPlugin   = &WallFilter{}
+	_ framework.ReservePlugin  = &WallFilter{}
 	_ framework.PostBindPlugin = &WallFilter{}
 )
 
@@ -45,13 +47,23 @@ func New(ctx context.Context, _ runtime.Object, fh framework.Handle) (framework.
 		return nil, fmt.Errorf("initialising context client: %w", err)
 	}
 
-	logger.V(2).Info("plugin initialised")
-	return &WallFilter{cfg: cfg, logger: logger, client: client, clientset: fh.ClientSet()}, nil
+	logger.V(2).Info("plugin initialised", "assumedTTL", cfg.WallAssumedTTL)
+	return &WallFilter{
+		cfg:       cfg,
+		logger:    logger,
+		client:    client,
+		clientset: fh.ClientSet(),
+		assumed:   newAssumedLambda(cfg.WallAssumedTTL),
+	}, nil
 }
 
 // Filter implements c_wall. The actual decision lives in checkWall, which takes
 // plain issuer/lambda values instead of framework types, so it can be unit tested
 // without constructing a fwk.NodeInfo.
+//
+// Lambda(n) is the snapshot annotation union the contexts already assumed for
+// this node by pods reserved earlier in this scheduling round: see
+// assumedLambda for why the snapshot alone is not enough.
 func (w *WallFilter) Filter(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, nodeInfo fwk.NodeInfo) *fwk.Status {
 	nodeName := nodeInfo.Node().Name
 	logger := klog.FromContext(klog.NewContext(ctx, w.logger)).WithValues(
@@ -63,8 +75,9 @@ func (w *WallFilter) Filter(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, 
 	lambdaAnnotationKey := w.cfg.NodeTraceAnnotationPrefix + "/" + w.cfg.ContextsAnnotation
 
 	issuer := pod.Annotations[issuerAnnotationKey]
-	lambda := nodes.Get(nodeInfo.Node(), lambdaAnnotationKey)
-	logger.V(4).Info("Parsed Lambda(n)", "lambda", lambda)
+	snapshot := nodes.Get(nodeInfo.Node(), lambdaAnnotationKey)
+	lambda := w.assumed.merge(nodeName, snapshot)
+	logger.V(4).Info("Parsed Lambda(n)", "lambda", lambda, "snapshot", snapshot)
 
 	status := checkWall(ctx, w.client, issuer, lambda)
 
@@ -82,6 +95,52 @@ func (w *WallFilter) Filter(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, 
 	return status
 }
 
+// Reserve records ctx*(t) as assumed on the selected node.
+//
+// The framework runs Reserve synchronously within the scheduling cycle, once a
+// node has been picked and before the asynchronous binding cycle starts, so
+// this is the earliest point at which f(t) is known and the last one that is
+// still ordered before the next pod's Filter. Recording here, rather than only
+// in PostBind, is what prevents a burst of pods from passing c_wall against a
+// Lambda(n) that does not yet reflect the pods just placed.
+//
+// A malformed ctx*(t) annotation is logged and does not fail the cycle, matching
+// PostBind's handling of the same value: there is nothing to assume, and the
+// deposit itself will fail the same way and be logged there.
+func (w *WallFilter) Reserve(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, nodeName string) *fwk.Status {
+	logger := klog.FromContext(klog.NewContext(ctx, w.logger)).WithValues(
+		"ExtensionPoint", "Reserve", "node", nodeName, "pod", pod.Name)
+
+	ctxStarAnnotationKey := w.cfg.TaskPodAnnotationPrefix + "/" + w.cfg.CtxStarAnnotation
+
+	ctxStar, err := parseCtxStar(pod.Annotations[ctxStarAnnotationKey])
+	if err != nil {
+		logger.Error(err, "ctx-star annotation malformed, nothing assumed")
+		return fwk.NewStatus(fwk.Success)
+	}
+
+	if len(ctxStar) == 0 {
+		logger.V(4).Info("ctx*(t) is empty, nothing to assume")
+		return fwk.NewStatus(fwk.Success)
+	}
+
+	w.assumed.assume(pod.UID, nodeName, ctxStar)
+	logger.V(2).Info("Lambda(n) deposit assumed", "ctxStar", ctxStar)
+
+	return fwk.NewStatus(fwk.Success)
+}
+
+// Unreserve rolls the assumption back: the framework calls it when the pod does
+// not make it to a successful bind after Reserve, so ctx*(t) will never be
+// deposited on that node and must stop constraining other pods.
+func (w *WallFilter) Unreserve(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, nodeName string) {
+	logger := klog.FromContext(klog.NewContext(ctx, w.logger)).WithValues(
+		"ExtensionPoint", "Unreserve", "node", nodeName, "pod", pod.Name)
+
+	w.assumed.forget(pod.UID)
+	logger.V(2).Info("Lambda(n) assumption rolled back")
+}
+
 // PostBind deposits ctx*(t) onto Lambda(n) for the node actually
 // selected by Bind, implementing:
 //
@@ -93,6 +152,10 @@ func (w *WallFilter) Filter(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, 
 // logged and left to a later reconciliation (or to a subsequent task
 // landing on the same node updating it again) rather than surfaced as
 // an error.
+//
+// The in-memory assumption recorded in Reserve stays in place until a snapshot
+// reports the context, so a failure here does not reopen the window
+// immediately: the assumption keeps constraining other pods until its TTL.
 func (w *WallFilter) PostBind(ctx context.Context, _ fwk.CycleState, pod *v1.Pod, nodeName string) {
 	logger := klog.FromContext(klog.NewContext(ctx, w.logger)).WithValues(
 		"ExtensionPoint", "PostBind", "node", nodeName, "pod", pod.Name)

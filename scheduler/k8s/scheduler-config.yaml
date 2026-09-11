@@ -8,6 +8,9 @@ profiles:
       filter:
         enabled:
           - name: WallFilter
+      reserve:
+        enabled:
+          - name: WallFilter
       preScore:
         enabled:
           - name: TransferScore

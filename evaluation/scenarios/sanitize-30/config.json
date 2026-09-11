@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "sanitize-30",
-    "seed": 10,
+    "seed": 11,
     "nodes": [
       "kind-worker",
       "kind-worker2",
@@ -18,7 +18,7 @@
     "rate_seconds": 1.0,
     "sanitize_interval_seconds": 30,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 5,
+    "task_duration_seconds": 10,
     "scheduler_backoff_seconds": 1,
     "mode": "system"
   },
@@ -39,7 +39,7 @@
     "conflict_pairs_max": 45,
     "conflict_density_effective": 0.5111,
     "mean_context_degree": 4.6,
-    "replicas": 1
+    "replicas": 5
   },
   "conventions": {
     "api_version": "policydriven.unimi.it/v1alpha1",
@@ -51,12 +51,16 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks.csv": "6d1c9722701ea7617a4db3ac9546b690044191316d9f72fb94acc132485e4f7c"
+      "tasks_r0.csv": "3437ca9f9f18922f5d782b6089f77253c346df8fd23d55d575b065353635b9b6",
+      "tasks_r1.csv": "915ae151ec1a8672762d56190ca6db3e99eaf9f69c4185c0745bba215dc6ae7f",
+      "tasks_r2.csv": "0049adccbd13ddf4857c462e77b0f0ef86da245195d3e48882c99e6c9a45cb6f",
+      "tasks_r3.csv": "9cc0f85010e8edf39a7b1d1b23a28288ba5397f4ad33e69778eff4b961e9d0a8",
+      "tasks_r4.csv": "18aac7e1446804c517eefe1502d9128d65bb117bfb899a2085c043f1f0b15be3"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-09T23:01:03.432806+00:00",
-    "git_revision": "27f82f7",
+    "generated_at": "2026-09-11T00:38:05.084253+00:00",
+    "git_revision": "dbbf4e7",
     "generator": "generate.py"
   }
 }

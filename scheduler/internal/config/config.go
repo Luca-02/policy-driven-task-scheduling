@@ -2,6 +2,8 @@ package config
 
 import (
 	"os"
+	"strconv"
+	"time"
 )
 
 const (
@@ -22,6 +24,15 @@ const (
 	DefaultIssuerAnnotation   = "issuer"
 	DefaultCtxStarAnnotation  = "ctxStar"
 	DefaultContextsAnnotation = "contexts"
+
+	// DefaultWallAssumedTTL bounds how long WallFilter keeps honouring a
+	// Lambda(n) deposit that it decided in Reserve but has not yet observed in
+	// a node snapshot. It only has to outlast informer propagation of the
+	// PostBind write, which is on the order of tens to hundreds of
+	// milliseconds under load, so seconds is a generous margin; too small
+	// reopens the TOCTOU window, too large needlessly constrains scheduling
+	// when a deposit failed to persist.
+	DefaultWallAssumedTTL = 5 * time.Second
 )
 
 type Config struct {
@@ -53,6 +64,10 @@ type Config struct {
 
 	// Annotation carrying Lambda(n), inherited by the Node.
 	ContextsAnnotation string
+
+	// How long an assumed Lambda(n) deposit keeps constraining c_wall while it
+	// is not yet visible in the node snapshots Filter reads.
+	WallAssumedTTL time.Duration
 }
 
 func getEnv(key, defaultValue string) string {
@@ -60,6 +75,21 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// getEnvSeconds reads a whole number of seconds from the environment. A missing,
+// empty or unparsable value falls back to the default, so a typo degrades to
+// the safe built-in rather than to zero.
+func getEnvSeconds(key string, defaultValue time.Duration) time.Duration {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return defaultValue
+	}
+	seconds, err := strconv.Atoi(raw)
+	if err != nil || seconds < 0 {
+		return defaultValue
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 func Load() Config {
@@ -82,6 +112,8 @@ func Load() Config {
 		IssuerAnnotation:   getEnv("ISSUER_ANNOTATION_KEY", DefaultIssuerAnnotation),
 		CtxStarAnnotation:  getEnv("CTX_STAR_ANNOTATION_KEY", DefaultCtxStarAnnotation),
 		ContextsAnnotation: getEnv("CONTEXTS_ANNOTATION_KEY", DefaultContextsAnnotation),
+
+		WallAssumedTTL: getEnvSeconds("WALL_ASSUMED_TTL_SECONDS", DefaultWallAssumedTTL),
 	}
 
 	return cfg

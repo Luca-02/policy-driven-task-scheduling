@@ -14,11 +14,11 @@
     "node_location": "eval-loc",
     "contexts": 10,
     "conflict_density": 0.5,
-    "tasks": 100,
+    "tasks": 60,
     "rate_seconds": 1.0,
     "sanitize_interval_seconds": 60,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 5,
+    "task_duration_seconds": 10,
     "scheduler_backoff_seconds": 1,
     "mode": "system"
   },
@@ -51,12 +51,12 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks.csv": "3b045b1bf14c8382acb5bb27c45faf4b5f350032381c859b36496b26b5479516"
+      "tasks.csv": "e9061a1ea56294be49a80778222d4d33b3dbf8c14f8bf1ee0873da0281569905"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-09T23:05:52.508446+00:00",
-    "git_revision": "27f82f7",
+    "generated_at": "2026-09-10T00:20:04.526542+00:00",
+    "git_revision": "dbbf4e7",
     "generator": "generate.py"
   }
 }

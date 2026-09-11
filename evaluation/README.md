@@ -12,7 +12,7 @@ reseeding the two microservices.
 
 | Script | Role | Talks to cluster? |
 |---|---|---|
-| `generate.py` | Emit a self-contained scenario directory (config, seeds, manifests, task plan) | no — files only |
+| `generate.py` | Emit a self-contained scenario directory (config, seeds, manifests, task plan) | no, files only |
 | `setup.py` | Apply a scenario: relabel nodes, reseed services, set runtime knobs | yes |
 | `run.py` | Submit tasks, watch resources, write per-task metrics | yes |
 | `clean.py` | Reset state between runs (delete tasks/jobs, sanitize nodes, clear events) | yes |
@@ -50,7 +50,7 @@ Conflicts are parameterised by a **density** `rho` in `[0, 1]`: the fraction of
 the `C(K, 2)` possible context pairs declared in conflict. A single seeded
 permutation of all pairs is truncated to `ceil(rho * M)`, so:
 
-- scenarios are **nested** — a denser scenario is a superset of a sparser one,
+- scenarios are **nested**: a denser scenario is a superset of a sparser one,
   making the conflict x-axis monotone by construction;
 - the conflict graph is a function of the master seed only, so it is **fixed per
   scenario and shared across replicas**. Only the task issuer sequence varies
@@ -87,9 +87,9 @@ always carries the exact names it was generated with.
 The absolute time values are chosen to keep each run short; the **result does
 not depend on them**, only on two ratios:
 
-- `sanitize_interval / rate` — tasks submitted per sanitize window (how fast
+- `sanitize_interval / rate`: tasks submitted per sanitize window (how fast
   nodes get contaminated);
-- `task_duration / sanitize_interval` — how long a node stays occupied
+- `task_duration / sanitize_interval`: how long a node stays occupied
   (deferring sanitization) within a cycle.
 
 Scaling every time by the same factor leaves both ratios unchanged, so the
@@ -185,16 +185,16 @@ Applies a generated scenario to the **running** cluster (never recreates it):
    `DEBUG_MODE=true`** on the node-controller, `TASK_SIMULATED_DURATION_SECONDS`
    on the task-request-controller. This is done FIRST: the node-controller only
    registers its kopf `on.update` handlers (for nodes and node-properties) when
-   `DEBUG_MODE` is true — in production it treats metadata as immutable — and
+   `DEBUG_MODE` is true (in production it treats metadata as immutable) and
    relabelling nodes between scenarios is an update. The pod must be restarted
    with debug mode on before any label is touched, or the derived `property.*`
    labels are never written;
 2. applies the evaluation NodeProperty / GeographicalGroup manifests so the
    controller knows the property to evaluate against;
 3. purges stale attribute/property/topology labels from each worker (all nodes
-   first) and then applies the homogeneous evaluation labels (all nodes) — two
+   first) and then applies the homogeneous evaluation labels (all nodes), two
    passes so the attribute change is always an observable update that fires the
-   node handler — then waits for the derived `property.*` labels (poll with
+   node handler, then waits for the derived `property.*` labels (poll with
    timeout);
 4. reseeds both microservices over a `kubectl port-forward`: `DELETE` all, then
    `POST /batch`, then a `GET` count check. TLS is not verified (self-signed
@@ -237,7 +237,7 @@ after, so a leftover cannot contaminate the next run:
    and waits until none remain;
 2. clears every worker's wall memory directly: removes the `Lambda(n)`
    annotation (`trace.node.<group>/contexts`) and the sanitizing taint
-   (`trace.node.<group>/sanitizing`) — the same end state `Sanitize(n)` reaches,
+   (`trace.node.<group>/sanitizing`), the same end state `Sanitize(n)` reaches,
    done directly so it needs no particular Pod ordering and no sanitize image;
 3. deletes stale Events in the task namespace so the next run's watch starts
    clean;

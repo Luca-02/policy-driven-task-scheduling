@@ -10,7 +10,7 @@
 #   bash experiments/sanitize_sweep.sh
 #
 # Override any knob via environment variables, e.g.:
-#   REPLICAS=5 INTERVALS="1 5 10 20 30 60 90 120" bash experiments/sanitize_sweep.sh
+#   REPLICAS=5 INTERVALS="1 2 3 5 10 20 30 45" bash experiments/sanitize_sweep.sh
 #
 set -euo pipefail
 
@@ -25,7 +25,7 @@ NODES="${NODES:-kind-worker kind-worker2 kind-worker3 kind-worker4 kind-worker5}
 REPLICAS="${REPLICAS:-5}"
 
 # --- Independent variable: the interval grid --------------------------------- #
-INTERVALS="${INTERVALS:-1 5 10 20 30 45 60 90 120}"
+INTERVALS="${INTERVALS:-1 2 3 5 10 20 30 45}"
 
 # --- Warm-up: pre-pull the task image on every node ------------------------- #
 # The only cold-start cost is the first pull of busybox on each node, which

@@ -1,5 +1,5 @@
 {
-  "applied_at": "2026-09-09T23:01:25.404943+00:00",
+  "applied_at": "2026-09-10T12:08:40.514065+00:00",
   "scenario_name": "sanitize-30",
   "scenario_dir": "scenarios\\sanitize-30",
   "applied": {
@@ -16,7 +16,7 @@
     },
     "sanitize_interval_seconds": 30,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 5,
+    "task_duration_seconds": 10,
     "scheduler_backoff_seconds": 1,
     "datasets": 10,
     "issuer_auths": 10,
