@@ -25,7 +25,7 @@ from .output import EventsWriter, write_nodes_csv, write_summary, write_tasks_cs
 from .record import Record, WatchEvent
 from .recorder import Recorder
 from .scenario import Task, load_conventions, load_tasks
-from .util import is_num, log, pick
+from .utils import is_num, log, pick
 from .watchers import Watchers
 
 DEFAULT_PROGRESS_SECONDS = 1.0
@@ -115,6 +115,9 @@ class Runner:
 
         self.t0 = time.perf_counter()
         self.t0_epoch = time.time()
+        # The recorder discards FailedScheduling events predating this instant,
+        # so clean.py need not delete events between runs.
+        self.recorder.run_start_epoch = self.t0_epoch
         log(
             "start",
             f"scenario '{self.scenario['name']}' replica {self.replica}, "

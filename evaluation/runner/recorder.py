@@ -13,10 +13,15 @@ import json
 from typing import Any
 
 from .record import Record, WatchEvent
-from .util import get, is_num, count_nodes, rnd
+from .utils import get, is_num, count_nodes, event_epoch, rnd
 
 # Standard label the job-controller puts on a Job's pods.
 POD_JOB_LABEL = "job-name"
+
+# Events older than (run start - this margin) are treated as leftovers from a
+# previous run. The margin absorbs client/API-server clock skew and the
+# second-level granularity of the legacy event timestamp fields.
+STALE_EVENT_GRACE_S = 5.0
 
 
 def _event_occurrences(obj) -> int:
@@ -51,6 +56,12 @@ class Recorder:
             self.by_tr_name[rec.name] = rec
 
         self.node_rows: list[dict[str, Any]] = []
+
+        # Wall-clock epoch of run start, set by the core once the clock is
+        # fixed. FailedScheduling events from previous runs are discarded by
+        # comparing their own timestamp against this, so clean.py no longer has
+        # to delete events (a slow, per-event API call). 0 => not set, keep all.
+        self.run_start_epoch: float = 0.0
 
     # -- dispatch -------------------------------------------------------------
 
@@ -139,6 +150,14 @@ class Recorder:
         obj = ev.obj
         if (get(obj, "reason") or "") != "FailedScheduling":
             return
+        # Drop events left over from a previous run: their own timestamp
+        # predates this run's start. A grace margin of a few seconds absorbs
+        # clock skew between the client and the API server and the second-level
+        # granularity of the legacy timestamp fields.
+        if self.run_start_epoch:
+            when = event_epoch(obj)
+            if when is not None and when < self.run_start_epoch - STALE_EVENT_GRACE_S:
+                return
         involved = get(obj, "involvedObject", "name") or ""
         rec = self.by_pod_name.get(involved) or self._match_pod_prefix(involved)
         if rec is None:

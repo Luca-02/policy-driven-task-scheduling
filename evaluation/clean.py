@@ -14,11 +14,14 @@ What it does, in order:
      (trace.node.<group>/sanitizing). This is the same end state Sanitize(n)
      reaches, done directly so it does not depend on Pods being gone in a
      particular order or on the sanitize image;
-  3. delete stale Events in the task namespace, so the next run's watch does not
-     receive events from this one;
-  4. verify the clean state and fail loudly if anything remains;
-  5. optionally pause for one sanitize interval to re-align the node-controller
+  3. verify the clean state and fail loudly if anything remains;
+  4. optionally pause for one sanitize interval to re-align the node-controller
      timer across runs (--settle).
+
+Stale Events are intentionally NOT deleted: deleting them is a slow per-event
+API call (hundreds of FailedScheduling events accumulate per conflict run), and
+the runner already discards events predating the run start by timestamp. This
+saves ~2 minutes per run over a whole sweep.
 
 What it deliberately does NOT do:
 
@@ -264,18 +267,7 @@ def _remove_taint(node: str, key: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Step 3 — delete stale Events in the task namespace.
-# --------------------------------------------------------------------------- #
-
-
-def delete_events(conv: Conventions) -> None:
-    ns = conv.task_namespace
-    log("events", f"deleting Events in namespace {ns!r}")
-    kubectl("delete", "events", "--all", "-n", ns, "--ignore-not-found", check=False)
-
-
-# --------------------------------------------------------------------------- #
-# Step 4 — verify the clean state.
+# Step 3 — verify the clean state.
 # --------------------------------------------------------------------------- #
 
 
@@ -316,10 +308,12 @@ def run_clean(scenario_dir: Path | None, settle_seconds: int) -> None:
     log("start", f"cleaning (namespace={conv.task_namespace})")
 
     # Order matters: remove workloads first so no active Pod remains, then clear
-    # node wall state, then events, then verify.
+    # node wall state, then verify. Stale Events are NOT deleted here: deleting
+    # them is a slow per-event API call, and the runner already discards events
+    # predating the run start by timestamp, so leftovers are harmless. Kubernetes
+    # expires events on its own (default --event-ttl 1h).
     delete_workloads(conv)
     clear_node_wall_state(conv)
-    delete_events(conv)
     verify_clean(conv)
 
     if settle_seconds > 0:

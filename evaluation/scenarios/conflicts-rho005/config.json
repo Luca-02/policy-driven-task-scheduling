@@ -1,0 +1,71 @@
+{
+  "scenario": {
+    "name": "conflicts-rho005",
+    "seed": 10,
+    "nodes": [
+      "kind-worker",
+      "kind-worker2",
+      "kind-worker3",
+      "kind-worker4",
+      "kind-worker5"
+    ],
+    "node_attribute_key": "evaltier",
+    "node_attribute_value": "eval",
+    "node_location": "eval-loc",
+    "contexts": 10,
+    "conflict_density": 0.05,
+    "tasks": 100,
+    "rate_seconds": 1.0,
+    "sanitize_interval_seconds": 10,
+    "clear_traces_seconds": 0,
+    "task_duration_seconds": 10,
+    "scheduler_backoff_seconds": 1,
+    "mode": "system"
+  },
+  "derived": {
+    "contexts": [
+      "x01",
+      "x02",
+      "x03",
+      "x04",
+      "x05",
+      "x06",
+      "x07",
+      "x08",
+      "x09",
+      "x10"
+    ],
+    "conflict_pairs_effective": 3,
+    "conflict_pairs_max": 45,
+    "conflict_density_effective": 0.0667,
+    "mean_context_degree": 0.6,
+    "replicas": 10
+  },
+  "conventions": {
+    "api_version": "policydriven.unimi.it/v1alpha1",
+    "attribute_prefix": "attribute.node.policydriven.unimi.it",
+    "topology_location_label": "topology.node.policydriven.unimi.it/location",
+    "task_namespace": "compute",
+    "eval_property_name": "evalprop",
+    "eval_geo_group_name": "evalgeo"
+  },
+  "integrity": {
+    "tasks_sha256": {
+      "tasks_r0.csv": "5d7ae2a6e27a9f28d0d58d25ce96e0373d0fee17b45ee3540f6bfbc6b2eabcc0",
+      "tasks_r1.csv": "eee04bff660fcc30ddd6d776eeea3790a6973f42a33357cd0e564d96bf0fc430",
+      "tasks_r2.csv": "9d6f6f1a21d5fe0dfc61e0830cb40d5c534d8f7e5f77cb61455fbbf47b568cee",
+      "tasks_r3.csv": "5d46a523bcf11a8714820a7833546e385c57a3a9a234f3ed51a8ed15fa7f0eb3",
+      "tasks_r4.csv": "cb24902097a05531f5ebac8956a761635b4191f2fc1cf3d854cbfeb0784cc9e1",
+      "tasks_r5.csv": "003dc5513f7c08a65c055428d0ab070c3155e8be7c091b2ad6d565c1793b508a",
+      "tasks_r6.csv": "9b9389e77eeaf4a3256405c1a1175205e579438a95227510578fcc86e106a7db",
+      "tasks_r7.csv": "bf2f1885b375b695d956bbd81d44246fad75038f8564dbd6428174a5e97cab77",
+      "tasks_r8.csv": "96ec2c1f4813201f44f5ba3f1575eb73b43b68863463b6d85b4edda2d49fc311",
+      "tasks_r9.csv": "089bc90e878a78b6e67b3af11a1910d7ee651c05794eb137d0df9076a8a6605c"
+    }
+  },
+  "provenance": {
+    "generated_at": "2026-09-11T22:32:16.584054+00:00",
+    "git_revision": "bcacf27",
+    "generator": "generate.py"
+  }
+}

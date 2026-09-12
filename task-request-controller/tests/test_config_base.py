@@ -19,6 +19,7 @@ from src.config import (
     NODE_PROPERTY_PREFIX_DEFAULT,
     SCHEDULER_NAME_DEFAULT,
     TASK_SIMULATED_DURATION_SECONDS_DEFAULT,
+    TASK_TTL_SECONDS_AFTER_FINISHED_DEFAULT,
 )
 
 
@@ -44,5 +45,6 @@ def make_config() -> Config:
         node_topology_location_label=NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT,
         scheduler_name=SCHEDULER_NAME_DEFAULT,
         task_simulated_duration_seconds=TASK_SIMULATED_DURATION_SECONDS_DEFAULT,
+        task_ttl_seconds_after_finished=TASK_TTL_SECONDS_AFTER_FINISHED_DEFAULT,
         log_level="WARNING",
     )

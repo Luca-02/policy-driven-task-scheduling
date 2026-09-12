@@ -120,7 +120,7 @@ class Scenario:
             "kind-worker2",
             "kind-worker3",
             "kind-worker4",
-            "kind-worker5"
+            "kind-worker5",
         ]
     )
     # The single attribute value pair given to every worker. Chosen so the
@@ -151,6 +151,11 @@ class Scenario:
     clear_traces_seconds: int = 0
     task_duration_seconds: int = 5
     scheduler_backoff_seconds: int = 1
+    # Optional TTL (seconds) after which finished Jobs/Pods are garbage-collected
+    # by Kubernetes. None => not set: the controller default (no TTL) is used.
+    # Useful on long, high-volume runs to stop finished Pods accumulating
+    # against a node's maxPods limit.
+    task_ttl_seconds_after_finished: int | None = None
 
     # Mode: "system" (full pipeline via TaskRequest) or "baseline"
     # (plain Jobs on the default scheduler). Only affects run.py; kept here so
@@ -646,6 +651,7 @@ def scenario_from_args(args: argparse.Namespace) -> Scenario:
         "clear_traces_seconds": args.clear_traces_seconds,
         "task_duration_seconds": args.task_duration_seconds,
         "scheduler_backoff_seconds": args.scheduler_backoff_seconds,
+        "task_ttl_seconds_after_finished": args.task_ttl_seconds_after_finished,
         "mode": args.mode,
     }
     for key, value in overrides.items():
@@ -693,6 +699,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--scheduler-backoff-seconds", type=int, dest="scheduler_backoff_seconds"
+    )
+    parser.add_argument(
+        "--task-ttl-seconds",
+        type=int,
+        dest="task_ttl_seconds_after_finished",
+        help="TTL after which finished Jobs/Pods are garbage-collected "
+        "(default: unset, no TTL)",
     )
     parser.add_argument("--mode", choices=["system", "baseline"])
     parser.add_argument(

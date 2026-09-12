@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from .record import Record, TASKS_CSV_FIELDS, WatchEvent
-from .util import get, is_num, percentile
+from .utils import get, is_num, percentile
 
 NODES_CSV_FIELDS = ["t_recv", "node", "sanitizing", "lambda_size", "lambda"]
 EVENTS_CSV_FIELDS = ["t_recv", "kind", "type", "name", "detail"]

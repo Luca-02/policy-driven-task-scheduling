@@ -158,18 +158,15 @@ def block_fraction_by_cause(tasks):
     Returns a DataFrame indexed by ``point`` with a column per cause
     (none/wall/taint/mixed/other), values in [0, 1].
     """
+    # Pivot to one row per (point, replica) with a column per cause, filling
+    # causes absent in a replica with 0 BEFORE averaging across replicas.
+    # Averaging only over the replicas where a cause appears would inflate it
+    # and let the per-point fractions sum to more than 1.
     per_replica = (
-        tasks.groupby(["point", "replica", "block_cause"]).size().reset_index(name="n")
+        tasks.groupby(["point", "replica", "block_cause"]).size().unstack(fill_value=0)
     )
-    totals = tasks.groupby(["point", "replica"]).size().reset_index(name="total")
-    merged = per_replica.merge(totals, on=["point", "replica"])
-    merged["frac"] = merged["n"] / merged["total"]
-    pivot = (
-        merged.groupby(["point", "block_cause"])["frac"]
-        .mean()
-        .unstack(fill_value=0.0)
-        .sort_index()
-    )
+    per_replica = per_replica.div(per_replica.sum(axis=1), axis=0)
+    pivot = per_replica.groupby(level="point").mean().sort_index()
     return pivot
 
 

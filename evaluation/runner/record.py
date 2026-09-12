@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .util import NAN, is_num, rnd
+from .utils import NAN, is_num, rnd
 
 
 @dataclass

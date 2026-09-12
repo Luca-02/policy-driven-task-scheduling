@@ -1,0 +1,328 @@
+t_recv,node,sanitizing,lambda_size,lambda
+0.021,kind-control-plane,False,0,[]
+0.0227,kind-worker,False,0,[]
+0.0238,kind-worker2,False,0,[]
+0.0252,kind-worker3,False,0,[]
+0.0267,kind-worker4,False,0,[]
+0.0279,kind-worker5,False,0,[]
+0.0821,kind-worker5,False,1,"[""x08""]"
+0.0961,kind-worker5,False,1,"[""x08""]"
+1.0743,kind-worker,False,1,"[""x05""]"
+1.0838,kind-worker,False,1,"[""x05""]"
+2.0637,kind-worker,False,2,"[""x05"", ""x09""]"
+2.073,kind-worker,False,2,"[""x05"", ""x09""]"
+3.0721,kind-worker2,False,1,"[""x06""]"
+3.0802,kind-worker2,False,1,"[""x06""]"
+3.5872,kind-worker5,True,1,"[""x08""]"
+3.5996,kind-worker5,True,1,"[""x08""]"
+4.0733,kind-worker2,False,2,"[""x03"", ""x06""]"
+4.0834,kind-worker2,False,2,"[""x03"", ""x06""]"
+5.0682,kind-worker2,False,3,"[""x03"", ""x06"", ""x07""]"
+5.0787,kind-worker2,False,3,"[""x03"", ""x06"", ""x07""]"
+6.0656,kind-worker,False,3,"[""x01"", ""x05"", ""x09""]"
+6.0758,kind-worker,False,3,"[""x01"", ""x05"", ""x09""]"
+6.6779,kind-worker,True,3,"[""x01"", ""x05"", ""x09""]"
+6.6916,kind-worker,True,3,"[""x01"", ""x05"", ""x09""]"
+7.0632,kind-worker4,False,1,"[""x06""]"
+7.0742,kind-worker4,False,1,"[""x06""]"
+8.0665,kind-worker4,False,2,"[""x06"", ""x08""]"
+8.0767,kind-worker4,False,2,"[""x06"", ""x08""]"
+9.0771,kind-worker2,False,4,"[""x03"", ""x05"", ""x06"", ""x07""]"
+9.0869,kind-worker2,False,4,"[""x03"", ""x05"", ""x06"", ""x07""]"
+10.0667,kind-worker2,False,5,"[""x03"", ""x05"", ""x06"", ""x07"", ""x08""]"
+10.0775,kind-worker2,False,5,"[""x03"", ""x05"", ""x06"", ""x07"", ""x08""]"
+10.3665,kind-worker2,True,5,"[""x03"", ""x05"", ""x06"", ""x07"", ""x08""]"
+10.3806,kind-worker2,True,5,"[""x03"", ""x05"", ""x06"", ""x07"", ""x08""]"
+10.8893,kind-worker4,True,2,"[""x06"", ""x08""]"
+10.9019,kind-worker4,True,2,"[""x06"", ""x08""]"
+11.0688,kind-worker3,False,1,"[""x10""]"
+11.0779,kind-worker3,False,1,"[""x10""]"
+12.0575,kind-worker3,False,2,"[""x04"", ""x10""]"
+12.0673,kind-worker3,False,2,"[""x04"", ""x10""]"
+13.0541,kind-worker3,False,3,"[""x04"", ""x09"", ""x10""]"
+13.0624,kind-worker3,False,3,"[""x04"", ""x09"", ""x10""]"
+13.6411,kind-worker5,True,0,[]
+13.6543,kind-worker5,False,0,[]
+13.6626,kind-worker5,False,0,[]
+13.6728,kind-worker5,False,0,[]
+14.0688,kind-worker5,False,1,"[""x01""]"
+14.0806,kind-worker5,False,1,"[""x01""]"
+15.0627,kind-worker5,False,2,"[""x01"", ""x10""]"
+15.072,kind-worker5,False,2,"[""x01"", ""x10""]"
+16.0671,kind-worker5,False,3,"[""x01"", ""x03"", ""x10""]"
+16.0775,kind-worker5,False,3,"[""x01"", ""x03"", ""x10""]"
+17.0691,kind-worker5,False,4,"[""x01"", ""x03"", ""x08"", ""x10""]"
+17.0793,kind-worker5,False,4,"[""x01"", ""x03"", ""x08"", ""x10""]"
+17.0913,kind-worker3,True,3,"[""x04"", ""x09"", ""x10""]"
+17.103,kind-worker3,True,3,"[""x04"", ""x09"", ""x10""]"
+18.0651,kind-worker5,False,5,"[""x01"", ""x03"", ""x06"", ""x08"", ""x10""]"
+18.077,kind-worker5,False,5,"[""x01"", ""x03"", ""x06"", ""x08"", ""x10""]"
+20.9634,kind-worker4,True,0,[]
+21.039,kind-worker4,True,0,[]
+21.0497,kind-worker4,False,0,[]
+21.0627,kind-worker5,False,6,"[""x01"", ""x03"", ""x04"", ""x06"", ""x08"", ""x10""]"
+21.0639,kind-worker4,False,0,[]
+21.0717,kind-worker5,False,6,"[""x01"", ""x03"", ""x04"", ""x06"", ""x08"", ""x10""]"
+22.0616,kind-worker4,False,1,"[""x01""]"
+22.0727,kind-worker4,False,1,"[""x01""]"
+23.0621,kind-worker4,False,2,"[""x01"", ""x10""]"
+23.072,kind-worker4,False,2,"[""x01"", ""x10""]"
+23.6713,kind-worker5,True,6,"[""x01"", ""x03"", ""x04"", ""x06"", ""x08"", ""x10""]"
+23.6825,kind-worker5,True,6,"[""x01"", ""x03"", ""x04"", ""x06"", ""x08"", ""x10""]"
+24.0633,kind-worker4,False,3,"[""x01"", ""x04"", ""x10""]"
+24.0733,kind-worker4,False,3,"[""x01"", ""x04"", ""x10""]"
+25.0682,kind-worker4,False,4,"[""x01"", ""x02"", ""x04"", ""x10""]"
+25.0793,kind-worker4,False,4,"[""x01"", ""x02"", ""x04"", ""x10""]"
+26.0992,kind-worker4,False,5,"[""x01"", ""x02"", ""x04"", ""x09"", ""x10""]"
+26.1105,kind-worker4,False,5,"[""x01"", ""x02"", ""x04"", ""x09"", ""x10""]"
+26.8445,kind-worker,True,0,[]
+26.8589,kind-worker,False,0,[]
+26.866,kind-worker,False,0,[]
+26.876,kind-worker,False,0,[]
+27.0717,kind-worker,False,1,"[""x06""]"
+27.0834,kind-worker,False,1,"[""x06""]"
+27.2444,kind-worker3,True,0,[]
+27.2597,kind-worker3,True,0,[]
+27.2688,kind-worker3,False,0,[]
+27.2819,kind-worker3,False,0,[]
+28.083,kind-worker,False,2,"[""x06"", ""x07""]"
+28.0952,kind-worker,False,2,"[""x06"", ""x07""]"
+29.0742,kind-worker,False,3,"[""x02"", ""x06"", ""x07""]"
+29.0853,kind-worker,False,3,"[""x02"", ""x06"", ""x07""]"
+30.0702,kind-worker,False,4,"[""x01"", ""x02"", ""x06"", ""x07""]"
+30.0799,kind-worker,False,4,"[""x01"", ""x02"", ""x06"", ""x07""]"
+30.4997,kind-worker2,True,0,[]
+30.5408,kind-worker2,True,0,[]
+30.5516,kind-worker2,False,0,[]
+30.5634,kind-worker2,False,0,[]
+31.0642,kind-worker2,False,1,"[""x01""]"
+31.0683,kind-worker4,True,5,"[""x01"", ""x02"", ""x04"", ""x09"", ""x10""]"
+31.0738,kind-worker2,False,1,"[""x01""]"
+31.0882,kind-worker4,True,5,"[""x01"", ""x02"", ""x04"", ""x09"", ""x10""]"
+32.0562,kind-worker2,False,2,"[""x01"", ""x09""]"
+32.0657,kind-worker2,False,2,"[""x01"", ""x09""]"
+33.0821,kind-worker2,False,3,"[""x01"", ""x04"", ""x09""]"
+33.0921,kind-worker2,False,3,"[""x01"", ""x04"", ""x09""]"
+33.9414,kind-worker5,True,0,[]
+33.9538,kind-worker5,False,0,[]
+33.9631,kind-worker5,False,0,[]
+34.0355,kind-worker5,False,0,[]
+34.0743,kind-worker5,False,1,"[""x02""]"
+34.0842,kind-worker5,False,1,"[""x02""]"
+35.0649,kind-worker5,False,2,"[""x02"", ""x07""]"
+35.076,kind-worker5,False,2,"[""x02"", ""x07""]"
+36.0645,kind-worker5,False,3,"[""x02"", ""x07"", ""x08""]"
+36.074,kind-worker5,False,3,"[""x02"", ""x07"", ""x08""]"
+36.8797,kind-worker,True,4,"[""x01"", ""x02"", ""x06"", ""x07""]"
+36.8927,kind-worker,True,4,"[""x01"", ""x02"", ""x06"", ""x07""]"
+38.0684,kind-worker2,False,4,"[""x01"", ""x04"", ""x07"", ""x09""]"
+38.0782,kind-worker2,False,4,"[""x01"", ""x04"", ""x07"", ""x09""]"
+39.0645,kind-worker2,False,5,"[""x01"", ""x03"", ""x04"", ""x07"", ""x09""]"
+39.075,kind-worker2,False,5,"[""x01"", ""x03"", ""x04"", ""x07"", ""x09""]"
+40.0638,kind-worker5,False,4,"[""x02"", ""x07"", ""x08"", ""x09""]"
+40.0735,kind-worker5,False,4,"[""x02"", ""x07"", ""x08"", ""x09""]"
+40.5734,kind-worker2,True,5,"[""x01"", ""x03"", ""x04"", ""x07"", ""x09""]"
+40.5857,kind-worker2,True,5,"[""x01"", ""x03"", ""x04"", ""x07"", ""x09""]"
+41.0672,kind-worker5,False,5,"[""x02"", ""x06"", ""x07"", ""x08"", ""x09""]"
+41.0775,kind-worker5,False,5,"[""x02"", ""x06"", ""x07"", ""x08"", ""x09""]"
+41.2387,kind-worker4,True,0,[]
+41.2502,kind-worker4,True,0,[]
+41.2583,kind-worker4,False,0,[]
+41.271,kind-worker4,False,0,[]
+42.0846,kind-worker4,False,1,"[""x10""]"
+42.0939,kind-worker4,False,1,"[""x10""]"
+43.0684,kind-worker4,False,2,"[""x09"", ""x10""]"
+43.0788,kind-worker4,False,2,"[""x09"", ""x10""]"
+43.9727,kind-worker5,True,5,"[""x02"", ""x06"", ""x07"", ""x08"", ""x09""]"
+43.9848,kind-worker5,True,5,"[""x02"", ""x06"", ""x07"", ""x08"", ""x09""]"
+44.0609,kind-worker4,False,3,"[""x03"", ""x09"", ""x10""]"
+44.1402,kind-worker4,False,3,"[""x03"", ""x09"", ""x10""]"
+45.0642,kind-worker4,False,4,"[""x01"", ""x03"", ""x09"", ""x10""]"
+45.0735,kind-worker4,False,4,"[""x01"", ""x03"", ""x09"", ""x10""]"
+46.0715,kind-worker3,False,1,"[""x09""]"
+46.0813,kind-worker3,False,1,"[""x09""]"
+47.0396,kind-worker,True,0,[]
+47.0535,kind-worker,False,0,[]
+47.0647,kind-worker,False,0,[]
+47.0743,kind-worker3,False,2,"[""x03"", ""x09""]"
+47.1409,kind-worker,False,0,[]
+47.1421,kind-worker3,False,2,"[""x03"", ""x09""]"
+47.2962,kind-worker3,True,2,"[""x03"", ""x09""]"
+47.3083,kind-worker3,True,2,"[""x03"", ""x09""]"
+48.0727,kind-worker,False,1,"[""x09""]"
+48.0835,kind-worker,False,1,"[""x09""]"
+49.0736,kind-worker,False,2,"[""x02"", ""x09""]"
+49.0833,kind-worker,False,2,"[""x02"", ""x09""]"
+50.0686,kind-worker,False,3,"[""x02"", ""x07"", ""x09""]"
+50.0788,kind-worker,False,3,"[""x02"", ""x07"", ""x09""]"
+51.0597,kind-worker,False,4,"[""x02"", ""x07"", ""x09"", ""x10""]"
+51.0702,kind-worker,False,4,"[""x02"", ""x07"", ""x09"", ""x10""]"
+51.2782,kind-worker4,True,4,"[""x01"", ""x03"", ""x09"", ""x10""]"
+51.2913,kind-worker4,True,4,"[""x01"", ""x03"", ""x09"", ""x10""]"
+54.0585,kind-worker,False,5,"[""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+54.0663,kind-worker,False,5,"[""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+54.2515,kind-worker5,True,0,[]
+54.2624,kind-worker5,True,0,[]
+54.3344,kind-worker5,False,0,[]
+54.3459,kind-worker5,False,0,[]
+55.072,kind-worker5,False,1,"[""x08""]"
+55.0819,kind-worker5,False,1,"[""x08""]"
+56.0602,kind-worker5,False,2,"[""x08"", ""x10""]"
+56.0701,kind-worker5,False,2,"[""x08"", ""x10""]"
+57.0626,kind-worker5,False,3,"[""x07"", ""x08"", ""x10""]"
+57.0756,kind-worker5,False,3,"[""x07"", ""x08"", ""x10""]"
+57.078,kind-worker,True,5,"[""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+57.09,kind-worker,True,5,"[""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+58.0604,kind-worker5,False,4,"[""x07"", ""x08"", ""x09"", ""x10""]"
+58.0692,kind-worker5,False,4,"[""x07"", ""x08"", ""x09"", ""x10""]"
+59.0617,kind-worker5,False,5,"[""x01"", ""x07"", ""x08"", ""x09"", ""x10""]"
+59.0724,kind-worker5,False,5,"[""x01"", ""x07"", ""x08"", ""x09"", ""x10""]"
+60.0184,kind-control-plane,False,0,[]
+60.0231,kind-worker,True,5,"[""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+60.0254,kind-worker2,True,5,"[""x01"", ""x03"", ""x04"", ""x07"", ""x09""]"
+60.0289,kind-worker3,True,2,"[""x03"", ""x09""]"
+60.0323,kind-worker4,True,4,"[""x01"", ""x03"", ""x09"", ""x10""]"
+60.0372,kind-worker5,False,5,"[""x01"", ""x07"", ""x08"", ""x09"", ""x10""]"
+60.0677,kind-worker5,False,6,"[""x01"", ""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+60.0799,kind-worker5,False,6,"[""x01"", ""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+60.8408,kind-worker2,True,0,[]
+60.852,kind-worker2,True,0,[]
+60.8608,kind-worker2,False,0,[]
+60.8715,kind-worker2,False,0,[]
+61.0665,kind-worker2,False,1,"[""x04""]"
+61.0803,kind-worker2,False,1,"[""x04""]"
+61.4594,kind-worker4,True,0,[]
+61.4711,kind-worker4,False,0,[]
+61.4882,kind-worker4,False,0,[]
+61.5378,kind-worker4,False,0,[]
+62.0819,kind-worker2,False,2,"[""x04"", ""x05""]"
+62.095,kind-worker2,False,2,"[""x04"", ""x05""]"
+63.068,kind-worker4,False,1,"[""x06""]"
+63.0808,kind-worker4,False,1,"[""x06""]"
+64.0698,kind-worker2,False,3,"[""x04"", ""x05"", ""x06""]"
+64.0817,kind-worker2,False,3,"[""x04"", ""x05"", ""x06""]"
+64.3565,kind-worker5,True,6,"[""x01"", ""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+64.3709,kind-worker5,True,6,"[""x01"", ""x02"", ""x07"", ""x08"", ""x09"", ""x10""]"
+65.0633,kind-worker4,False,2,"[""x06"", ""x07""]"
+65.0845,kind-worker4,False,2,"[""x06"", ""x07""]"
+67.0641,kind-worker4,False,3,"[""x02"", ""x06"", ""x07""]"
+67.0747,kind-worker4,False,3,"[""x02"", ""x06"", ""x07""]"
+67.347,kind-worker,True,0,[]
+67.3588,kind-worker,True,0,[]
+67.3674,kind-worker,False,0,[]
+67.5464,kind-worker,False,0,[]
+67.6512,kind-worker3,True,0,[]
+67.737,kind-worker3,True,0,[]
+67.7474,kind-worker3,False,0,[]
+67.7583,kind-worker3,False,0,[]
+68.0635,kind-worker,False,1,"[""x05""]"
+68.0749,kind-worker,False,1,"[""x05""]"
+69.0734,kind-worker,False,2,"[""x04"", ""x05""]"
+69.0853,kind-worker,False,2,"[""x04"", ""x05""]"
+70.0705,kind-worker,False,3,"[""x04"", ""x05"", ""x06""]"
+70.0819,kind-worker,False,3,"[""x04"", ""x05"", ""x06""]"
+70.878,kind-worker2,True,3,"[""x04"", ""x05"", ""x06""]"
+70.8891,kind-worker4,False,3,"[""x02"", ""x06"", ""x07""]"
+70.8909,kind-worker2,True,3,"[""x04"", ""x05"", ""x06""]"
+71.4943,kind-worker4,True,3,"[""x02"", ""x06"", ""x07""]"
+71.5068,kind-worker4,True,3,"[""x02"", ""x06"", ""x07""]"
+73.0634,kind-worker3,False,1,"[""x09""]"
+73.0733,kind-worker3,False,1,"[""x09""]"
+74.1069,kind-worker3,False,2,"[""x09"", ""x10""]"
+74.1169,kind-worker3,False,2,"[""x09"", ""x10""]"
+74.745,kind-worker5,True,0,[]
+74.7582,kind-worker5,False,0,[]
+74.768,kind-worker5,False,0,[]
+74.7786,kind-worker5,False,0,[]
+75.0639,kind-worker5,False,1,"[""x09""]"
+75.072,kind-worker5,False,1,"[""x09""]"
+76.0687,kind-worker5,False,2,"[""x03"", ""x09""]"
+76.0784,kind-worker5,False,2,"[""x03"", ""x09""]"
+77.0751,kind-worker5,False,3,"[""x01"", ""x03"", ""x09""]"
+77.0843,kind-worker5,False,3,"[""x01"", ""x03"", ""x09""]"
+77.5516,kind-worker,True,3,"[""x04"", ""x05"", ""x06""]"
+77.5653,kind-worker,True,3,"[""x04"", ""x05"", ""x06""]"
+77.776,kind-worker3,True,2,"[""x09"", ""x10""]"
+77.7911,kind-worker3,True,2,"[""x09"", ""x10""]"
+78.0528,kind-worker5,False,4,"[""x01"", ""x03"", ""x07"", ""x09""]"
+78.0619,kind-worker5,False,4,"[""x01"", ""x03"", ""x07"", ""x09""]"
+81.1546,kind-worker2,True,0,[]
+81.2555,kind-worker2,True,0,[]
+81.2641,kind-worker2,False,0,[]
+81.2744,kind-worker2,False,0,[]
+81.7658,kind-worker4,True,0,[]
+81.7794,kind-worker4,True,0,[]
+81.8363,kind-worker4,False,0,[]
+81.848,kind-worker4,False,0,[]
+82.0728,kind-worker2,False,1,"[""x01""]"
+82.082,kind-worker2,False,1,"[""x01""]"
+83.0768,kind-worker2,False,2,"[""x01"", ""x04""]"
+83.0871,kind-worker2,False,2,"[""x01"", ""x04""]"
+84.0956,kind-worker4,False,1,"[""x07""]"
+84.1054,kind-worker4,False,1,"[""x07""]"
+84.7775,kind-worker5,True,4,"[""x01"", ""x03"", ""x07"", ""x09""]"
+84.7931,kind-worker5,True,4,"[""x01"", ""x03"", ""x07"", ""x09""]"
+86.0623,kind-worker2,False,3,"[""x01"", ""x04"", ""x07""]"
+86.0736,kind-worker2,False,3,"[""x01"", ""x04"", ""x07""]"
+87.9349,kind-worker,True,0,[]
+87.9516,kind-worker,False,0,[]
+87.9609,kind-worker,False,0,[]
+88.0502,kind-worker,False,0,[]
+88.0668,kind-worker,False,1,"[""x10""]"
+88.1507,kind-worker,False,1,"[""x10""]"
+88.2564,kind-worker3,True,0,[]
+88.2704,kind-worker3,True,0,[]
+88.3342,kind-worker3,False,0,[]
+88.3482,kind-worker3,False,0,[]
+89.0993,kind-worker,False,2,"[""x02"", ""x10""]"
+89.109,kind-worker,False,2,"[""x02"", ""x10""]"
+90.0652,kind-worker,False,3,"[""x02"", ""x09"", ""x10""]"
+90.0762,kind-worker,False,3,"[""x02"", ""x09"", ""x10""]"
+91.0637,kind-worker,False,4,"[""x02"", ""x04"", ""x09"", ""x10""]"
+91.0735,kind-worker,False,4,"[""x02"", ""x04"", ""x09"", ""x10""]"
+91.2861,kind-worker2,True,3,"[""x01"", ""x04"", ""x07""]"
+91.2994,kind-worker2,True,3,"[""x01"", ""x04"", ""x07""]"
+91.86,kind-worker4,True,1,"[""x07""]"
+91.8715,kind-worker4,True,1,"[""x07""]"
+92.0659,kind-worker,False,5,"[""x02"", ""x03"", ""x04"", ""x09"", ""x10""]"
+92.0751,kind-worker,False,5,"[""x02"", ""x03"", ""x04"", ""x09"", ""x10""]"
+93.0615,kind-worker3,False,1,"[""x02""]"
+93.0705,kind-worker3,False,1,"[""x02""]"
+94.0748,kind-worker3,False,2,"[""x02"", ""x05""]"
+94.0837,kind-worker3,False,2,"[""x02"", ""x05""]"
+95.0588,kind-worker,False,6,"[""x01"", ""x02"", ""x03"", ""x04"", ""x09"", ""x10""]"
+95.0684,kind-worker,False,6,"[""x01"", ""x02"", ""x03"", ""x04"", ""x09"", ""x10""]"
+95.3416,kind-worker5,True,0,[]
+95.3546,kind-worker5,False,0,[]
+95.364,kind-worker5,False,0,[]
+95.4353,kind-worker5,False,0,[]
+96.0706,kind-worker5,False,1,"[""x07""]"
+96.0787,kind-worker5,False,1,"[""x07""]"
+97.0852,kind-worker5,False,2,"[""x05"", ""x07""]"
+97.0955,kind-worker5,False,2,"[""x05"", ""x07""]"
+98.0694,kind-worker5,False,3,"[""x05"", ""x07"", ""x08""]"
+98.08,kind-worker5,False,3,"[""x05"", ""x07"", ""x08""]"
+98.2531,kind-worker,True,6,"[""x01"", ""x02"", ""x03"", ""x04"", ""x09"", ""x10""]"
+98.2673,kind-worker,True,6,"[""x01"", ""x02"", ""x03"", ""x04"", ""x09"", ""x10""]"
+98.536,kind-worker3,True,2,"[""x02"", ""x05""]"
+98.5481,kind-worker3,True,2,"[""x02"", ""x05""]"
+99.0608,kind-worker5,False,4,"[""x05"", ""x06"", ""x07"", ""x08""]"
+99.0708,kind-worker5,False,4,"[""x05"", ""x06"", ""x07"", ""x08""]"
+101.7352,kind-worker2,True,0,[]
+101.7484,kind-worker2,False,0,[]
+101.7584,kind-worker2,False,0,[]
+101.7746,kind-worker2,False,0,[]
+102.0434,kind-worker4,True,0,[]
+102.0556,kind-worker4,False,0,[]
+102.0646,kind-worker4,False,0,[]
+102.1343,kind-worker4,False,0,[]
+105.3745,kind-worker5,True,4,"[""x05"", ""x06"", ""x07"", ""x08""]"
+105.3877,kind-worker5,True,4,"[""x05"", ""x06"", ""x07"", ""x08""]"
+108.748,kind-worker,True,0,[]
+108.8379,kind-worker,True,0,[]
+108.9346,kind-worker,False,0,[]
+109.0449,kind-worker3,True,0,[]
+109.0464,kind-worker,False,0,[]
+109.0585,kind-worker3,False,0,[]
+109.0665,kind-worker3,False,0,[]
+109.1362,kind-worker3,False,0,[]

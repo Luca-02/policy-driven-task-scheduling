@@ -163,6 +163,7 @@ class JobBuilder:
         """
         return client.V1JobSpec(
             backoff_limit=0,
+            ttl_seconds_after_finished=self._config.task_ttl_seconds_after_finished,
             template=client.V1PodTemplateSpec(
                 metadata=client.V1ObjectMeta(
                     annotations=self._scheduling_annotations(),

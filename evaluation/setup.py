@@ -72,6 +72,11 @@ SERVICE_HTTPS_PORT = int(os.getenv("SERVICE_HTTPS_PORT", "443"))
 ENV_SANITIZE_INTERVAL = "SANITIZE_INTERVAL_SECONDS"
 ENV_CLEAR_TRACES = "CLEAR_TRACES_SIMULATION_SECONDS"
 ENV_TASK_DURATION = "TASK_SIMULATED_DURATION_SECONDS"
+# Optional: TTL after which finished Jobs/Pods are garbage-collected, to keep
+# the cluster light on long high-volume runs. Applied only when the scenario
+# sets task_ttl_seconds_after_finished; otherwise the controller default (no
+# TTL, field omitted) is left untouched.
+ENV_TASK_TTL = "TASK_TTL_SECONDS_AFTER_FINISHED"
 # The node-controller only registers kopf on.update handlers for nodes and
 # node-properties when DEBUG_MODE is true (in production it treats metadata as
 # immutable to avoid a TOCTOU race). The evaluation must relabel nodes between
@@ -471,14 +476,18 @@ def set_controller_env(loaded: Loaded) -> None:
         f"{ENV_DEBUG_MODE}=true",
     )
 
-    log("env", f"task-request-controller: {ENV_TASK_DURATION}={task_duration}")
+    trc_env = [f"{ENV_TASK_DURATION}={task_duration}"]
+    ttl = scenario.get("task_ttl_seconds_after_finished")
+    trc_env.append(f"{ENV_TASK_TTL}={ttl if ttl is not None else ''}")
+
+    log("env", f"task-request-controller: {' '.join(trc_env)}")
     kubectl(
         "set",
         "env",
         "-n",
         TRC_NS,
         f"deployment/{TRC_DEPLOY}",
-        f"{ENV_TASK_DURATION}={task_duration}",
+        *trc_env,
     )
 
     _rollout_status(NODE_CONTROLLER_NS, NODE_CONTROLLER_DEPLOY)

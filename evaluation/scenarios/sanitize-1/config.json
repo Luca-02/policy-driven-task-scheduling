@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "sanitize-1",
-    "seed": 11,
+    "seed": 42,
     "nodes": [
       "kind-worker",
       "kind-worker2",
@@ -14,12 +14,13 @@
     "node_location": "eval-loc",
     "contexts": 10,
     "conflict_density": 0.5,
-    "tasks": 100,
+    "tasks": 200,
     "rate_seconds": 1.0,
     "sanitize_interval_seconds": 1,
     "clear_traces_seconds": 0,
     "task_duration_seconds": 10,
     "scheduler_backoff_seconds": 1,
+    "task_ttl_seconds_after_finished": 30,
     "mode": "system"
   },
   "derived": {
@@ -39,7 +40,7 @@
     "conflict_pairs_max": 45,
     "conflict_density_effective": 0.5111,
     "mean_context_degree": 4.6,
-    "replicas": 5
+    "replicas": 8
   },
   "conventions": {
     "api_version": "policydriven.unimi.it/v1alpha1",
@@ -51,16 +52,19 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks_r0.csv": "b2a16e3c889400d79d2eb6d2b1e98b9aca437f41450f06354c90dbaba837ab3b",
-      "tasks_r1.csv": "c8cb8e4d4d42594643274c1711521a85d2164f9a9c827b173e317cdd84418be1",
-      "tasks_r2.csv": "f7b1fbad9f2ec2b801808bbe82882f3f9c790435cb1db3bd9187234904e5a860",
-      "tasks_r3.csv": "0394d6a1b86e9c3a830cefd1833db8f9c2ea4423429fb29472923db30c2407ee",
-      "tasks_r4.csv": "11e14bc8d33fb71da89beca525f707c90a1b4eb0a104c84d4c023157125bacf9"
+      "tasks_r0.csv": "70f6f421456da391bfa3f0756406baad565b47e675110b32c98c98eaad0157b3",
+      "tasks_r1.csv": "7d53971f2e44629b706dbd523c5c56d8e127102ca3bfe8c5991722b4b2c556eb",
+      "tasks_r2.csv": "b074c863e2fcdba5ab59d521da4866449d2e91b0cdda16886ea15e56c10030de",
+      "tasks_r3.csv": "3594a9e6ed753acb9cee12fd171a3e08f9113ed6781ed4086674dede9d0047f9",
+      "tasks_r4.csv": "7d77654d0c9c4c321fd3919e01c68e61b5983a49e8514b8dfdd405c29a64c27a",
+      "tasks_r5.csv": "eb2323ca80268b6d88770906ea30caa9c6d0ca68405adc47db72fd7710fe238b",
+      "tasks_r6.csv": "8ed65c4c46a0ccfa123dae3a89958a0c511070d53e36843d66d7b0829b47cf6e",
+      "tasks_r7.csv": "d73e07b5918d12a9fd6d54b2b2207a4cd5522133334311ff708ac4e7e83d3976"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-11T01:09:08.752283+00:00",
-    "git_revision": "dbbf4e7",
+    "generated_at": "2026-09-12T01:18:43.118302+00:00",
+    "git_revision": "bcacf27",
     "generator": "generate.py"
   }
 }

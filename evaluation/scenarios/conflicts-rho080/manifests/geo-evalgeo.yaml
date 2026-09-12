@@ -1,0 +1,7 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: GeographicalGroup
+metadata:
+  name: evalgeo
+spec:
+  locations:
+    - eval-loc

@@ -19,6 +19,22 @@ SCHEDULER_NAME_DEFAULT = "policy-driven-scheduler"
 NODE_TOPOLOGY_LOCATION_LABEL_DEFAULT = f"topology.node.{GROUP_DEFAULT}/location"
 DATASET_SERVICE_URL_DEFAULT = "https://127.0.0.1:8443"
 TASK_SIMULATED_DURATION_SECONDS_DEFAULT = 5
+TASK_TTL_SECONDS_AFTER_FINISHED_DEFAULT = None
+
+
+def _optional_int(raw: str | None, default: int | None) -> int | None:
+    """Parse an optional integer env var.
+
+    An unset or empty value yields the default (typically None, meaning the
+    corresponding field is omitted). A non-integer value also falls back to the
+    default rather than crashing the controller at startup.
+    """
+    if raw is None or raw == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
 
 
 class Config:
@@ -44,6 +60,7 @@ class Config:
         node_topology_location_label: str,
         scheduler_name: str,
         task_simulated_duration_seconds: int,
+        task_ttl_seconds_after_finished: int | None,
         dataset_service_url: str,
         dataset_service_ca_file: str | None,
         log_level: str,
@@ -66,6 +83,7 @@ class Config:
         self.node_topology_location_label = node_topology_location_label
         self.scheduler_name = scheduler_name
         self.task_simulated_duration_seconds = task_simulated_duration_seconds
+        self.task_ttl_seconds_after_finished = task_ttl_seconds_after_finished
         self.dataset_service_url = dataset_service_url
         self.dataset_service_ca_file = dataset_service_ca_file
         self.log_level = log_level
@@ -118,6 +136,10 @@ class Config:
                     "TASK_SIMULATED_DURATION_SECONDS",
                     TASK_SIMULATED_DURATION_SECONDS_DEFAULT,
                 )
+            ),
+            task_ttl_seconds_after_finished=_optional_int(
+                os.getenv("TASK_TTL_SECONDS_AFTER_FINISHED"),
+                TASK_TTL_SECONDS_AFTER_FINISHED_DEFAULT,
             ),
             dataset_service_url=os.getenv(
                 "DATASET_SERVICE_URL", DATASET_SERVICE_URL_DEFAULT

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 #
-# sanitize_sweep.sh — Run the "Impatto della sanificazione" experiment (5.4).
-#
 # Fixed across all points: K contexts, conflict density, task count/rate, nodes,
 # task duration. The ONLY independent variable is SANITIZE_INTERVAL_SECONDS.
 # This isolates the interval's effect, as the methodology requires.
@@ -10,12 +8,12 @@
 #   bash experiments/sanitize_sweep.sh
 #
 # Override any knob via environment variables, e.g.:
-#   REPLICAS=5 INTERVALS="1 2 3 5 10 20 30 45" bash experiments/sanitize_sweep.sh
-#
+#   DENSITY="0.5" INTERVALS="1 2 3 5 10 20 30 45" REPLICAS=5 bash experiments/sanitize_sweep.sh
+
 set -euo pipefail
 
 # --- Fixed scenario parameters (same for every point in the sweep) ---------- #
-SEED="${SEED:-10}"
+SEED="${SEED:-42}"
 CONTEXTS="${CONTEXTS:-10}"
 DENSITY="${DENSITY:-0.5}"
 TASKS="${TASKS:-30}"
@@ -23,6 +21,7 @@ RATE="${RATE:-1.0}"
 TASK_DURATION="${TASK_DURATION:-10}"
 NODES="${NODES:-kind-worker kind-worker2 kind-worker3 kind-worker4 kind-worker5}"
 REPLICAS="${REPLICAS:-5}"
+TASK_TTL="${TASK_TTL:-}"
 
 # --- Independent variable: the interval grid --------------------------------- #
 INTERVALS="${INTERVALS:-1 2 3 5 10 20 30 45}"
@@ -62,10 +61,15 @@ EOF
 
 echo "=== sanitize-interval sweep ==="
 echo "K=$CONTEXTS rho=$DENSITY N=$TASKS rate=${RATE}s duration=${TASK_DURATION}s replicas=$REPLICAS"
-echo "intervals: $INTERVALS"
+echo "intervals: $INTERVALS | task_ttl: ${TASK_TTL:-none}"
 echo
 
 prepull_image
+
+TTL_FLAG=()
+if [[ -n "$TASK_TTL" ]]; then
+    TTL_FLAG=(--task-ttl-seconds "$TASK_TTL")
+fi
 
 for interval in $INTERVALS; do
     name="sanitize-${interval}"
@@ -82,6 +86,7 @@ for interval in $INTERVALS; do
         --task-duration-seconds "$TASK_DURATION" \
         --nodes $NODES \
         --replicas "$REPLICAS" \
+        "${TTL_FLAG[@]+"${TTL_FLAG[@]}"}" \
         --out scenarios
 
     # setup.py restarts the node-controller with this interval; done once per
