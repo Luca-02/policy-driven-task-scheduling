@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "sanitize-20",
-    "seed": 10,
+    "seed": 1234,
     "nodes": [
       "kind-worker",
       "kind-worker2",
@@ -14,12 +14,13 @@
     "node_location": "eval-loc",
     "contexts": 10,
     "conflict_density": 0.5,
-    "tasks": 100,
+    "tasks": 200,
     "rate_seconds": 1.0,
     "sanitize_interval_seconds": 20,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 10,
+    "task_duration_seconds": 20,
     "scheduler_backoff_seconds": 1,
+    "task_ttl_seconds_after_finished": 30,
     "mode": "system"
   },
   "derived": {
@@ -51,16 +52,16 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks_r0.csv": "d75931fc5ce58aa3ebcbac611529b91f0a739b54f449b75d691f418b98dc360d",
-      "tasks_r1.csv": "71cf376719125262de9d0aa622d199169999a47d92d41eedfb5309cc241c8200",
-      "tasks_r2.csv": "7ffc16baf0dfe21e3a1ba765269dc48c0c08f3b781b0cd8f82d6a913673350cd",
-      "tasks_r3.csv": "89f40999b5785956b1f01b3f45c4aeac9610d5734f538a44f713ac28b28c1846",
-      "tasks_r4.csv": "ee7d7ef4fd807aa1d60347fd8fd65cde4e9afd575f48f293f734688200f7d7bd"
+      "tasks_r0.csv": "82a510434717ede3a712b55f1191581fa37d0fca3e8f7b603e0d547639ee71d7",
+      "tasks_r1.csv": "545913ae856541c6d483296cca84b79e71703b48e32840279f81334e14b00266",
+      "tasks_r2.csv": "05addac9a6be6346c6ab99305c8cf6d6e11e37c6c410fd9de42878c577925f2f",
+      "tasks_r3.csv": "80df37fbb1c9d584816c53d04b155a8214654371c83bf8ceea7854aea4242c13",
+      "tasks_r4.csv": "982fd9a10b31280f25f1d19f87ebe65c8effe7d8c5ce526eb25ea5a95f2df90f"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-10T23:41:06.772461+00:00",
-    "git_revision": "dbbf4e7",
+    "generated_at": "2026-09-12T19:06:49.336049+00:00",
+    "git_revision": "1f6649d",
     "generator": "generate.py"
   }
 }

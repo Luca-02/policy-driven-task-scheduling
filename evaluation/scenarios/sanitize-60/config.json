@@ -1,0 +1,67 @@
+{
+  "scenario": {
+    "name": "sanitize-60",
+    "seed": 8,
+    "nodes": [
+      "kind-worker",
+      "kind-worker2",
+      "kind-worker3",
+      "kind-worker4",
+      "kind-worker5"
+    ],
+    "node_attribute_key": "evaltier",
+    "node_attribute_value": "eval",
+    "node_location": "eval-loc",
+    "contexts": 10,
+    "conflict_density": 0.5,
+    "tasks": 200,
+    "rate_seconds": 1.0,
+    "sanitize_interval_seconds": 60,
+    "clear_traces_seconds": 0,
+    "task_duration_seconds": 20,
+    "scheduler_backoff_seconds": 1,
+    "task_ttl_seconds_after_finished": 30,
+    "mode": "system"
+  },
+  "derived": {
+    "contexts": [
+      "x01",
+      "x02",
+      "x03",
+      "x04",
+      "x05",
+      "x06",
+      "x07",
+      "x08",
+      "x09",
+      "x10"
+    ],
+    "conflict_pairs_effective": 23,
+    "conflict_pairs_max": 45,
+    "conflict_density_effective": 0.5111,
+    "mean_context_degree": 4.6,
+    "replicas": 5
+  },
+  "conventions": {
+    "api_version": "policydriven.unimi.it/v1alpha1",
+    "attribute_prefix": "attribute.node.policydriven.unimi.it",
+    "topology_location_label": "topology.node.policydriven.unimi.it/location",
+    "task_namespace": "compute",
+    "eval_property_name": "evalprop",
+    "eval_geo_group_name": "evalgeo"
+  },
+  "integrity": {
+    "tasks_sha256": {
+      "tasks_r0.csv": "8ae412556f252d75f999ef755cd3a57b684caff21603b9bebb33fd7dce79a7cb",
+      "tasks_r1.csv": "ec9d4a82621ea2f6df502f67e41c0606866ab37eaf9b25951fbc727a45bd0f99",
+      "tasks_r2.csv": "2c06483d2ba399eddf540863692c98bb760cee140907f0c63f6eb16e6f5d2e02",
+      "tasks_r3.csv": "f97c4320e7262053a471ed71c7b0bdcfbb91a9a3afa3cb4975e12da48d43c2bb",
+      "tasks_r4.csv": "efb890a8f00cab90cc2c2694b4e6751737fc07484cdacba42b504935533a1572"
+    }
+  },
+  "provenance": {
+    "generated_at": "2026-09-13T01:29:14.446994+00:00",
+    "git_revision": "1f6649d",
+    "generator": "generate.py"
+  }
+}

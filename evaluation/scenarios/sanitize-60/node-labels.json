@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    "kind-worker",
+    "kind-worker2",
+    "kind-worker3",
+    "kind-worker4",
+    "kind-worker5"
+  ],
+  "labels": {
+    "attribute.node.policydriven.unimi.it/evaltier": "eval",
+    "topology.node.policydriven.unimi.it/location": "eval-loc"
+  },
+  "purge_prefixes": [
+    "attribute.node.policydriven.unimi.it/",
+    "property.node.policydriven.unimi.it/",
+    "topology.node.policydriven.unimi.it/location"
+  ]
+}

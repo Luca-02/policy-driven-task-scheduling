@@ -1,0 +1,101 @@
+{
+  "scenario": "sanitize-60",
+  "replica": 2,
+  "mode": "system",
+  "run_started_epoch": 1789246576.2138479,
+  "run_started_iso": "2026-09-12T20:56:16.213848+00:00",
+  "params": {
+    "tasks": 200,
+    "rate_seconds": 1.0,
+    "sanitize_interval_seconds": 60,
+    "task_duration_seconds": 20,
+    "conflict_density": 0.5,
+    "timeout_seconds": null
+  },
+  "counts": {
+    "submitted": 200,
+    "admitted": 200,
+    "scheduled": 200,
+    "completed": 200,
+    "timed_out": 0,
+    "blocked": 88,
+    "block_cause": {
+      "none": 112,
+      "mixed": 62,
+      "taint": 26
+    }
+  },
+  "latency_s": {
+    "n": 200,
+    "mean": 17.8401,
+    "median": 6.0108,
+    "p95": 60.5022,
+    "std": 23.8242,
+    "min": 0.0397,
+    "max": 110.487
+  },
+  "scheduling_s": {
+    "n": 200,
+    "mean": 16.8912,
+    "median": 0.2367,
+    "p95": 60.4279,
+    "std": 24.2914,
+    "min": 0.0031,
+    "max": 110.4481
+  },
+  "admission_s": {
+    "n": 200,
+    "mean": 0.0302,
+    "median": 0.0122,
+    "p95": 0.1103,
+    "std": 0.0368,
+    "min": 0.0059,
+    "max": 0.1984
+  },
+  "translation_s": {
+    "n": 200,
+    "mean": 0.0306,
+    "median": 0.0207,
+    "p95": 0.0946,
+    "std": 0.0388,
+    "min": 0.0168,
+    "max": 0.3873
+  },
+  "pod_creation_s": {
+    "n": 200,
+    "mean": 0.8881,
+    "median": 0.0076,
+    "p95": 7.3388,
+    "std": 2.2006,
+    "min": -0.0035,
+    "max": 7.9527
+  },
+  "wait_s": {
+    "n": 88,
+    "mean": 37.9189,
+    "median": 37.6861,
+    "p95": 70.9241,
+    "std": 22.7328,
+    "min": 1.6744,
+    "max": 110.4394
+  },
+  "startup_s": {
+    "n": 200,
+    "mean": 1.1526,
+    "median": 1.1488,
+    "p95": 1.68,
+    "std": 0.3231,
+    "min": 0.5039,
+    "max": 1.8903
+  },
+  "execution_s": {
+    "n": 200,
+    "mean": 21.2502,
+    "median": 21.245,
+    "p95": 21.4827,
+    "std": 0.2326,
+    "min": 20.0937,
+    "max": 22.4373
+  },
+  "makespan_s": 251.5674
+}

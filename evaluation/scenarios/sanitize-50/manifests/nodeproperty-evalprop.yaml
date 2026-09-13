@@ -1,0 +1,12 @@
+apiVersion: policydriven.unimi.it/v1alpha1
+kind: NodeProperty
+metadata:
+  name: evalprop
+spec:
+  levels:
+    - disjunction:
+        - clause:
+            - key: evaltier
+              operator: Eq
+              values:
+                - eval
