@@ -8,7 +8,9 @@
 #   bash experiments/sanitize_sweep.sh
 #
 # Override any knob via environment variables, e.g.:
-#   DENSITY="0.5" INTERVALS="1 2 3 5 10 20 30 45" REPLICAS=5 bash experiments/sanitize_sweep.sh
+#   TASKS="200" DENSITY="0.5" INTERVALS="1 3 5 10 20 30 40 50" \ 
+#     TASK_DURATION="20" REPLICAS=5 TASK_TTL=30 \ 
+#     bash experiments/sanitize_sweep.sh
 
 set -euo pipefail
 

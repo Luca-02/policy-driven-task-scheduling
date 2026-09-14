@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "conflicts-rho040",
-    "seed": 10,
+    "seed": 123,
     "nodes": [
       "kind-worker",
       "kind-worker2",
@@ -14,12 +14,13 @@
     "node_location": "eval-loc",
     "contexts": 10,
     "conflict_density": 0.4,
-    "tasks": 100,
+    "tasks": 200,
     "rate_seconds": 1.0,
-    "sanitize_interval_seconds": 10,
+    "sanitize_interval_seconds": 20,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 10,
+    "task_duration_seconds": 20,
     "scheduler_backoff_seconds": 1,
+    "task_ttl_seconds_after_finished": null,
     "mode": "system"
   },
   "derived": {
@@ -39,7 +40,7 @@
     "conflict_pairs_max": 45,
     "conflict_density_effective": 0.4,
     "mean_context_degree": 3.6,
-    "replicas": 10
+    "replicas": 5
   },
   "conventions": {
     "api_version": "policydriven.unimi.it/v1alpha1",
@@ -51,21 +52,16 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks_r0.csv": "8264bab10fb5aaee55ee76762966f739d47871056724b2edf5c5b09e952a6e37",
-      "tasks_r1.csv": "d2c680065b607fadb4b31ba4f65a0d5726d10808e878209a0786b8962a072344",
-      "tasks_r2.csv": "b53ba28a23affe1e1554be1460e30789ef015fc219bafa03ef9755017df83d93",
-      "tasks_r3.csv": "4570706e45a2ba4148f8b618ff7c05dec6c6fe4267eea586293c8ad60589406f",
-      "tasks_r4.csv": "c27286bdb63d613dbb0deff9ed170dbeaa413514fdb68775a890dfab52b01a49",
-      "tasks_r5.csv": "53d15e3fdbf6eae36c0700c81fb9ca0edc783cbde113b5725c8d144292b36cc0",
-      "tasks_r6.csv": "629acaaa3e1fd79d416eda3d0792658399cb4107e966b5aa30584efecd15537a",
-      "tasks_r7.csv": "15b1b2e4f39a842eaef0a802d92ef4d3800ea97b0a9e16970d1970b711705dbf",
-      "tasks_r8.csv": "1f278b8f5a07b7ed9fc2d9a689804bb9354d23df2d5da829749982d6cdec5742",
-      "tasks_r9.csv": "dc9130a351aa5dc6183ed0bce59219d217b28c8c550460c7f94cdc5b15e19564"
+      "tasks_r0.csv": "0b0b6c439be5f6044f0b5bb2d975a1d7adebc89174661ad3307a0f5e0b636120",
+      "tasks_r1.csv": "6e15bc1883dccb8b5bfb9bdaa8d93e8a726e67006a04a92d4a6d828d29744182",
+      "tasks_r2.csv": "292acc74fe44143a71357f275033d3074aca0548460a86c822043df35ece497b",
+      "tasks_r3.csv": "433a24462aac99cd5550b2288498c91918c6cb4005ee6c5e15392415f1ed2fc9",
+      "tasks_r4.csv": "a884f7807290678bac4aca0e53035ac8173b1206be0196abda112fb5ba1a6bed"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-12T00:04:48.003402+00:00",
-    "git_revision": "bcacf27",
+    "generated_at": "2026-09-14T12:16:47.998739+00:00",
+    "git_revision": "e924cb6",
     "generator": "generate.py"
   }
 }

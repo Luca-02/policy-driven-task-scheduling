@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "conflicts-rho080",
-    "seed": 10,
+    "seed": 1234,
     "nodes": [
       "kind-worker",
       "kind-worker2",
@@ -14,12 +14,13 @@
     "node_location": "eval-loc",
     "contexts": 10,
     "conflict_density": 0.8,
-    "tasks": 100,
+    "tasks": 200,
     "rate_seconds": 1.0,
-    "sanitize_interval_seconds": 10,
+    "sanitize_interval_seconds": 20,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 10,
+    "task_duration_seconds": 20,
     "scheduler_backoff_seconds": 1,
+    "task_ttl_seconds_after_finished": 30,
     "mode": "system"
   },
   "derived": {
@@ -39,7 +40,7 @@
     "conflict_pairs_max": 45,
     "conflict_density_effective": 0.8,
     "mean_context_degree": 7.2,
-    "replicas": 1
+    "replicas": 5
   },
   "conventions": {
     "api_version": "policydriven.unimi.it/v1alpha1",
@@ -51,12 +52,16 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks.csv": "d49a0b79797a2ca25abcde005fd6d151a610ec3b594fc872da76178026321469"
+      "tasks_r0.csv": "1751d37258e8167bfecd30896aaf1dab29cadd69ab6746849daa406542fb9aee",
+      "tasks_r1.csv": "da608a78891e3d86a138287abd581c9adb7e7c2f49d47a15d5697440ec7559a8",
+      "tasks_r2.csv": "c88861f6caaa641a496a760fdbfe40a65af0fb1f8df7729fa9c39babb057654f",
+      "tasks_r3.csv": "320751eb70dec7131725a618f2c540c532388a3ae411d571ba523919bbb9d1a2",
+      "tasks_r4.csv": "cd97ec4044e47de4da92988139daa44d21d23e295c1c1ef33716fcef0f14ea5c"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-11T22:02:21.265548+00:00",
-    "git_revision": "bcacf27",
+    "generated_at": "2026-09-14T14:29:40.499565+00:00",
+    "git_revision": "e924cb6",
     "generator": "generate.py"
   }
 }

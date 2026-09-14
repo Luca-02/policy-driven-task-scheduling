@@ -1,5 +1,5 @@
 {
-  "applied_at": "2026-09-12T00:28:05.499454+00:00",
+  "applied_at": "2026-09-14T12:40:31.453874+00:00",
   "scenario_name": "conflicts-rho050",
   "scenario_dir": "scenarios\\conflicts-rho050",
   "applied": {
@@ -14,9 +14,9 @@
       "attribute.node.policydriven.unimi.it/evaltier": "eval",
       "topology.node.policydriven.unimi.it/location": "eval-loc"
     },
-    "sanitize_interval_seconds": 10,
+    "sanitize_interval_seconds": 20,
     "clear_traces_seconds": 0,
-    "task_duration_seconds": 10,
+    "task_duration_seconds": 20,
     "scheduler_backoff_seconds": 1,
     "datasets": 10,
     "issuer_auths": 10,

@@ -1,0 +1,174 @@
+{
+  "conflicts": [
+    {
+      "context_a": "x06",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x01",
+      "context_b": "x10"
+    },
+    {
+      "context_a": "x03",
+      "context_b": "x07"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x03"
+    },
+    {
+      "context_a": "x07",
+      "context_b": "x08"
+    },
+    {
+      "context_a": "x04",
+      "context_b": "x06"
+    },
+    {
+      "context_a": "x05",
+      "context_b": "x08"
+    },
+    {
+      "context_a": "x05",
+      "context_b": "x06"
+    },
+    {
+      "context_a": "x07",
+      "context_b": "x10"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x05"
+    },
+    {
+      "context_a": "x03",
+      "context_b": "x05"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x10"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x04",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x01",
+      "context_b": "x03"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x08"
+    },
+    {
+      "context_a": "x04",
+      "context_b": "x08"
+    },
+    {
+      "context_a": "x03",
+      "context_b": "x10"
+    },
+    {
+      "context_a": "x05",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x06"
+    },
+    {
+      "context_a": "x03",
+      "context_b": "x06"
+    },
+    {
+      "context_a": "x06",
+      "context_b": "x10"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x07"
+    },
+    {
+      "context_a": "x01",
+      "context_b": "x02"
+    },
+    {
+      "context_a": "x08",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x01",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x03",
+      "context_b": "x09"
+    }
+  ],
+  "issuer_auths": [
+    {
+      "name": "issuer1",
+      "contexts": [
+        "x01"
+      ]
+    },
+    {
+      "name": "issuer2",
+      "contexts": [
+        "x02"
+      ]
+    },
+    {
+      "name": "issuer3",
+      "contexts": [
+        "x03"
+      ]
+    },
+    {
+      "name": "issuer4",
+      "contexts": [
+        "x04"
+      ]
+    },
+    {
+      "name": "issuer5",
+      "contexts": [
+        "x05"
+      ]
+    },
+    {
+      "name": "issuer6",
+      "contexts": [
+        "x06"
+      ]
+    },
+    {
+      "name": "issuer7",
+      "contexts": [
+        "x07"
+      ]
+    },
+    {
+      "name": "issuer8",
+      "contexts": [
+        "x08"
+      ]
+    },
+    {
+      "name": "issuer9",
+      "contexts": [
+        "x09"
+      ]
+    },
+    {
+      "name": "issuer10",
+      "contexts": [
+        "x10"
+      ]
+    }
+  ]
+}
