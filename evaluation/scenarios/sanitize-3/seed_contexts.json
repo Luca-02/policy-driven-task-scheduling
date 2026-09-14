@@ -1,96 +1,96 @@
 {
   "conflicts": [
     {
-      "context_a": "x03",
-      "context_b": "x10"
-    },
-    {
-      "context_a": "x03",
-      "context_b": "x08"
-    },
-    {
-      "context_a": "x02",
-      "context_b": "x05"
-    },
-    {
-      "context_a": "x04",
-      "context_b": "x08"
-    },
-    {
-      "context_a": "x02",
-      "context_b": "x06"
-    },
-    {
-      "context_a": "x03",
-      "context_b": "x04"
-    },
-    {
       "context_a": "x07",
-      "context_b": "x09"
-    },
-    {
-      "context_a": "x04",
-      "context_b": "x06"
-    },
-    {
-      "context_a": "x05",
-      "context_b": "x06"
-    },
-    {
-      "context_a": "x02",
-      "context_b": "x07"
-    },
-    {
-      "context_a": "x01",
-      "context_b": "x10"
-    },
-    {
-      "context_a": "x03",
-      "context_b": "x05"
-    },
-    {
-      "context_a": "x02",
-      "context_b": "x04"
+      "context_b": "x08"
     },
     {
       "context_a": "x02",
       "context_b": "x03"
     },
     {
+      "context_a": "x03",
+      "context_b": "x09"
+    },
+    {
       "context_a": "x05",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x01",
       "context_b": "x08"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x01",
+      "context_b": "x06"
+    },
+    {
+      "context_a": "x05",
+      "context_b": "x07"
     },
     {
       "context_a": "x04",
       "context_b": "x07"
     },
     {
-      "context_a": "x04",
+      "context_a": "x03",
+      "context_b": "x08"
+    },
+    {
+      "context_a": "x03",
+      "context_b": "x07"
+    },
+    {
+      "context_a": "x03",
       "context_b": "x05"
     },
     {
-      "context_a": "x08",
-      "context_b": "x10"
+      "context_a": "x06",
+      "context_b": "x08"
+    },
+    {
+      "context_a": "x04",
+      "context_b": "x05"
     },
     {
       "context_a": "x09",
       "context_b": "x10"
     },
     {
-      "context_a": "x02",
-      "context_b": "x10"
+      "context_a": "x01",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x05",
+      "context_b": "x06"
     },
     {
       "context_a": "x08",
       "context_b": "x09"
     },
     {
-      "context_a": "x01",
-      "context_b": "x05"
+      "context_a": "x05",
+      "context_b": "x10"
     },
     {
-      "context_a": "x05",
+      "context_a": "x06",
+      "context_b": "x09"
+    },
+    {
+      "context_a": "x02",
+      "context_b": "x06"
+    },
+    {
+      "context_a": "x06",
       "context_b": "x07"
+    },
+    {
+      "context_a": "x04",
+      "context_b": "x09"
     }
   ],
   "issuer_auths": [

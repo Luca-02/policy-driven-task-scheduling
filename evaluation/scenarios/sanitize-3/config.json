@@ -1,7 +1,7 @@
 {
   "scenario": {
     "name": "sanitize-3",
-    "seed": 1234,
+    "seed": 2,
     "nodes": [
       "kind-worker",
       "kind-worker2",
@@ -52,16 +52,16 @@
   },
   "integrity": {
     "tasks_sha256": {
-      "tasks_r0.csv": "e4bf84cd35feba2187076e05aa9f23cd9845e812eb9d14144ac70399918b27dd",
-      "tasks_r1.csv": "dd14a2e4bbd702ff937f3050c461ea486a2586462330aa06d5903d52f053e41e",
-      "tasks_r2.csv": "463f7936a329faac4ab5b96681005c80358639ae4bf16c071784249ec9812da5",
-      "tasks_r3.csv": "a0a4474cdd01cbcfaa4d4ddccd4315c027eb205f62c3ee5ca9242056c01ece3f",
-      "tasks_r4.csv": "9f335e49b8289fed3c8aec0e2a2616ed542fde698fb35b7ec1a8ee88bec6b9fc"
+      "tasks_r0.csv": "3646ce3220766f7fced0b5ac1b3aec38f4947439fc33226b809c41a2c5a02fc1",
+      "tasks_r1.csv": "3e3dfcc26b090b26c844bf89ac71e1b59139b222fb2efd06f70bb596ed234a2d",
+      "tasks_r2.csv": "5cdf926dcfb8b4d150884980c7463434a292af9557dcb9267bf806814eed0cde",
+      "tasks_r3.csv": "9c493756caff54ff6ead8a9602e9ec39042bfd0412891993f6f69b95fd95f682",
+      "tasks_r4.csv": "1a3fc4d15eb3312befb7ff20653665ee4d09a54f35573f599b1c217bb30fa4f2"
     }
   },
   "provenance": {
-    "generated_at": "2026-09-12T17:56:06.242405+00:00",
-    "git_revision": "1f6649d",
+    "generated_at": "2026-09-14T00:33:51.049419+00:00",
+    "git_revision": "4918a0d",
     "generator": "generate.py"
   }
 }
