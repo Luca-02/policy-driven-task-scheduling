@@ -1,0 +1,33 @@
+{
+  "applied_at": "2026-09-17T17:18:25.958089+00:00",
+  "scenario_name": "conflicts-rho000",
+  "scenario_dir": "scenarios\\conflicts-rho000",
+  "applied": {
+    "nodes": [
+      "kind-worker",
+      "kind-worker2",
+      "kind-worker3",
+      "kind-worker4",
+      "kind-worker5"
+    ],
+    "node_labels": {
+      "attribute.node.policydriven.unimi.it/evaltier": "eval",
+      "topology.node.policydriven.unimi.it/location": "eval-loc"
+    },
+    "sanitize_interval_seconds": 20,
+    "clear_traces_seconds": 0,
+    "task_duration_seconds": 20,
+    "scheduler_backoff_seconds": 1,
+    "datasets": 10,
+    "issuer_auths": 10,
+    "conflicts": 0
+  },
+  "conventions": {
+    "api_version": "policydriven.unimi.it/v1alpha1",
+    "attribute_prefix": "attribute.node.policydriven.unimi.it",
+    "topology_location_label": "topology.node.policydriven.unimi.it/location",
+    "task_namespace": "compute",
+    "eval_property_name": "evalprop",
+    "eval_geo_group_name": "evalgeo"
+  }
+}

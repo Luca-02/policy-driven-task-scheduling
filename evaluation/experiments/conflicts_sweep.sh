@@ -8,9 +8,9 @@
 #   bash experiments/conflicts_sweep.sh
 #
 # Override any knob via environment variables, e.g.:
-#   TASKS="200" INTERVAL="20" DENSITIES="0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8" \
-#     TASK_DURATION="20" REPLICAS=5 TASK_TTL=30 \ 
-#     bash experiments/conflicts_sweep.sh
+  # TASKS="200" INTERVAL="20" DENSITIES="0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8" \
+  #   TASK_DURATION="20" REPLICAS=5 TASK_TTL=30 \ 
+  #   bash experiments/conflicts_sweep.sh
 
 set -euo pipefail
 
