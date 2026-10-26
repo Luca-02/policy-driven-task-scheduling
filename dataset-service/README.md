@@ -1,97 +1,191 @@
-# Dataset Service (mock data governor)
+# Dataset Service
 
-Mock data governance service (e.g. Apache Atlas) for the policy-driven task scheduling system. Stores dataset **metadata**, the protection class `β(d)`, the size used for transfer cost, the placement `λ(d)` and the data sovereignty information `geo(d)`, and exposes them to OPA Gatekeeper via the **External Data Provider** protocol, plus a CRUD API to manage the datasets for the policy-driven task scheduling system.
+REST service holding the registry of dataset metadata. It plays the role a
+data governance catalog, such as Apache Atlas, would play in a real
+deployment: it does not store the data, only the information that describes
+how each dataset must be protected and where it currently lives.
 
-The service is intentionally a thin demo component, not a production system: no authentication is enforced. Isolation is provided by the ClusterIP scope and a `NetworkPolicy` that restricts ingress to the namespaces of Gatekeeper, the TaskRequest controller and the Dataset Service namespace. TLS is kept because Gatekeeper External Data requires the provider to be served over TLS.
+It is intentionally a thin demo component, not a production system. No
+authentication is enforced; isolation relies on the ClusterIP scope and on a
+`NetworkPolicy` that restricts ingress to the namespaces that need it. TLS is
+kept because the Gatekeeper External Data protocol requires it.
 
-## Architecture choices
+## Data model
 
-- **PostgreSQL via CloudNativePG**: PostgreSQL `Cluster`. The service connects to the `-rw` service, so writes always reach the current primary.
-- **Replicable service**: state lives only in PostgreSQL, so the Deployment could runs multiple replicas without coordination.
+For each dataset `d` the service stores:
+
+| Field | Model | Description |
+| --- | --- | --- |
+| `name` | | unique identifier, referenced by `TaskRequest.spec.datasets` |
+| `requirements` | `β(d)` | minimum level required for each node property, as `{property: level}`; omitted properties default to 0 |
+| `geo` | `geo(d)` | name of a `GeographicalGroup`; omitted means no geographical constraint |
+| `contexts` | `ctx(d)` | contexts the dataset belongs to; an empty list means public data |
+| `nodes` | `λ(d)` | names of the nodes that already host the dataset |
+| `static` | `d ∈ D_static` | if true, the dataset can neither be transferred nor accessed remotely |
+| `size_mb` | `size(d)` | size in megabytes, used for the transfer cost |
+
+```json
+{
+  "name": "d1",
+  "requirements": { "security": 2, "computation": 1 },
+  "geo": "oecd",
+  "contexts": ["Ford"],
+  "nodes": ["kind-worker", "kind-worker4"],
+  "static": false,
+  "size_mb": 1024
+}
+```
+
+The service does not check that the referenced properties, groups and nodes
+exist in the cluster. The existence of properties and groups is verified at
+admission time by the Gatekeeper policy `validate-task-request-datasets`.
+
+## Who calls it
+
+| Caller | Endpoint | Purpose |
+| --- | --- | --- |
+| Gatekeeper | `POST /datasets/validate` | check that the requested datasets exist and fetch `β(d)`, `geo(d)`, `ctx(d)` to validate the request and evaluate `c_auth` |
+| task-request-controller | `POST /datasets/query` | fetch the full metadata to compute `β*(t)`, `geo*(t)`, `ctx*(t)` and the static nodes |
+| scheduler, `TransferScore` | `POST /datasets/query` | fetch `size(d)` and `λ(d)` to compute `φ_transfer` |
 
 ## Endpoints
 
-| Method | Path               | Description                       |
-| ------ | ------------------ | --------------------------------- |
-| GET    | `/healthz`         | liveness/readiness                |
-| POST   | `/datasets/validate` | Gatekeeper EDP                  |
-| GET    | `/datasets`        | list datasets                     |
-| GET    | `/datasets/{name}` | dataset detail                    |
-| POST   | `/datasets/query`  | query datasets                    |
-| POST   | `/datasets`        | create dataset                    |
-| POST   | `/datasets/batch`  | create multiple datasets          |
-| PUT    | `/datasets/{name}` | full replace dataset (debug only) |
-| DELETE | `/datasets/{name}` | delete dataset                    |
-| DELETE | `/datasets/`       | delete all datasets (debug only)  |
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/healthz` | liveness and readiness |
+| POST | `/datasets/validate` | Gatekeeper External Data provider |
+| GET | `/datasets` | list all datasets |
+| GET | `/datasets/{name}` | one dataset |
+| POST | `/datasets/query` | several datasets by name, body `{"keys": [...]}`; `404` if any is missing |
+| POST | `/datasets` | create a dataset |
+| POST | `/datasets/batch` | create several datasets |
+| PUT | `/datasets/{name}` | replace a dataset, available only with `DEBUG_MODE=true` |
+| DELETE | `/datasets/{name}` | delete a dataset |
+| DELETE | `/datasets` | delete all datasets |
 
-## Configuration (env vars)
+`PUT` is disabled by default, and answers `404`, to respect the assumption
+that metadata is immutable once created. The interactive API documentation
+generated by FastAPI is served at `/docs`.
 
-| Variable                 | Default                              | Description               |
-| ------------------------ | ------------------------------------ | ------------------------- |
-| `DB_URL`                 | `sqlite://`                          | SQLAlchemy connection URI |
-| `HOST`                   | `127.0.0.1`                          | listen host               |
-| `PORT`                   | `8443`                               | listen port               |
-| `TLS_CERT_FILE`          | (unset)                              | server cert (enables TLS) |
-| `TLS_KEY_FILE`           | (unset)                              | server key (enables TLS)  |
-| `GATEKEEPER_API_VERSION` | `externaldata.gatekeeper.sh/v1beta1` | API version for EDP       |
-| `LOG_LEVEL`              | `INFO`                               | DEBUG/INFO/WARNING/ERROR  |
+## Architecture choices
 
-When `TLS_CERT_FILE` / `TLS_KEY_FILE` are unset, the service runs in plain HTTP (used by tests). 
+- **Two storage modes.** In *light mode* the service uses SQLite on a
+  `PersistentVolumeClaim` (`k8s/deployment-light.yaml`), which is what the
+  Makefile selects by default. In full mode it connects to a PostgreSQL
+  cluster managed by [CloudNativePG](https://cloudnative-pg.io/)
+  (`k8s/postgres-cluster.yaml` and `k8s/deployment.yaml`), through the `-rw`
+  service so that writes always reach the current primary.
+- **Stateless service.** The state lives only in the database, so in full mode
+  the Deployment could run several replicas without coordination.
+
+## Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `DB_URL` | `sqlite://` | SQLAlchemy connection URI; the default is an in-memory database |
+| `HOST` | `127.0.0.1` | listen address |
+| `PORT` | `8443` | listen port |
+| `TLS_CERT_FILE` | (unset) | server certificate |
+| `TLS_KEY_FILE` | (unset) | server key |
+| `DEBUG_MODE` | `false` | enables the `PUT` endpoint |
+| `LOG_LEVEL` | `INFO` | one of `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+
+TLS is enabled only when both `TLS_CERT_FILE` and `TLS_KEY_FILE` are set;
+otherwise the service speaks plain HTTP, which is what the tests use.
 
 ## Running locally
 
-Requires Python 3.12+.
+Requires Python 3.12.
 
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-## Deploying to Kubernetes
-
-For `kind` environments, the entire deployment lifecycle is fully automated by the `init-cluster.sh` script. 
-
-To update the dataset-service manually:
-
-### 1. Database Prerequisites
-
-The service requires the CloudNativePG operator and a running PostgreSQL cluster.
+Variables can be placed in a `.env` file, loaded at startup. To serve HTTPS
+locally, generate a certificate for `localhost` first and point
+`TLS_CERT_FILE` and `TLS_KEY_FILE` to the files under `.certs/local/`:
 
 ```bash
-# Install the CloudNativePG operator
-kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.29/releases/cnpg-1.29.1.yaml
+SVC="dataset-service" NS="dataset-service" TARGET_ENV="local" bash ../scripts/gen-certs.sh
+```
 
-# Deploy the highly-available postgres cluster
+### Seeding
+
+`seeding.py` loads a JSON file into a running instance through
+`POST /datasets/batch`.
+
+| Variable | Description |
+| --- | --- |
+| `SEED_DATA_FILE` | path of the seed file, for example `../examples/data/seed_datasets.json` |
+| `SERVICE_URL` | base URL of the service |
+| `CA_CERT_FILE` | CA used to verify the service; if unset, the certificate is not verified |
+
+```bash
+SEED_DATA_FILE=../examples/data/seed_datasets.json \
+SERVICE_URL=https://127.0.0.1:8443 \
+CA_CERT_FILE=.certs/local/ca.crt \
+python seeding.py
+```
+
+Inside the cluster the same script runs as a one-off Job
+(`k8s/seeding.yaml`), launched by `scripts/populate-examples.sh`.
+
+## Deploying to Kubernetes
+
+On kind, `scripts/init-cluster.sh` takes care of everything. The manual steps
+are listed below, to be run from this directory.
+
+### 1. Database, full mode only
+
+```bash
+# CloudNativePG operator
+kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.30/releases/cnpg-1.30.0.yaml
+
+# PostgreSQL cluster
 kubectl apply -f k8s/postgres-cluster.yaml
-
-# Wait until the Cluster is ready to accept connections (can take a few times)
 kubectl wait -n dataset-service --for=condition=Ready cluster/dataset-db --timeout=600s
 ```
 
-### 2. Certificates & App Deployment
+### 2. Certificates
 
-`gen-certs.sh` lives at the repo root (`scripts/gen-certs.sh`, shared across all mock services) and, if executed with the env `TARGET_ENV=k8s`, automatically generates a self-signed CA, creates the server certificates, and automatically injects the base64 CA bundle into k8s/provider.yaml. Since it's shared, `SVC`/`NS` must always be passed explicitly.
+`scripts/gen-certs.sh` is shared by the two services, so `SVC` and `NS` must
+always be passed. It creates a self-signed CA and a server certificate under
+`.certs/k8s/` and prints the CA bundle in base64.
+
 ```bash
-# From this directory (dataset-service/) generate TLS certs
 SVC="dataset-service" NS="dataset-service" TARGET_ENV="k8s" bash ../scripts/gen-certs.sh
 
-# Create the TLS Secret for the service
 kubectl create secret generic dataset-service-tls \
     --from-file=ca.crt=".certs/k8s/ca.crt" \
     --from-file=tls.crt=".certs/k8s/tls.crt" \
     --from-file=tls.key=".certs/k8s/tls.key" \
     -n dataset-service
+```
 
-# Build and load the image into Kind
+`k8s/provider.yaml` is the Gatekeeper `Provider` that points to
+`/datasets/validate`. It contains a `<CA_BUNDLE>` placeholder, filled in with
+the CA when the manifest is applied:
+
+```bash
+CA_B64=$(kubectl get secret dataset-service-tls -n dataset-service -o jsonpath='{.data.ca\.crt}')
+sed "s|<CA_BUNDLE>|${CA_B64}|" k8s/provider.yaml | kubectl apply -f -
+```
+
+The task-request-controller and the scheduler need the same CA: copy `ca.crt`
+into a secret named `dataset-service-tls` in their namespaces. The bootstrap
+script does all of this automatically.
+
+### 3. Service
+
+```bash
 docker build -t dataset-service:latest .
 kind load docker-image dataset-service:latest --name <cluster-name>
 
-# Apply all service manifests
 kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/deployment.yaml          # or k8s/deployment-light.yaml
 kubectl apply -f k8s/network-policy.yaml
 
-# Wait for the service to be fully rolled out and ready
 kubectl -n dataset-service rollout status deployment/dataset-service --timeout=180s
 ```
 
@@ -102,4 +196,5 @@ pip install pytest pytest-cov
 pytest -v --cov=src
 ```
 
-Tests need **no external services**: the repository is tested on in-memory SQLite.
+The tests need no external service: they run against an in-memory SQLite
+database.

@@ -1,132 +1,224 @@
-# Context Service (mock issuer & context-conflict authority)
+# Context Service
 
-Mock service holding the two pieces of the Chinese Wall model that live
-outside the cluster's Kubernetes-native objects: issuer authorizations
-`auth(i)` and the context conflict-of-interest relation `X_conf`. Exposes
-them to OPA Gatekeeper via the **External Data Provider** protocol (issuer
-existence and `auth(i)`, consumed by the `c_auth` admission constraint),
-plus a CRUD API used to manage both.
+REST service holding the two pieces of the Chinese Wall model that do not
+live in Kubernetes objects: the issuer authorizations `auth(i)` and the
+conflict of interest relation between contexts `X_conf`.
 
-Like `dataset-service`, this is intentionally a thin demo component, not a
-production system: no authentication is enforced. Isolation is provided by
-the ClusterIP scope and a `NetworkPolicy` restricting ingress to Gatekeeper,
-the scheduler, `dataset-service` (which calls `/conflicts` to validate
-`ctx(d)`) and the Context Service namespace itself. TLS is kept because
-Gatekeeper External Data requires the provider to be served over TLS.
+Like dataset-service, it is intentionally a thin demo component, not a
+production system. No authentication is enforced; isolation relies on the
+ClusterIP scope and on a `NetworkPolicy` that restricts ingress to the
+namespaces that need it. TLS is kept because the Gatekeeper External Data
+protocol requires it.
 
-## Architecture choices
+## Data model
 
-- **PostgreSQL via CloudNativePG**: same as `dataset-service`, the service
-  connects to the `-rw` service so writes always reach the current primary.
-- **A single service for `auth` and `X_conf`, not two**: they are the same
-  domain (identity/security policy) and, more importantly, the
-  well-formedness invariant below spans both, so keeping them in the same
-  database lets it be enforced with a local transaction instead of a
-  distributed one.
-- **Concurrency**: every write that can affect the invariant
+**Issuer authorizations.** Each issuer `i` is associated with the set of
+contexts it may request datasets for.
 
-  ```
-  (auth(i) x auth(i)) intersect X_conf = empty   for every i in I
-  ```
+```json
+{ "name": "issuerferrari", "contexts": ["Ferrari", "Finance"] }
+```
 
-  (assigning/updating an issuer's contexts, or declaring a new conflict)
-  serializes against every other such write via a row lock on a sentinel
-  row (`ContextRepository._acquire_lock`), preventing the write-skew
-  anomaly where two concurrent, individually "safe" writes leave the
-  invariant broken. See the docstring on that method for details. This is
-  only load-bearing on PostgreSQL; on SQLite (tests, local dev) writes are
-  already serialized by the shared single connection.
-- **Symmetric checks, one direction out of scope**: creating/updating an
-  issuer is checked against existing conflicts, and creating a conflict is
-  checked against existing issuers — both enforced transactionally since
-  they live in the same database. The equivalent check for datasets
-  (`(ctx(d) x ctx(d)) intersect X_conf = empty`) lives in `dataset-service`, a
-  different service: only the "new dataset against existing conflicts"
-  direction is enforced there (a synchronous HTTP call at write time); a
-  new conflict retroactively invalidating an existing dataset's contexts is
-  *not* checked. This is a deliberate scope cut for the prototype,
-  documented as an assumption: conflict configuration precedes dataset
-  population.
+An issuer with an empty list may only request public datasets.
+
+**Conflicts.** `X_conf` is stored as a collection of unordered pairs of
+distinct contexts. A pair is normalized so that `context_a < context_b`,
+which makes the relation symmetric and irreflexive by construction and avoids
+storing the same pair twice.
+
+```json
+{ "context_a": "Ferrari", "context_b": "Ford" }
+```
+
+### The well-formedness invariant
+
+The service guarantees at all times that no issuer is authorized on two
+conflicting contexts:
+
+```
+(auth(i) × auth(i)) ∩ X_conf = ∅      for every issuer i
+```
+
+Both directions are checked. Creating or updating an issuer is validated
+against the existing conflicts, and declaring a new conflict is validated
+against the existing issuers. A write that would break the invariant is
+rejected with `409 Conflict` and a `detail` payload naming the offending
+pairs or issuers.
+
+The policies `c_auth` and `c_wall` both rely on this invariant, which is why
+it is enforced here and not left to the callers.
+
+## Who calls it
+
+| Caller | Endpoint | Purpose |
+| --- | --- | --- |
+| Gatekeeper | `POST /issuer-auths/validate` | check that the issuer exists and fetch `auth(i)` to evaluate `c_auth` |
+| scheduler, `WallFilter` | `POST /issuer-auths/{name}/wall-check` | evaluate `c_wall` for a candidate node |
+
+The wall check takes a set of contexts `X` and returns the pairs in
+
+```
+(auth(i) × X) ∩ X_conf
+```
+
+The scheduler passes the node memory `Λ(n)` as `X`: an empty answer means the
+node is admissible for the task. Computing the intersection inside the
+service spares the caller from fetching both sets and combining them.
+
+```bash
+curl -k -X POST https://127.0.0.1:8443/issuer-auths/issuerferrari/wall-check \
+    -H 'Content-Type: application/json' \
+    -d '{"contexts": ["Ford"]}'
+# {"conflicts":[{"context_a":"Ferrari","context_b":"Ford"}]}
+```
 
 ## Endpoints
 
-| Method | Path                   | Description                                    |
-| ------ | ---------------------- | ---------------------------------------------- |
-| GET    | `/healthz`             | liveness/readiness                             |
-| POST   | `/validate`            | Gatekeeper EDP (issuer existence + `auth(i)`)  |
-| GET    | `/issuer-auths`        | list issuer authorizations                     |
-| GET    | `/issuer-auths/{name}` | issuer authorization detail                    |
-| POST   | `/issuer-auths/query`  | query issuer authorizations                    |
-| POST   | `/issuer-auths`        | create issuer authorization                    |
-| POST   | `/issuer-auths/batch`  | create multiple issuer authorizations (atomic) |
-| PUT    | `/issuer-auths/{name}` | full replace issuer authorization (debug only) |
-| DELETE | `/issuer-auths/{name}` | delete issuer authorization                    |
-| DELETE | `/issuer-auths`        | delete all issuer authorizations (debug only)  |
-| GET    | `/conflicts`           | list context conflicts (`X_conf`)              |
-| GET    | `/conflicts/{context}` | list conflicts involving a context             |
-| POST   | `/conflicts`           | create a conflict pair                         |
-| POST   | `/conflicts/batch`     | create multiple conflict pairs (atomic)        |
-| DELETE | `/conflicts/{a}/{b}`   | delete a conflict pair                         |
-| DELETE | `/conflicts`           | delete all conflicts (debug only)              |
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/healthz` | liveness and readiness |
+| POST | `/issuer-auths/validate` | Gatekeeper External Data provider |
+| POST | `/issuer-auths/{name}/wall-check` | conflicts between `auth(name)` and the given contexts |
+| GET | `/issuer-auths` | list all issuer authorizations |
+| GET | `/issuer-auths/{name}` | one issuer authorization |
+| POST | `/issuer-auths/query` | several issuers by name, body `{"keys": [...]}`; `404` if any is missing |
+| POST | `/issuer-auths` | create an issuer authorization |
+| POST | `/issuer-auths/batch` | create several issuer authorizations atomically |
+| PUT | `/issuer-auths/{name}` | replace an issuer authorization, available only with `DEBUG_MODE=true` |
+| DELETE | `/issuer-auths/{name}` | delete an issuer authorization |
+| DELETE | `/issuer-auths` | delete all issuer authorizations |
+| GET | `/conflicts` | list all conflict pairs |
+| GET | `/conflicts/{context}` | conflicts involving a context |
+| POST | `/conflicts` | create a conflict pair |
+| POST | `/conflicts/batch` | create several conflict pairs atomically |
+| DELETE | `/conflicts/{a}/{b}` | delete a conflict pair |
+| DELETE | `/conflicts` | delete all conflicts |
 
-Writes to `/issuer-auths` and `/conflicts` that would violate the
-well-formedness invariant return `409 Conflict` with a `detail` payload
-naming the offending pairs or issuers.
+`PUT` is disabled by default, and answers `404`, to respect the assumption
+that metadata is immutable once created. The interactive API documentation
+generated by FastAPI is served at `/docs`.
 
-## Configuration (env vars)
+## Architecture choices
 
-| Variable        | Default     | Description               |
-| --------------- | ----------- | ------------------------- |
-| `DB_URL`        | `sqlite://` | SQLAlchemy connection URI |
-| `HOST`          | `127.0.0.1` | listen host               |
-| `PORT`          | `8443`      | listen port               |
-| `TLS_CERT_FILE` | (unset)     | server cert (enables TLS) |
-| `TLS_KEY_FILE`  | (unset)     | server key (enables TLS)  |
-| `LOG_LEVEL`     | `INFO`      | DEBUG/INFO/WARNING/ERROR  |
+- **One service for both structures.** `auth` and `X_conf` belong to the same
+  domain and, more importantly, the invariant spans both. Keeping them in the
+  same database lets it be enforced with a local transaction instead of a
+  distributed one.
+- **Serialized writes.** Every write that can affect the invariant takes a
+  row lock on a sentinel row first (`BaseRepository._acquire_lock`).
+  Without it, two concurrent writes that are individually safe, such as
+  authorizing an issuer on a pair of contexts while that pair is being
+  declared in conflict, could both commit and leave the invariant broken.
+  The lock matters on PostgreSQL only; on SQLite writes are already
+  serialized.
+- **Datasets are out of scope.** The analogous property for datasets,
+  `(ctx(d) × ctx(d)) ∩ X_conf = ∅`, is not enforced by any service. The model
+  does not need it as an invariant: a task that satisfies `c_auth` can only
+  request well-formed datasets, so a malformed dataset is simply unusable.
+- **Two storage modes.** In *light mode* the service uses SQLite on a
+  `PersistentVolumeClaim` (`k8s/deployment-light.yaml`), which is what the
+  Makefile selects by default. In full mode it connects to a PostgreSQL
+  cluster managed by [CloudNativePG](https://cloudnative-pg.io/), through the
+  `-rw` service so that writes always reach the current primary.
 
-When `TLS_CERT_FILE` / `TLS_KEY_FILE` are unset, the service runs in plain
-HTTP (used by tests).
+## Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `DB_URL` | `sqlite://` | SQLAlchemy connection URI; the default is an in-memory database |
+| `HOST` | `127.0.0.1` | listen address |
+| `PORT` | `8443` | listen port |
+| `TLS_CERT_FILE` | (unset) | server certificate |
+| `TLS_KEY_FILE` | (unset) | server key |
+| `DEBUG_MODE` | `false` | enables the `PUT` endpoint |
+| `LOG_LEVEL` | `INFO` | one of `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+
+TLS is enabled only when both `TLS_CERT_FILE` and `TLS_KEY_FILE` are set;
+otherwise the service speaks plain HTTP, which is what the tests use.
 
 ## Running locally
 
-Requires Python 3.12+.
+Requires Python 3.12.
 
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
+Variables can be placed in a `.env` file, loaded at startup. To serve HTTPS
+locally, generate a certificate for `localhost` first and point
+`TLS_CERT_FILE` and `TLS_KEY_FILE` to the files under `.certs/local/`:
+
+```bash
+SVC="context-service" NS="context-service" TARGET_ENV="local" bash ../scripts/gen-certs.sh
+```
+
+### Seeding
+
+`seeding.py` loads a JSON file with two lists, `conflicts` and `issuer_auths`,
+into a running instance. See
+[`examples/data/seed_contexts.json`](../examples/data/seed_contexts.json) for
+the format.
+
+| Variable | Description |
+| --- | --- |
+| `SEED_DATA_FILE` | path of the seed file |
+| `SERVICE_URL` | base URL of the service |
+| `CA_CERT_FILE` | CA used to verify the service; if unset, the certificate is not verified |
+
+```bash
+SEED_DATA_FILE=../examples/data/seed_contexts.json \
+SERVICE_URL=https://127.0.0.1:8443 \
+CA_CERT_FILE=.certs/local/ca.crt \
+python seeding.py
+```
+
+Inside the cluster the same script runs as a one-off Job
+(`k8s/seeding.yaml`), launched by `scripts/populate-examples.sh`.
+
 ## Deploying to Kubernetes
 
-### 1. Database Prerequisites
+On kind, `scripts/init-cluster.sh` takes care of everything. The manual steps
+are listed below, to be run from this directory.
 
-Reuses the CloudNativePG operator already installed for `dataset-service`.
+### 1. Database, full mode only
+
+The CloudNativePG operator is shared with dataset-service; see its README for
+the installation command.
 
 ```bash
 kubectl apply -f k8s/postgres-cluster.yaml
 kubectl wait -n context-service --for=condition=Ready cluster/context-db --timeout=600s
 ```
 
-### 2. Certificates & App Deployment
+### 2. Certificates
 
 ```bash
-# From this directory (context-service/) generate TLS certs
 SVC="context-service" NS="context-service" TARGET_ENV="k8s" bash ../scripts/gen-certs.sh
 
-# Create the TLS Secret for the service
 kubectl create secret generic context-service-tls \
     --from-file=ca.crt=".certs/k8s/ca.crt" \
     --from-file=tls.crt=".certs/k8s/tls.crt" \
     --from-file=tls.key=".certs/k8s/tls.key" \
     -n context-service
 
-# Build and load the image into Kind
+# Gatekeeper provider, with the CA injected in place of <CA_BUNDLE>
+CA_B64=$(kubectl get secret context-service-tls -n context-service -o jsonpath='{.data.ca\.crt}')
+sed "s|<CA_BUNDLE>|${CA_B64}|" k8s/provider.yaml | kubectl apply -f -
+```
+
+The scheduler needs the same CA: copy `ca.crt` into a secret named
+`context-service-tls` in the `scheduler` namespace. The bootstrap script does
+it automatically.
+
+### 3. Service
+
+```bash
 docker build -t context-service:latest .
 kind load docker-image context-service:latest --name <cluster-name>
 
-# Apply all service manifests
 kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/deployment.yaml          # or k8s/deployment-light.yaml
 kubectl apply -f k8s/network-policy.yaml
 
 kubectl -n context-service rollout status deployment/context-service --timeout=180s
@@ -139,4 +231,5 @@ pip install pytest pytest-cov
 pytest -v --cov=src
 ```
 
-Tests need **no external services**: the repository is tested on in-memory SQLite.
+The tests need no external service: they run against an in-memory SQLite
+database.
