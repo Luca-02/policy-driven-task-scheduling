@@ -1,0 +1,104 @@
+% ------------------------------------------------------------ %
+%   Nomenclatura centralizzata del documento
+% ------------------------------------------------------------ %
+
+% Gruppi di nomenclatura
+\renewcommand\nomgroup[1]{%
+  \item[\bfseries
+  \ifstrequal{#1}{A}{Insiemi e Funzioni di Base}{%
+  \ifstrequal{#1}{B}{Politiche e Soddisfacibilità}{%
+  \ifstrequal{#1}{C}{Assegnazione e Ottimizzazione}{%
+  \ifstrequal{#1}{D}{Proprietà Astratte dei Nodi}{%
+  \ifstrequal{#1}{E}{Raggruppamento Geografico}{%
+  \ifstrequal{#1}{F}{Staticità e Trasferimento dei Dati}{%
+  \ifstrequal{#1}{G}{Contesti e Conflitto di Interesse}{%
+  \ifstrequal{#1}{H}{Autorizzazione degli Issuer}{%
+  \ifstrequal{#1}{I}{Isolamento Nodo-Task}{}}}}}}}}}%
+]}
+
+% --- Gruppo A: Insiemi e Funzioni di Base (Capitolo 2) ---
+\nomenclature[A, 01]{$\mathcal{N}$}{Insieme dei nodi del cluster attivi e raggiungibili al momento della valutazione}
+\nomenclature[A, 02]{$\mathcal{D}$}{Insieme dei dataset disponibili nel sistema}
+\nomenclature[A, 03]{$\mathcal{T}$}{Insieme dei task sottomessi nel sistema}
+\nomenclature[A, 04]{$\mathcal{I}$}{Insieme degli issuer, i soggetti che sottomettono i task}
+\nomenclature[A, 05]{$iss(t)$}{Issuer che ha sottomesso il task $t$}
+\nomenclature[A, 06]{$req(t)$}{Insieme dei dataset richiesti dal task $t$}
+\nomenclature[A, 07]{$\lambda(d)$}{Insieme dei nodi in cui il dataset $d$ è disponibile localmente}
+
+% --- Gruppo B: Politiche e Soddisfacibilità (Capitolo 2) ---
+\nomenclature[B, 01]{$\mathcal{C}$}{Insieme di tutte le politiche del sistema}
+\nomenclature[B, 02]{$\mathcal{C_A}$}{Politiche di ammissibilità del task, indipendenti dal nodo candidato}
+\nomenclature[B, 03]{$\mathcal{C_T}$}{Politiche di compatibilità tra requisiti del task e caratteristiche del nodo}
+\nomenclature[B, 04]{$\mathcal{C_D}$}{Politiche di trasferimento o accesso remoto dei dataset verso il nodo}
+\nomenclature[B, 05]{$t \models c$}{Il task $t$ soddisfa la politica $c \in \mathcal{C_A}$ rispetto al sistema}
+\nomenclature[B, 06]{$n \models_t c$}{Il nodo $n$ soddisfa la politica $c$ rispetto al task $t$}
+\nomenclature[B, 07]{$n \models_d c$}{Il nodo $n$ soddisfa la politica $c$ rispetto al dataset $d$}
+\nomenclature[B, 08]{$n \models_t \mathcal{C}$}{Il nodo $n$ soddisfa tutte le politiche in $\mathcal{C}$ rispetto al task $t$}
+\nomenclature[B, 09]{$\mathcal{F_C}(t)$}{Insieme dei nodi ammissibili per il task $t$ rispetto alle
+politiche $\mathcal{C}$}
+\nomenclature[B, 10]{$\mathcal{F}_c(t)$}{Insieme dei nodi ammissibili per il task $t$ rispetto alla singola politica $c$}
+
+% --- Gruppo C: Assegnazione e Ottimizzazione (Capitolo 2) ---
+\nomenclature[C, 01]{$\Phi$}{Insieme degli indicatori di ottimizzazione del sistema}
+\nomenclature[C, 02]{$w_\phi$}{Peso dell'indicatore $\phi \in \Phi$ nella funzione di ottimizzazione}
+\nomenclature[C, 03]{$\mathcal{S}_\Phi(n,t)$}{Funzione di ottimizzazione del task $t$ al nodo $n$ rispetto agli indicatori $\Phi$}
+\nomenclature[C, 04]{$f(t)$}{Funzione di assegnazione che determina il nodo al quale viene assegnato $t$}
+\nomenclature[C, 05]{$\bot$}{Simbolo che indica l'impossibilità di assegnare un task a un nodo}
+
+% --- Gruppo D: Proprietà Astratte dei Nodi (Capitolo 3) ---
+\nomenclature[D, 01]{$\mathcal{A}$}{Insieme degli attributi tecnici concreti dei nodi}
+\nomenclature[D, 02]{$n[a]$}{Valore dell'attributo $a$ per il nodo $n$}
+\nomenclature[D, 03]{$Dom(a)$}{Dominio dei valori dell'attributo $a$}
+\nomenclature[D, 04]{$\mathcal{P}$}{Insieme delle proprietà astratte dei nodi}
+\nomenclature[D, 05]{$\mathcal{L}_p$}{Insieme ordinato dei livelli della proprietà $p$}
+\nomenclature[D, 055]{$\mathcal{E}$}{Insieme delle espressioni booleane sugli attributi in $\mathcal{A}$}
+\nomenclature[D, 06]{$e_p(l)$}{Espressione booleana base associata al livello $l$ della proprietà $p$}
+\nomenclature[D, 07]{$\hat{e}_p(l)$}{Espressione effettiva del livello $l$ della proprietà $p$}
+\nomenclature[D, 08]{$n \models e$}{Il nodo $n$ soddisfa l'espressione booleana $e$}
+\nomenclature[D, 09]{$\mathcal{N}_{p,l}$}{Insieme dei nodi che soddisfano il livello $l$ della proprietà $p$}
+\nomenclature[D, 10]{$\alpha_p(n)$}{Livello del nodo $n$ rispetto alla proprietà $p$}
+\nomenclature[D, 11]{$\Gamma$}{Spazio delle classi di proprietà, prodotto cartesiano dei livelli $\mathcal{L}_p$}
+\nomenclature[D, 12]{$\alpha(n)$}{Classe di proprietà del nodo $n$}
+\nomenclature[D, 13]{$\succeq$}{Relazione di dominanza tra classi di proprietà nel reticolo $\mathcal{H}$}
+\nomenclature[D, 14]{$\mathcal{H}$}{Reticolo delle classi di proprietà $\langle \Gamma, \succeq \rangle$}
+\nomenclature[D, 15]{$\beta(x)$}{Classe di proprietà richiesta dall'entità $x$ (task o dataset)}
+\nomenclature[D, 16]{$\beta^*(t)$}{Classe di proprietà effettiva richiesta dal task $t$}
+\nomenclature[D, 17]{$c_{prop}$}{Politica di compatibilità delle proprietà tra task e nodo}
+\nomenclature[D, 18]{$c_{prop}^{\mathcal{D}}$}{Politica di compatibilità delle proprietà tra dataset e nodo}
+\nomenclature[D, 19]{$\overline{w}_{\mathcal{P}}$}{Vettore dei pesi associati alle proprietà in $\mathcal{P}$}
+\nomenclature[D, 19a]{$w_p$}{Peso della proprietà $p \in \mathcal{P}$ nel calcolo dell'eccesso di proprietà}
+\nomenclature[D, 20]{$\Delta(n,t)$}{Eccesso di proprietà normalizzato e pesato tra il nodo $n$ e il task $t$}
+\nomenclature[D, 21]{$\Delta_{max}(t)$}{Limite superiore dell'eccesso di proprietà per il task $t$}
+\nomenclature[D, 22]{$\phi_{prop}(n,t)$}{Indicatore dell'eccesso di proprietà tra il nodo $n$ e il task $t$}
+
+% --- Gruppo E: Raggruppamento Geografico (Capitolo 3) ---
+\nomenclature[E, 01]{$\Omega$}{Insieme universale delle località geografiche dei nodi}
+\nomenclature[E, 02]{$loc(n)$}{Località geografica del nodo $n$}
+\nomenclature[E, 03]{$\mathcal{G}$}{Famiglia dei gruppi geografici}
+\nomenclature[E, 04]{$geo(x)$}{Gruppo geografico richiesto dall'entità $x$ (task o dataset)}
+\nomenclature[E, 05]{$geo^*(t)$}{Gruppo geografico effettivo richiesto dal task $t$}
+\nomenclature[E, 06]{$c_{geo}$}{Politica di co-locazione geografica tra task e nodo}
+\nomenclature[E, 07]{$c_{geo}^{\mathcal{D}}$}{Politica di co-locazione geografica tra dataset e nodo}
+
+% --- Gruppo F: Staticità e Trasferimento dei Dati (Capitolo 3) ---
+\nomenclature[F, 01]{$\mathcal{D}_{static}$}{Insieme dei dataset statici, non trasferibili né accessibili da remoto}
+\nomenclature[F, 02]{$c_{static}$}{Politica di staticità dei dataset}
+\nomenclature[F, 03]{$size(d)$}{Dimensione del dataset $d$ (o di un insieme di dataset)}
+\nomenclature[F, 04]{$remote(n,t)$}{Insieme dei dataset richiesti da $t$ non disponibili localmente su $n$}
+\nomenclature[F, 05]{$\phi_{transfer}(n,t)$}{Indicatore del costo di trasferimento tra il nodo $n$ e il task $t$}
+
+% --- Gruppo G: Contesti e Conflitto di Interesse (Capitolo 3) ---
+\nomenclature[G, 01]{$\mathcal{X}$}{Insieme dei contesti applicativi o organizzativi dei dataset}
+\nomenclature[G, 02]{$ctx(d)$}{Insieme dei contesti a cui afferisce il dataset $d$}
+\nomenclature[G, 03]{$\mathcal{X}_{conf}$}{Relazione di conflitto di interesse tra contesti}
+\nomenclature[G, 04]{$x \parallel x'$}{I contesti $x$ e $x'$ sono in competizione tra loro}
+
+% --- Gruppo H: Autorizzazione degli Issuer (Capitolo 3) ---
+\nomenclature[H, 01]{$auth(i)$}{Insieme dei contesti per cui l'issuer $i$ è autorizzato}
+\nomenclature[H, 02]{$c_{auth}$}{Politica di autorizzazione dell'issuer sui contesti dei dataset richiesti}
+
+% --- Gruppo I: Isolamento Nodo-Task (Capitolo 3) ---
+\nomenclature[I, 01]{$ctx^*(t)$}{Impronta contestuale effettiva del task $t$, unione dei contesti dei dataset richiesti}
+\nomenclature[I, 02]{$\Lambda(n)$}{Memoria del nodo $n$, insieme dei contesti depositati dai task eseguiti}
+\nomenclature[I, 03]{$c_{wall}$}{Politica di Chinese Wall nodo-task sulle autorizzazioni dell'issuer}
+\nomenclature[I, 04]{$sanitizing(n)$}{Predicato che indica se il nodo $n$ è in fase di sanificazione}

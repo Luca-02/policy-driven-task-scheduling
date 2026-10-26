@@ -1,0 +1,269 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%           TEMPLATE LATEX PER TESI                                           %
+%           ______________                                                    %
+%                                                                             %
+%           Ultima revisione: 10 Dicembre 2025                                %
+%           Revisori: G.Presti; L.A.Ludovico; F. Avanzini; M. Tiraboschi      %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Usare l'opzione twoside se volete stampare fronte-retro. Es.:
+% \documentclass[twoside,12pt]{report}
+\documentclass[12pt]{report}
+
+% Si consiglia di diminuire il font per tesi di dottorato in formato 17x24. Es:
+% \documentclass[11pt]{report}
+
+% --- PREAMBOLO ---------------------------------------------------------------
+% Inserire qui eventuali package da includere o 
+% definizioni di comandi personalizzati..
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz-cd}
+\usepackage{pifont}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{subcaption}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc}
+
+\usepackage[italian]{nomencl}
+\makenomenclature
+
+% ...ad esempio il seguente package permette di inserire note visibili nel pdf di output,
+% (il comando che lo precede serve a lasciare spazio alle note, va rimosso prima della consegna)
+% \setlength {\marginparwidth }{2cm}
+% \usepackage{todonotes}  % istruzioni sull'uso in sezione 3.2.9
+
+% Comando per aggiungere un piccolo spazio quando si inizia una nuova riga.
+% \setlength{\parindent}{0ex}
+
+% Selezione lingua
+\usepackage[italian]{babel}
+
+\usepackage{tesi}
+% Puoi usare il font di default di LaTeX con la relativa opzione del package
+% \usepackage[defaultfont]{tesi}
+% Esiste anche un'opzione per il formato 17x24 per le tesi di dottorato
+% \usepackage[phd]{tesi}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Togliere il commento se si vuole togliere il margine maggiore a sinistra per la rilegatura
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\geometry{left=\avghm, textwidth=6in}
+\savegeometry{thethesisgeometry}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\definecolor{dioblue}{RGB}{218,232,252}
+\definecolor{diogreen}{RGB}{213,232,212}
+\definecolor{dioorange}{RGB}{255,230,204}
+\definecolor{diored}{RGB}{248,206,204}
+\definecolor{dioblueborder}{RGB}{108,142,191}
+\definecolor{diogreenborder}{RGB}{130,179,102}
+\definecolor{dioredborder}{RGB}{184,84,80}
+
+% In caso il copia-incolla del PDF generato perda gli spazi,
+% provare a decommentare la seguente riga
+% \pdfinterwordspaceon
+
+% !!! INFORMAZIONI SULLA TESI DA COMPILARE !!!
+
+%   UNIVERSITA' E CORSO DI LAUREA:
+\university{Università degli Studi di Milano}
+\unilogo{immagini/loghi/unimi}
+\faculty{Facoltà di Scienze e Tecnologie}
+\department{Dipartimento di Informatica\\Giovanni Degli Antoni}
+\cdl{Corso di Laurea Magistrale in\\Informatica}
+
+%   TITOLO TESI:
+\title{Scheduling Policy-Driven di Task in Kubernetes con Vincoli di Protezione dei Dati}
+% Questo comando (opzionale) sovrascrive \title per quanto riguarda la copertina
+% Può essere usato per stampare caratteri speciali, tenendo i metadati puliti
+\printedtitle{Scheduling Policy-Driven di Task in Kubernetes con Vincoli di Protezione dei Dati}
+
+%   AUTORE:
+\author{Luca Milanesi}
+\matricola{55053A}
+% "Elaborato Finale" per i CdL triennali
+% "Tesi di Laurea" per i CdL magistrali
+\typeofthesis{Tesi di Laurea}
+
+%   RELATORE E CORRELATORE:
+\relatore{Prof.ssa Sara Foresti}
+\correlatore{Prof.ssa Pierangela Samarati}
+
+%   LABORATORIO:
+% Questa sezione crea una pagina di chiusura della tesi con
+% il logo dell'ente/laboratorio presso cui si è svolto il tirocinio.
+% Più afferenze/url/loghi sono supportate,
+% e la frase può essere personalizzata.
+% Qui trovate alcuni predefiniti del nostro dipartimento
+% \adaptlab
+% \aislab
+% \anacletolab
+% \bisplab
+% \connetslab
+% \everywarelab
+% \falselab
+% \iebilab
+% \islab
+% \lailalab
+% \lalalab
+% \lawlab
+% \laserlab
+% \limlab
+% \mipslab
+% \optlab
+% \phuselab
+% \ponglab
+% \sesarlab
+% \spdplab
+
+% Esempio di personalizzazione della pagina di chiusura
+% (non consegnate con questo esempio!)
+% (da commentare in caso sia sufficiente una delle macro precedenti)
+% \lab{Laboratorio di Ricerca}
+% \lab[in collaborazione con l']{Azienda Specifica}
+% \laburl{https://di.unimi.it/it/ricerca/risorse-e-luoghi-della-ricerca/laboratori-di-ricerca}
+% \lablogo{immagini/redqmark}
+
+% Con questo comando si può cambiare la dimensione (massima
+% altezza e larghezza consentite) dei loghi
+% \setlength\lablogosize{25mm}
+
+%   ANNO ACCADEMICO
+% \the\year inserisce l'anno corrente
+% per specificare manualmente un anno accademico
+% NON inserire nel formato 1970-1971, ma
+% inserire solo 1970
+\academicyear{2025} 
+
+%   INDICI:
+% elenco delle figure (facoltativo)
+% \figurespagetrue
+% elenco delle tabelle (facoltativo)
+% \tablespagetrue
+% prefazioni nell'indice (facoltativo)
+% \prefaceintoctrue
+% indice nell'indice (facoltativo)
+% \tocintoctrue
+% --- FINE PREAMBOLO ----------------------------------------------------------
+
+\begin{document}
+
+% Creazione automatica della copertina
+% Centra la copertina nel foglio: usa questo comando per la copertina esterna
+\makecenteredfrontpage
+% Copertina allineata alle altre pagine: usa questo comando per la copertina interna
+% \makefrontpage
+
+% 
+%			PAGINA DI DEDICA E/O CITAZIONE
+%			facoltativa, questa è l'unica cosa che dovete formattare a mano, un po' come vi pare
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\raggedleft \large \sl 
+A tutte le persone che mi hanno supportato\\
+durante questo percorso.\\
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\beforepreface
+
+% 
+%			PREFAZIONE (facoltativa)
+%
+
+\prefacesection{Prefazione}
+\input{riassunto/contenuto}
+
+Questa tesi è articolata in sei capitoli: il Capitolo~\ref{cap:introduzione} introduce il contesto, gli obiettivi e i lavori correlati; il Capitolo~\ref{cap:definizione} definisce formalmente il problema, le assunzioni adottate e le proprietà garantite dal sistema; il Capitolo~\ref{cap:modello} presenta il modello di scheduling policy-driven proposto, con le componenti concrete del sistema, le famiglie di politiche e gli indicatori di ottimizzazione; il Capitolo~\ref{cap:implementazione} descrive l'implementazione concreta del modello in ambiente Kubernetes; il Capitolo~\ref{cap:valutazione} analizza i risultati sperimentali ottenuti; il Capitolo~\ref{cap:conclusioni} conclude ripercorrendo il lavoro svolto e delineando i possibili sviluppi futuri.
+
+%
+%			RINGRAZIAMENTI (facoltativi)
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \prefacesection{Ringraziamenti}
+% Questa sezione, facoltativa, contiene i ringraziamenti.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 
+%			NOMENCLATURA 
+%
+
+\input{nomenclatura}
+\printnomenclature
+
+%
+%			Creazione automatica dell'indice
+%
+
+\afterpreface
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+\setcounter{page}{1}
+
+% 
+%			SCOPE FORMALI 
+%
+
+% --- amsthm Settings ---------------------------------------------------------
+\newtheoremstyle{styledefinition}
+  {\topsep}         % spazio sopra
+  {\topsep}         % spazio sotto
+  {}                % font corpo: tondo
+  {}                % indentazione
+  {\bfseries}       % font titolo: grassetto
+  {.}               % punteggiatura dopo titolo
+  { }               % spazio dopo titolo
+  {\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+
+\theoremstyle{styledefinition}
+% -----------------------------------------------------------------------------
+
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollario}[section]
+\newtheorem{definition}{Definizione}[section]
+\newtheorem{remark}{Osservazione}[section]
+\newtheorem{property}{Proprietà}[section]
+\newtheorem{problem}{Problema}[section]
+\newtheorem{policy}{Politica}[section]
+\newtheorem{optimizer}{Indicatore}[section]
+
+%
+%			CAPITOLI
+%
+
+\input{capitoli/introduzione}
+\input{capitoli/definizione_problema}
+\input{capitoli/modello_formale}
+\input{capitoli/implementazione}
+\input{capitoli/valutazione}
+\input{capitoli/conclusioni}
+
+%
+%			BIBLIOGRAFIA
+%
+
+% Si può specificare a che livello della TOC deve essere la bibliografia.
+% Il default è 'chapter', per 'part' usare
+% \beforebibliography[part]
+\beforebibliography
+\bibliographystyle{plain}
+\bibliography{bibliografia}
+
+% Pagina di chiusura
+\closingpage
+
+\end{document}

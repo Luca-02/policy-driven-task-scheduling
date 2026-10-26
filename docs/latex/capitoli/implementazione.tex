@@ -1,0 +1,573 @@
+\chapter{Implementazione}
+\label{cap:implementazione}
+
+Nel capitolo precedente sono state definite formalmente le componenti del sistema, insieme alle loro caratteristiche e al relativo comportamento. Questo capitolo è invece dedicato alla descrizione dell'implementazione concreta del sistema, approfondendo gli aspetti tecnici e architetturali rilevanti del modello. Il codice sorgente completo del progetto è pubblicamente disponibile nel repository ufficiale della tesi\footnote{Il codice è disponibile su \url{https://github.com/Luca-02/policy-driven-task-scheduling}}.
+
+% ------------------------------------------------------------ %
+
+\section{Premesse Implementative}
+\label{sec:premesse_implementative}
+
+Prima di descrivere le singole componenti del sistema, è utile presentare alcune scelte implementative che ne caratterizzano l'architettura complessiva.
+
+\paragraph{Ambiente Kubernetes}
+\label{impl:ambiente_k8s}
+
+Come già anticipato nel Capitolo~\ref{cap:definizione}, il sistema è realizzato in ambiente Kubernetes, sfruttando i meccanismi di estensione già previsti dalla piattaforma invece di introdurre un livello di orchestrazione separato. I dettagli di come ciascuna componente del modello viene realizzata concretamente saranno descritti nelle sezioni successive.
+
+\paragraph{Cluster singolo}
+\label{impl:cluster_singolo}
+
+Il sistema opera su un singolo cluster Kubernetes, con un unico \emph{control-plane} e più nodi \emph{worker}~\cite{k8s-architecture}. Di conseguenza, con questa configurazione è presente una sola istanza attiva dello scheduler che assegna i \texttt{Pod} in modo sequenziale: due task non vengono mai valutati contemporaneamente nel cluster. Estendere il sistema a scenari multi-cluster o a più scheduler concorrenti introdurrebbe una complessità aggiuntiva legata alla coordinazione dei cluster e alla sincronizzazione dello stato tra gli scheduler, che esula dagli obiettivi della tesi. Quindi, l'insieme dei nodi $\mathcal{N}$ del modello corrisponde direttamente all'insieme dei nodi worker.
+
+\paragraph{Staticità dei metadati delle entità}
+\label{impl:staticita_metadati}
+
+La pipeline di assegnazione di un task, come già visto, è composta da più passaggi distinti eseguiti in momenti diversi e non atomici tra loro. Tra le operazioni che possono interessare i metadati di nodi, dataset e issuer rilevanti ai fini della pipeline, creazione e cancellazione non introducono problemi di consistenza, dato che la creazione riguarda sempre un'entità nuova non ancora osservata nei passaggi precedenti, mentre la cancellazione di un'entità già in uso durante l'esecuzione della pipeline viene rilevata dal passaggio successivo che tenta di accedervi, causando semplicemente il fallimento controllato dell'assegnazione del task, in linea con un modello di \emph{eventual consistency}.
+
+Il caso problematico è invece la modifica di metadati già esistenti: se i metadati di nodi, dataset o issuer potessero cambiare tra un passaggio e il successivo, una decisione presa in un passaggio precedente potrebbe risultare non più valida al momento in cui viene effettivamente utilizzata, una condizione nota come \emph{time-of-check to time-of-use}~\cite{tictou-fix, tictou-unix}, tipica dei sistemi in cui la verifica di una condizione e il suo utilizzo sono separati nel tempo.
+
+Per questo motivo si assume che, una volta creati, i metadati di nodi, dataset e issuer rilevanti ai fini della pipeline non vengano mai modificati, lasciando il problema aperto a lavori futuri. Soluzioni note per affrontarlo, come meccanismi di lock distribuito o il versioning delle risorse, non vengono implementate in questa tesi per non introdurre una complessità aggiuntiva non inerente agli obiettivi del lavoro.
+
+% ------------------------------------------------------------ %
+
+\section{Panoramica della Pipeline Implementativa}
+\label{sec:architettura_generale}
+
+Il Capitolo~\ref{cap:definizione} ha introdotto la pipeline di assegnazione come un processo strutturato in due fasi logiche, \emph{policy evaluation} e \emph{optimal scheduling}, illustrata nella Figura~\ref{fig:flusso_schedulazione}. Questa sezione descrive come queste fasi vengono realizzate concretamente attraverso una sequenza di componenti architetturali distinte, mostrata in Figura~\ref{fig:architettura_generale}, che collaborano per gestire l'intero ciclo di vita di un task, dalla sua sottomissione iniziale all'assegnazione finale a un nodo del cluster.
+
+Un issuer avvia il processo sottomettendo un task, rappresentato come \emph{Custom Resource} di Kubernetes. Questa richiesta viene innanzitutto intercettata da OPA Gatekeeper (\emph{Open Policy Agent Gatekeeper}), seguendo un approccio già proposto in letteratura per l'enforcement di politiche di scheduling su Kubernetes~\cite{policy-driven-sec-aware-scheduling-k8s}, che ne verifica la validità strutturale e, per quanto riguarda le politiche, l'ammissibilità rispetto a $\mathcal{C_A}$, la famiglia di politiche di ammissibilità dei task indipendenti da qualunque nodo candidato. Se il task viene respinto a questo livello, il processo termina immediatamente senza che alcun nodo del cluster venga mai considerato, coerentemente con quanto stabilito nel Problema~\ref{def:formulazione_problema}.
+
+Superata la validazione, il \emph{task-request-controller} traduce la richiesta in un \texttt{Job}, iniettandone le strutture che la pipeline dovrà confrontare con i nodi candidati, ossia i requisiti di proprietà effettivi $\beta^*(t)$, il vincolo geografico effettivo $geo^*(t)$ e l'impronta contestuale $ctx^*(t)$, oltre alle \emph{nodeAffinity} che codificano dichiarativamente i vincoli da rispettare, ma che saranno poi valutate concretamente dallo scheduler~\cite{k8s-node-affinity}. Questo passaggio non appartiene a nessuna delle due fasi logiche del modello, dato che non valuta né le politiche né i criteri di ottimizzazione, ma è necessario dal punto di vista implementativo per tradurre il task in un elemento schedulabile da Kubernetes, oltre che per calcolare in anticipo i dati che i passaggi successivi utilizzeranno.
+
+Infine, il \texttt{Job} costruito viene preso in carico dallo scheduler, che a partire dalle \emph{nodeAffinity} già iniettate nel \texttt{Job} realizza il secondo e il terzo livello di filtraggio della fase di \emph{policy evaluation}, basati sulle politiche di compatibilità nodo-task e nodo-dataset in $\mathcal{C_T} \cup \mathcal{C_D}$, oltre alla successiva fase di \emph{optimal scheduling} in cui viene calcolata la funzione di ottimizzazione $\mathcal{S}_\Phi$ sui nodi ammissibili. Le due fasi restano concettualmente distinte, ma nell'implementazione vengono eseguite all'interno dello stesso componente, visto che lo scheduler di Kubernetes esegue filtraggio e scoring come fasi consecutive nel ciclo di schedulazione~\cite{k8s-scheduler-framework, k8s-scheduler}. Completate queste due fasi, il nodo finale selezionato ospiterà l'esecuzione del \texttt{Job} relativo al task.
+
+\begin{figure}[htb]
+    \centering
+    \begin{tikzpicture}[
+        node distance = 0.5cm,
+        box/.style = {
+            rectangle, rounded corners=3pt,
+            minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick,
+            font=\footnotesize, align=center
+        },
+        terminal/.style = {
+            rectangle, rounded corners=6pt,
+            minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick,
+            font=\footnotesize, align=center
+        },
+        support/.style = {
+            rectangle, rounded corners=3pt,
+            minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick,
+            font=\footnotesize, align=center
+        },
+        arrow/.style  = {-{Stealth[length=6pt]}, thick},
+        leaderarrow/.style = {dashed, gray!70, thin, -{Stealth[length=6pt]}}
+    ]
+
+    % --- pipeline principale ---
+    \node[terminal, fill=gray!10] (req)
+        {TaskRequest\\\scriptsize sottomissione Custom Resource};
+
+    \node[box, fill=dioblue, below=of req] (gk)
+        {OPA Gatekeeper\\\scriptsize validazione e $\mathcal{C_A}$};
+
+    \node[box, fill=gray!10, below=of gk] (ctrl)
+        {task-request-controller\\\scriptsize traduzione e iniezione};
+
+    \node[box, fill=dioblue, below=of ctrl] (filt)
+        {Scheduler: filtraggio\\\scriptsize $\mathcal{C_T} \cup \mathcal{C_D}$};
+
+    \node[box, fill=diogreen, below=of filt] (score)
+        {Scheduler: scoring\\\scriptsize $\phi_{prop},\, \phi_{transfer}$};
+
+    \node[terminal, fill=gray!10, below=of score] (nodes)
+        {Nodi del cluster\\\scriptsize assegnazione completata};
+
+    \draw[arrow] (req)   -- (gk);
+    \draw[arrow] (gk)    -- (ctrl);
+    \draw[arrow] (ctrl)  -- (filt);
+    \draw[arrow] (filt)  -- (score);
+    \draw[arrow] (score) -- (nodes);
+
+    % --- servizi esterni, in un unico riquadro ---
+    \coordinate (mid1) at ($(gk)!0.5!(ctrl)$);
+    \coordinate (mid2) at ($(ctrl)!0.5!(filt)$);
+
+    \node[support, fill=dioorange, xshift=5.2cm] at (mid1) (ds)
+        {dataset-service\\\scriptsize data governance};
+
+    \node[support, fill=dioorange, xshift=5.2cm] at (mid2) (cs)
+        {context-service\\\scriptsize conflitti e autorizzazioni};
+
+    \begin{scope}[on background layer]
+        \node[
+            draw=orange!50, dashed, thick, rounded corners=5pt,
+            fill=dioorange!40,
+            fit=(ds)(cs),
+            inner sep=14pt,
+            label={[font=\scriptsize]above:Servizi esterni}
+        ] (extbox) {};
+    \end{scope}
+
+    \draw[leaderarrow] (gk.east)   -- (gk.east   -| extbox.west);
+    \draw[leaderarrow] (ctrl.east) -- (ctrl.east -| extbox.west);
+    \draw[leaderarrow] (filt.east) -- (filt.east -| extbox.west);
+
+    % --- node-controller ---
+    \node[support, fill=gray!10, right=1.18cm of nodes] (nc)
+        {node-controller\\\scriptsize gestione dei nodi};
+    \draw[leaderarrow] (nc.west) -- (nodes.east);
+
+    \end{tikzpicture}
+    \caption{Architettura generale della pipeline di assegnazione.}
+    \label{fig:architettura_generale}
+\end{figure}
+
+Il colore dei riquadri grigi, blu e verdi segue la stessa convenzione introdotta nella Figura~\ref{fig:flusso_schedulazione}, a cui si aggiunge un nuovo ruolo. I riquadri arancioni infatti rappresentano i servizi esterni dedicati che vengono interrogati lungo la pipeline per recuperare metadati di dataset, conflitti o autorizzazioni, la cui interazione è rappresentata in figura da una linea tratteggiata. Il riquadro grigio del \emph{node-controller}, coerentemente con il suo ruolo neutro non legato a una fase specifica della pipeline, rappresenta invece un'ulteriore componente che, indipendentemente dal flusso appena descritto, manterrà aggiornata la classificazione dei nodi del cluster, così da renderla disponibile ai passaggi che ne faranno uso. Il ruolo e il funzionamento di ciascuna componente della pipeline, inclusi quelli di supporto appena introdotti, verranno approfonditi nelle prossime sezioni.
+
+% ------------------------------------------------------------ %
+
+\section{Rappresentazione e Gestione delle Entità del Modello}
+\label{sec:entita_modello_impl}
+
+Prima di descrivere il percorso che una richiesta compie lungo la pipeline, è necessario introdurre le componenti che rappresentano e mantengono lo stato delle entità del modello formale del Capitolo~\ref{cap:modello}: il task stesso, le proprietà e il comportamento dei nodi, i metadati dei dataset e le autorizzazioni sui contesti. Queste componenti operano in modo indipendente dal flusso di assegnazione di un singolo task, offrendo però le informazioni su cui la pipeline descritta nella Sezione~\ref{sec:architettura_generale} si appoggerà.
+
+% ------------------------------------------------------------ %
+
+\subsection{Struttura di un Task}
+\label{subsec:struttura_task}
+
+Un task viene rappresentato nel cluster tramite una \emph{Custom Resource} \texttt{TaskRequest}, i cui campi rispecchiano direttamente le componenti della richiesta $t$ definite nel modello formale:
+
+\begin{itemize} 
+    \item \texttt{issuer} identifica l'emittente della richiesta $iss(t)$. Il campo è obbligatorio nello schema della risorsa, coerentemente con la definizione stessa di $iss$ nel Capitolo~\ref{cap:definizione}, secondo cui a ogni task è sempre associato un proprio emittente;
+    \item \texttt{datasets} elenca i nomi dei dataset richiesti per l'esecuzione $req(t)$. Coerentemente con l'assunzione secondo cui ogni task richiede almeno un dataset, introdotta nella Sezione~\ref{sec:assunzioni_preliminari}, lo schema impone che l'insieme contenga almeno un elemento. Il campo contiene soltanto i riferimenti ai dataset, e non i loro metadati: questi verranno ritrovati interrogando il relativo servizio \emph{dataset-service};
+    \item \texttt{requirements}, corrispondente a $\beta(t)$, è un oggetto composto da una serie di coppie chiave-valore, dove ciascuna chiave identifica una proprietà e il rispettivo valore ne indica il livello minimo richiesto. Le proprietà non presenti tra le chiavi si assume richiedano un livello minimo nullo;
+    \item \texttt{geo} esprime il vincolo geografico della richiesta $geo(t)$, facendo riferimento a una seconda \emph{Custom Resource} descritta di seguito.
+\end{itemize}
+
+Tutte le istanze di \texttt{TaskRequest} sono risorse \emph{namespace-scoped} e vengono sottomesse esclusivamente all'interno di un namespace \texttt{compute}, dedicato unicamente all'esecuzione dei task nel cluster. Questa scelta sfrutta il ruolo che i namespace ricoprono in Kubernetes come meccanismo di isolamento logico delle risorse~\cite{k8s-namespaces}, tipicamente usato per segmentare le risorse del cluster: isolare i task in un namespace dedicato consente di restringere in esso l'applicazione delle politiche.
+
+Il campo \texttt{geo} fa riferimento a una seconda \emph{Custom Resource}, \texttt{GeographicalGroup}, ovvero un gruppo geografico. Quest'ultimo può essere definito elencando un insieme di località, innestando altri gruppi geografici già definiti, oppure combinandole entrambe. Questa struttura ricorsiva riflette la definizione di raggruppamento gerarchico introdotta nel Capitolo~\ref{cap:modello} per la famiglia $\mathcal{G}$.
+
+% ------------------------------------------------------------ %
+
+\subsection{Gestione delle Proprietà e del Comportamento dei Nodi}
+\label{subsec:node_controller}
+
+Il \emph{node-controller} è responsabile sia del calcolo di $\alpha(n)$, ovvero la classe di proprietà del nodo, sia dell'esecuzione della procedura di sanificazione introdotta nel Capitolo~\ref{cap:modello} per la politica $c_{wall}$ per ciascun nodo del cluster. Opera in modo completamente autonomo rispetto al resto della pipeline, come già anticipato nella Sezione~\ref{sec:architettura_generale}, reagendo esclusivamente ai cambiamenti di stato dei nodi e delle relative proprietà.
+
+Kubernetes offre nativamente la possibilità di etichettare ogni nodo con coppie chiave-valore~\cite{k8s-nodes}, e il sistema si appoggia a questo meccanismo per rappresentare due informazioni distinte: un insieme di etichette relative agli attributi del nodo e da cui viene derivato $\alpha(n)$ come discusso nella Sezione~\ref{subsec:classificazione_nodi}, e un'etichetta che ne indica la località geografica $loc(n)$. Mentre la seconda viene assegnata staticamente al nodo durante la sua inizializzazione, la prima è quella su cui interviene il \emph{node-controller} per derivarne il livello di ciascuna proprietà.
+
+Le proprietà astratte dei nodi sono rappresentate tramite un'apposita \emph{Custom Resource}, \texttt{NodeProperty}, che ne implementa la struttura a livelli definita nella Sezione~\ref{subsec:classificazione_nodi}, associando a ciascun livello la condizione che un nodo deve soddisfare, valutata proprio rispetto alle etichette di attributo appena introdotte, e, per la proprietà nel suo complesso, un peso \texttt{weight} utilizzato successivamente da $\phi_{prop}$ nella fase di ottimizzazione dello scheduler. Il numero identificativo di ciascun livello non è specificato esplicitamente nella risorsa, ma è derivato direttamente dalla sua posizione nella lista ordinata, garantendo così per costruzione che l'insieme dei livelli rispetti sempre la struttura $\mathcal{L}_p = \{0, 1, \ldots, l\}$ prevista dal modello, senza discontinuità tra un livello e il successivo.
+
+Il controller osserva i cambiamenti delle \texttt{NodeProperty} e dei nodi del cluster. Quando un nodo entra a far parte del cluster ne calcola il livello per ciascuna proprietà definita ed etichetta il nodo di conseguenza, con una label la cui chiave è il nome della proprietà e il valore è il livello calcolato; quando invece viene creata una nuova \texttt{NodeProperty}, il controller ne calcola il livello su tutti i nodi del cluster ed etichetta ciascuno di conseguenza, mentre quando una \texttt{NodeProperty} viene eliminata, rimuove la label corrispondente da tutti i nodi. Il livello 0, quello di default, non viene mai rappresentato da un valore esplicito, ma dalla semplice assenza dell'etichetta corrispondente.
+
+\begin{figure}[htb]
+    \centering
+    \begin{tikzpicture}[
+        node distance = 0.3cm,
+        box/.style = {rectangle, rounded corners=3pt, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        terminal/.style = {rectangle, rounded corners=6pt, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        decision/.style = {diamond, aspect=2, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        arrow/.style = {-{Stealth[length=6pt]}, thick},
+        label/.style = {font=\scriptsize}
+    ]
+
+    \node[terminal, fill=gray!10] (s1) 
+        {Timer periodico};
+    
+    \node[decision, fill=gray!10, below=of s1] (s2) 
+        {$\Lambda(n) = \emptyset$?};
+    
+    \node[terminal, fill=gray!10, right=1cm of s2] (nl) 
+        {Nodo lasciato\\inalterato};
+    
+    \node[box, fill=gray!10, below=of s2] (s3)
+        {$sanitizing(n) \leftarrow \mathit{true}$\\\scriptsize \emph{taint} applicato};
+        
+    \node[decision, fill=gray!10, below=of s3] (s4) 
+        {\texttt{Pod} attivi in \texttt{compute}?};
+    
+    \node[box, fill=gray!10, below=of s4] (s5) 
+        {$\mathit{ClearResidualTraces}(n)$\\\scriptsize simulata};
+    
+    \node[terminal, fill=gray!10, below=of s5] (s6)
+        {$\Lambda(n) \leftarrow \emptyset$, $sanitizing(n) \leftarrow \mathit{false}$ \\\scriptsize annotazioni e \emph{taint} rimossi};
+
+    \draw[arrow] (s1) -- (s2);
+    \draw[arrow] (s2) -- node[label, above] {sì} (nl);
+    \draw[arrow] (s2) -- node[label, left] {no} (s3);
+    \draw[arrow] (s3) -- (s4);
+    \draw[arrow] (s4) -- node[label, left] {no} (s5);
+    \draw[arrow] (s5) -- (s6);
+
+    \draw[arrow] (s4.east) -- ++(5cm,0)
+        node[label, above, pos=0.5, sloped] {sì: rimandato al ciclo successivo}
+        |- (s1.east);
+
+    \end{tikzpicture}
+    \caption{Procedura periodica di sanificazione per un nodo eseguita dal \emph{node-controller}.}
+    \label{fig:node_controller_dettaglio}
+\end{figure}
+
+Il secondo compito del controller è la gestione della procedura di sanificazione. Tra le strategie discusse nella Sezione~\ref{subsec:chinese_wall}, per semplicità è stata implementata quella periodica, azionata a intervalli fissi per tutti i nodi del cluster e riassunta nella Figura~\ref{fig:node_controller_dettaglio}; la stessa procedura è comunque invocabile anche manualmente, ad esempio a scopo di test o valutazione, tramite un apposito \texttt{Job}. I quattro passaggi concettuali dell'Algoritmo~\ref{alg:sanificazione} sono implementati in questo modo:
+
+\begin{itemize}
+    \item $sanitizing(n) \leftarrow \mathit{true}$ è realizzato applicando al nodo un \emph{taint} dedicato con effetto \texttt{NoSchedule}~\cite{k8s-taint-toleration}, che impedisce l'assegnazione di nuovi \texttt{Pod} sul nodo per tutta la durata dell'operazione, facendolo così uscire da $\mathcal{N}$;
+    \item $\mathit{WaitForCompletion}(n)$ non viene implementata come attesa bloccante, ma verificata a ogni invocazione periodica, controllando esclusivamente i \texttt{Pod} presenti nel namespace \texttt{compute}, l'unico in cui vengono eseguiti i task del sistema: se ne è ancora attivo almeno uno sul nodo, l'operazione viene rimandata al ciclo successivo;
+    \item $\mathit{ClearResidualTraces}(n)$ in questo caso è simulata, dato che la sua realizzazione concreta dipende dalle caratteristiche hardware~\cite{data-remanence-flash-memory} e di sistema operativo specifiche del nodo, ambito ampiamente trattato per contesti di cloud computing~\cite{survey-data-remanence-cloud, standards-techniques-remove-data-remanence-cloud} ma non affrontato in questa tesi;
+    \item $\Lambda(n) \leftarrow \emptyset$ e $sanitizing(n) \leftarrow \mathit{false}$ sono realizzati rimuovendo l'annotazione del nodo che rappresenta $\Lambda(n)$ e togliendo il \emph{taint} applicato al primo passo, facendo così rientrare il nodo in $\mathcal{N}$.
+\end{itemize}
+
+Se $\Lambda(n)$ risulta già vuoto al momento dell'invocazione, il nodo viene lasciato del tutto inalterato saltando la procedura di sanificazione, visto che, non essendoci nulla da proteggere, non c'è nulla da sanificare.
+
+% ------------------------------------------------------------ %
+
+\subsection{Gestione dei Dataset}
+\label{subsec:dataset_service}
+
+Il \emph{dataset-service} è un servizio REST API che gestisce il registro dei metadati dei dataset nel sistema, svolgendo un ruolo analogo a quello di un servizio di \emph{data governance}~\cite{data-governance-framework}, simile ad un catalogo di dati come Apache Atlas~\cite{datahub-apache-atlas-comparison}. Questo servizio non gestisce i dati stessi, ma le informazioni che ne descrivono i requisiti di protezione, la distribuzione nel cluster e i vincoli di trasferimento, appoggiandosi a un database esterno per la persistenza. I dataset vengono registrati tramite appositi endpoint dedicati alla gestione del loro ciclo di vita, distinti da quelli di interrogazione usati durante la pipeline descritti di seguito.
+
+Per ciascun dataset $d \in \mathcal{D}$, il servizio salva:
+
+\begin{itemize}
+    \item \texttt{requirements}, che corrisponde a $\beta(d)$, rappresenta i requisiti rispetto alle proprietà dei nodi su cui il dataset può essere archiviato, con la stessa struttura a coppie chiave-valore già vista per $\beta(t)$ precedentemente;
+    \item \texttt{nodes} che indica l'insieme dei nodi che già lo ospitano localmente, ossia $\lambda(d)$;
+    \item \texttt{static}, un valore booleano, che indica l'appartenenza del dataset a $\mathcal{D}_{static}$;
+    \item \texttt{geo} che identifica uno specifico \texttt{GeographicalGroup} a cui il dataset è vincolato, ovvero il vincolo geografico $geo(d)$;
+    \item \texttt{contexts} che rappresenta l'insieme dei contesti $ctx(d)$ associati al dataset come una lista di stringhe;
+    \item \texttt{size\_mb} che indica la dimensione del dataset $size(d)$.
+\end{itemize}
+
+Per rendere questi metadati disponibili durante la pipeline della Sezione~\ref{sec:architettura_generale}, il servizio espone due endpoint dedicati. Il primo è dedicato a Gatekeeper e implementa la procedura di \emph{External Data} da esso fornita, interrogato da quest'ultimo in fase di validazione per controllare la lista di dataset $req(t)$ richiesti dal task e recuperarne le informazioni necessarie. Il secondo è un endpoint di interrogazione più generico, usato sia dal \emph{task-request-controller} sia dallo scheduler, entrambi interessati a recuperare i metadati di uno o più dataset, individuati dal loro identificatore, per motivi che verranno approfonditi nelle sezioni seguenti.
+
+% ------------------------------------------------------------ %
+
+\subsection{Gestione dei Conflitti e delle Autorizzazioni dei Contesti}
+\label{subsec:context_service}
+
+Il \emph{context-service} è il servizio responsabile della gestione delle autorizzazioni degli issuer $auth(i)$ e dell'insieme dei conflitti di interesse $\mathcal{X}_{conf}$. Analogamente al \emph{dataset-service}, anche questo servizio espone un insieme di endpoint dedicati all'amministrazione e al ciclo di vita di tali strutture, separati dagli endpoint di interrogazione utilizzati durante l'esecuzione della pipeline.
+
+Per ciascun issuer $i \in \mathcal{I}$, il servizio salva l'insieme dei contesti a cui è autorizzato ad accedere, ossia $auth(i)$. Separatamente, mantiene anche l'insieme $\mathcal{X}_{conf}$ come una collezione di coppie non ordinate di contesti in conflitto tra loro. Inoltre, ogni operazione di scrittura su una delle due strutture viene verificata anche rispetto all'altra, serializzando le scritture concorrenti tramite un meccanismo di lock, in modo da garantire che la buona formazione delle autorizzazioni di ciascun issuer, discussa alla Definizione~\ref{def:buona_formazione_auth}, resti sempre valida: un nuovo conflitto non può essere registrato se esistono già issuer autorizzati su entrambi i contesti coinvolti, e allo stesso modo un issuer non può essere autorizzato su una coppia di contesti già in conflitto.
+
+Anche in questo caso, per rendere queste informazioni disponibili durante la pipeline della Sezione~\ref{sec:architettura_generale}, il servizio espone due endpoint dedicati. Il primo è dedicato a Gatekeeper e ne implementa la procedura di \emph{External Data} come già visto per il \emph{dataset-service}, interrogato da Gatekeeper in fase di validazione per verificare l'esistenza dell'issuer e recuperarne le autorizzazioni $auth(i)$. Il secondo, dato un issuer e un insieme di contesti $X \subseteq \mathcal{X}$, restituisce direttamente l'esito dell'intersezione:
+\begin{equation}
+    \bigl( auth(i) \times X \bigr) \cap \mathcal{X}_{conf}
+\end{equation}
+evitando così a chi lo interroga di dover recuperare entrambi gli insiemi e calcolarla localmente: è il caso della politica $c_{wall}$, che verrà implementata nello scheduler, dove $X$ corrisponde alla memoria del nodo $\Lambda(n)$ e l'issuer a $iss(t)$.
+
+% ------------------------------------------------------------ %
+
+\section{Pipeline di Assegnazione}
+\label{sec:pipeline_assegnazione}
+
+Definite le componenti che rappresentano e mantengono lo stato delle entità del modello, è ora possibile ripercorrere e approfondire il flusso che una richiesta attraversa dalla sottomissione fino all'assegnazione finale, descritto precedentemente nella Sezione~\ref{sec:architettura_generale}: la validazione da parte di Gatekeeper, la traduzione delegata al \emph{task-request-controller} e, infine, la fase di filtraggio e scoring eseguita dallo scheduler personalizzato.
+
+% ------------------------------------------------------------ %
+
+\subsection{Validazione dei Task}
+\label{subsec:gatekeeper_validation}
+
+Con la sottomissione di una \texttt{TaskRequest} inizia la pipeline descritta nella Sezione~\ref{sec:architettura_generale}, e il primo passaggio che la richiesta attraversa è la validazione da parte di Gatekeeper. A differenza di altri lavori noti in letteratura che utilizzano questo strumento sia per la validazione sia per la mutazione delle risorse in ammissione~\cite{policy-driven-sec-aware-scheduling-k8s, secure-k8s-workload-deployment}, in questo sistema viene impiegato esclusivamente in fase di validazione. Infatti, l'iniezione dei dati che la richiesta dovrà portare con sé è delegata al \emph{task-request-controller}, descritto nella sezione successiva.
+
+La validazione effettuata da Gatekeeper, illustrata nella Figura~\ref{fig:gatekeeper_dettaglio}, si basa su due livelli distinti. Il primo riguarda l'integrità strutturale della richiesta rispetto a ciò che è già definito nel cluster, venendo risolto interamente rispetto alle risorse native di Kubernetes: si controlla che il namespace di sottomissione sia quello previsto, che ogni proprietà elencata in \texttt{requirements} corrisponda a una \texttt{NodeProperty} esistente e che il livello richiesto sia uno di quelli previsti dalla sua definizione, e che il gruppo geografico indicato in \texttt{geo} corrisponda a un \texttt{GeographicalGroup} effettivamente definito.
+
+\begin{figure}[htb]
+    \centering
+    \begin{tikzpicture}[
+        node distance = 0.3cm,
+        box/.style = {rectangle, rounded corners=3pt, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        terminal/.style = {rectangle, rounded corners=6pt, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        decision/.style = {diamond, aspect=2, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\scriptsize, align=center, inner sep=1pt},
+        support/.style = {rectangle, rounded corners=3pt, minimum width=3.2cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        arrow/.style = {-{Stealth[length=6pt]}, thick},
+        leaderarrow/.style = {dashed, gray!70, thin, -{Stealth[length=6pt]}},
+        label/.style = {font=\scriptsize},
+        edgelabel/.style = {font=\tiny, align=center}
+    ]
+    \node[terminal, fill=gray!10] (t1)
+        {\texttt{TaskRequest} sottomessa};
+
+    \node[decision, fill=dioblue, below=of t1] (t2)
+        {Namespace\\\texttt{compute}?};
+        
+    \node[decision, fill=dioblue, below=of t2] (t3)
+        {Proprietà/livelli\\esistenti?};
+        
+    \node[decision, fill=dioblue, below=of t3] (t4)
+        {\texttt{GeographicalGroup}\\esistente?};
+
+    \node[decision, fill=dioblue, below=of t4] (t5)
+        {Dataset\\esistenti/integri?};
+
+    \node[decision, fill=dioblue, below=of t5] (t6)
+        {Issuer esistente e\\$c_{auth}$ soddisfatta?};
+
+    \node[terminal, fill=gray!10, below=of t6] (ok)
+        {Richiesta ammessa};
+        
+    \node[terminal, fill=diored, left=0.5cm of ok] (fail)
+        {Richiesta respinta\\\scriptsize $f(t) = \bot$};
+
+    \node[support, fill=dioorange, right=1.8cm of t5] (ds)
+        {dataset-service};
+
+    \node[support, fill=dioorange, right=1.8cm of t6] (cs)
+        {context-service};
+
+    \draw[arrow] (t1) -- (t2);
+    \draw[arrow] (t2) -- node[label, right] {sì} (t3);
+    \draw[arrow] (t3) -- node[label, right] {sì} (t4);
+    \draw[arrow] (t4) -- node[label, right] {sì} (t5);
+    \draw[arrow] (t5) -- node[label, right] {sì} (t6);
+    \draw[arrow] (t6) -- node[label, right] {sì} (ok);
+    
+    \draw[arrow] (t2.west) -| node[label, near start, above] {no} (fail.north);
+    \draw[arrow] (t3.west) -| node[label, near start, above] {no} (fail.north);
+    \draw[arrow] (t4.west) -| node[label, near start, above] {no} (fail.north);
+    \draw[arrow] (t5.west) -| node[label, near start, above] {no} (fail.north);
+    \draw[arrow] (t6.west) -| node[label, near start, above] {no} (fail.north);
+    
+    \draw[leaderarrow] (t5.east) -- node[edgelabel, above] {$\beta(d)$,\\$geo(d)$,\\$ctx(d)$} (ds.west);
+    \draw[leaderarrow] (t6.east) -- node[edgelabel, above] {$auth(iss(t))$} (cs.west);
+    \end{tikzpicture}
+    \caption{Sequenza di controlli eseguiti da Gatekeeper in fase di validazione di una \texttt{TaskRequest}.}
+    \label{fig:gatekeeper_dettaglio}
+\end{figure}
+
+Il secondo livello riguarda invece ciò che dipende da informazioni non rappresentate come risorse native di Kubernetes, quindi non risolvibile rispetto alla replica delle risorse del cluster mantenuta da Gatekeeper, come l'esistenza e l'integrità dei dataset richiesti e l'ammissibilità del task rispetto a $\mathcal{C_A}$, in particolare alla politica $c_{auth}$. Per questo, Gatekeeper interroga l'endpoint dedicato del \emph{dataset-service} per accertarsi che ciascun dataset elencato in \texttt{datasets} esista, verificando inoltre che i suoi stessi metadati siano integri, ossia che i requisiti $\beta(d)$ e il vincolo geografico $geo(d)$ facciano a loro volta riferimento a proprietà e gruppi geografici effettivamente esistenti nel cluster, come già verificato per il task nel primo livello. Successivamente, interroga l'endpoint analogo del \emph{context-service} per validare l'esistenza dell'issuer e recuperarne $auth(iss(t))$: dato che $c_{auth}$ vincola l'insieme dei dataset richiesti dal task alle autorizzazioni del suo issuer, è naturale che la sua verifica avvenga in questa fase, prima ancora che il task venga tradotto in una risorsa schedulabile dal \emph{task-request-controller}. Infatti, come visto nel modello formale alla Sezione~\ref{subsec:autorizzazione_issuer}, se anche un solo dataset richiesto appartiene a un contesto non compreso tra quelli autorizzati, la richiesta deve essere respinta.
+
+Quindi, se uno di questi controlli dovesse fallire, la richiesta viene rifiutata immediatamente, ancor prima di essere tradotta in una risorsa schedulabile, coerentemente con quanto già discusso nella Sezione~\ref{sec:architettura_generale}.
+
+% ------------------------------------------------------------ %
+
+\subsection{Traduzione dei Task}
+\label{subsec:task_request_controller}
+
+Superata la validazione descritta nella Sezione~\ref{subsec:gatekeeper_validation}, la richiesta passa al \emph{task-request-controller}, responsabile di tradurla in un \texttt{Job} schedulabile e di iniettarvi le informazioni necessarie per i prossimi passaggi della pipeline. 
+
+Il primo passo è il recupero dei metadati completi dei dataset richiesti, interrogando in un'unica chiamata l'endpoint apposito del \emph{dataset-service} discusso nella Sezione~\ref{subsec:dataset_service}. A partire da questi metadati, il controller calcola le seguenti strutture, come riassunto nella Figura~\ref{fig:controller_dettaglio}:
+
+\begin{itemize}
+    \item $\beta^*(t)$ come \emph{least upper bound} tra $\beta(t)$ e $\beta(d)$ per ogni $d \in req(t)$ come illustrato nella Definizione~\ref{def:classe_effettiva};
+    \item $geo^*(t)$, come intersezione tra $geo(t)$ e $geo(d)$ per ogni $d \in req(t)$ come da Definizione~\ref{def:localita_effettiva}, risolvendo ricorsivamente la struttura gerarchica dei gruppi geografici coinvolti. Se l'intersezione dovesse risultare vuota, il task viene rifiutato immediatamente, coerentemente con quanto discusso a proposito di $c_{geo}$ nel Capitolo~\ref{cap:modello};
+    \item $ctx^*(t)$ come unione dei contesti $ctx(d)$ per ogni $d \in req(t)$ come visto nella Sezione~\ref{subsec:chinese_wall}.
+\end{itemize}
+
+Infine, il controller calcola l'intersezione degli insiemi $\lambda(d)$ per i dataset richiesti che appartengono all'insieme $\mathcal{D}_{static}$. Se questa intersezione dovesse risultare vuota, significa che nessun nodo ospita già localmente tutti i dataset statici richiesti, e anche in questo caso il task viene rifiutato prima di procedere oltre.
+
+Con queste informazioni ora il controller costruisce il relativo \texttt{Job}, impostando un riferimento di proprietà verso la \texttt{TaskRequest} di origine per la sua gestione del ciclo di vita nel cluster, e iniettandovi le annotazioni che riportano issuer $iss(t)$, dataset richiesti $req(t)$ e le strutture precedentemente calcolate $\beta^*(t)$, $geo^*(t)$ e $ctx^*(t)$, così da renderle disponibili ai passaggi successivi della pipeline senza doverle ricalcolare. Inoltre, costruisce una \emph{nodeAffinity} che traduce direttamente in vincoli nativi di Kubernetes tre delle politiche di $\mathcal{C_T} \cup \mathcal{C_D}$:
+
+\begin{itemize}
+    \item $c_{prop}$: per ogni proprietà $p$ con $\beta^*_p(t) > 0$, una \texttt{matchExpression} con operatore \texttt{Gt} impone che l'etichetta del livello del nodo per la proprietà $p$ sia strettamente maggiore di $\beta^*_p(t) - 1$, equivalente a richiedere $\alpha_p(n) \geq \beta^*_p(t)$ trattandosi di valori interi;
+    \item $c_{geo}$: una \texttt{matchExpression} con operatore \texttt{In} impone che l'etichetta della località del nodo appartenga all'insieme $geo^*(t)$;
+    \item $c_{static}$: una \texttt{matchExpression} con operatore \texttt{In} impone che il nome del nodo appartenga all'intersezione dei $\lambda(d)$ dei dataset statici calcolata poco sopra, agendo di fatto come un vincolo di co-locazione su nodi specifici.
+\end{itemize}
+
+\begin{figure}[htb]
+    \centering
+    \begin{tikzpicture}[
+        node distance = 0.3cm,
+        box/.style = {rectangle, rounded corners=3pt, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        terminal/.style = {rectangle, rounded corners=6pt, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        decision/.style = {diamond, aspect=2, minimum width=4cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center, inner sep=1pt},
+        support/.style = {rectangle, rounded corners=3pt, minimum width=3.2cm, minimum height=1cm,
+            text centered, draw=black, thick, font=\footnotesize, align=center},
+        arrow/.style = {-{Stealth[length=6pt]}, thick},
+        leaderarrow/.style = {dashed, gray!70, thin, -{Stealth[length=6pt]}},
+        label/.style = {font=\scriptsize},
+        edgelabel/.style = {font=\tiny, align=center}
+    ]
+    \node[terminal, fill=gray!10] (c1)
+        {\texttt{TaskRequest} validata};
+
+    \node[box, fill=gray!10, below=of c1] (c2)
+        {Recupero metadati\\dei dataset in $req(t)$};
+
+    \node[box, fill=gray!10, below=of c2] (c3)
+        {Calcolo $\beta^*(t)$};
+
+    \node[decision, fill=dioblue, below=of c3] (c5)
+        {$geo^*(t) \neq \emptyset$?};
+
+    \node[box, fill=gray!10, below=of c5] (c6)
+        {Calcolo $ctx^*(t)$};
+
+    \node[decision, fill=dioblue, below=of c6] (c7)
+        {$\mathcal{F}_{c_{static}}(t) \neq \emptyset$?};
+
+    \node[box, fill=gray!10, below=of c7] (c8)
+        {Costruzione \texttt{Job}\\\scriptsize annotazioni e \emph{nodeAffinity}};
+
+    \node[terminal, fill=gray!10, below=of c8] (ok)
+        {\texttt{Job} creato};
+
+    \node[terminal, fill=diored, left=0.5cm of ok] (fail)
+        {\texttt{TaskRequest} rifiutata\\\scriptsize $f(t) = \bot$};
+
+    \node[support, fill=dioorange, right=1.8cm of c2] (ds)
+        {dataset-service};
+
+    \draw[arrow] (c1) -- (c2);
+    \draw[arrow] (c2) -- (c3);
+    \draw[arrow] (c3) -- (c5);
+    \draw[arrow] (c5) -- node[label, right] {sì} (c6);
+    \draw[arrow] (c6) -- (c7);
+    \draw[arrow] (c7) -- node[label, right] {sì} (c8);
+    \draw[arrow] (c8) -- (ok);
+
+    \draw[arrow] (c5.west) -| node[label, near start, above] {no} (fail.north);
+    \draw[arrow] (c7.west) -| node[label, near start, above] {no} (fail.north);
+
+    \draw[leaderarrow] (c2.east) -- node[edgelabel, above] {$\beta(d)$, \\ $geo(d)$, $ctx(d)$, \\ $size(d)$, $\lambda(d)$} (ds.west);
+    \end{tikzpicture}
+    \caption{Passaggi eseguiti dal \emph{task-request-controller} per tradurre una \texttt{TaskRequest} in un \texttt{Job} schedulabile.}
+    \label{fig:controller_dettaglio}
+\end{figure}
+
+Il controller si limita quindi a codificare questi tre vincoli in forma dichiarativa: la loro valutazione concreta verso ciascun nodo candidato avviene solo in seguito per mezzo dello scheduler. La sola politica che rimane esclusa da questo meccanismo è $c_{wall}$, l'unica che dipende da uno stato dinamico non esprimibile come vincolo statico sulle etichette del nodo. La sua verifica è rimandata allo scheduler nella fase di filtraggio, descritto nella Sezione~\ref{subsec:scheduler}.
+
+Coerentemente con l'assunzione di trattare i task come \emph{black-box}, il container del \texttt{Job} non riceve ancora un'immagine specifica dalla \texttt{TaskRequest}: nel prototipo viene utilizzata un'immagine segnaposto, rimandando a un'eventuale estensione futura la gestione di questo aspetto.
+
+% ------------------------------------------------------------ %
+
+\subsection{Scheduler Personalizzato}
+\label{subsec:scheduler}
+
+Lo scheduler è realizzato come un insieme di plugin per lo Scheduler Framework di Kubernetes~\cite{k8s-scheduler-framework, k8s-scheduler}, registrati in una configurazione per lo scheduler specifica che sostituisce quella di default per i \texttt{Job} sottomessi al sistema relativi ai task. Il suo compito è completare il filtraggio previsto nella fase di \emph{policy evaluation}, nella quale le politiche $c_{prop}$, $c_{geo}$ e $c_{static}$ vengono valutate dal plugin nativo \texttt{NodeAffinity}~\cite{k8s-scheduler-config}, già incluso nello Scheduler Framework, sulla base dei vincoli codificati dal \emph{task-request-controller} nella Sezione~\ref{subsec:task_request_controller}. L'unica politica che richiede un plugin sviluppato separatamente è $c_{wall}$, dato che non è esprimibile come vincolo statico sulle etichette del nodo. Inoltre, lo scheduler si occupa interamente della successiva fase di \emph{optimal scheduling}, calcolando gli indicatori dell'insieme $\Phi = \{\phi_{prop},\, \phi_{transfer}\}$. 
+
+La Figura~\ref{fig:ciclo_scheduling} riassume l'intero ciclo di scheduling così ottenuto, distinguendo i punti di estensione valutati per ogni nodo candidato da quelli eseguiti una sola volta per ciclo; i paragrafi seguenti ne descrivono nel dettaglio ciascun plugin.
+
+\begin{figure}[htb]
+    \centering
+    \begin{tikzpicture}[
+        node distance = 0.3cm,
+        box/.style = {
+            rectangle, rounded corners=3pt,
+            minimum width=6cm, minimum height=1cm,
+            text centered, draw=black, thick,
+            font=\footnotesize, align=center
+        },
+        terminal/.style = {
+            rectangle, rounded corners=6pt,
+            minimum width=6cm, minimum height=1cm,
+            text centered, draw=black, thick,
+            font=\footnotesize, align=center
+        },
+        support/.style = {
+            rectangle, rounded corners=3pt,
+            minimum width=3.2cm, minimum height=1cm,
+            text centered, draw=black, thick,
+            font=\footnotesize, align=center
+        },
+        arrow/.style  = {-{Stealth[length=6pt]}, thick},
+        leaderarrow/.style = {dashed, gray!70, thin, -{Stealth[length=6pt]}},
+        edgelabel/.style = {font=\tiny, align=center}
+    ]
+    % --- ciclo di scheduling ---
+    \node[terminal, fill=gray!10] (job)
+        {Job\\\scriptsize ricevuto dallo scheduler};
+        
+    \node[box, fill=dioblue, below=of job] (filter)
+        {Filter\\\scriptsize WallFilter: $c_{wall}$ (per ogni nodo candidato)};
+        
+    \node[box, fill=diogreen, below=of filter] (prescore)
+        {PreScore\\\scriptsize TransferScore: batch dataset-service (una volta)};
+        
+    \node[box, fill=diogreen, below=of prescore] (score)
+        {Score\\\scriptsize PropScore + TransferScore: $\phi_{prop}$, $\phi_{transfer}$ (per ogni nodo ammissibile)};
+        
+    \node[box, fill=dioblue, below=of score] (reserve)
+        {Reserve\\\scriptsize WallFilter: $ctx^*(t)$ assunto in memoria};
+        
+    \node[box, fill=gray!10, below=of reserve] (bind)
+        {Bind\\\scriptsize $f(t) = \arg\max_{n \in \mathcal{F_C}(t)} \; \mathcal{S}_\Phi(n,t)$};
+        
+    \node[box, fill=dioblue, below=of bind] (postbind)
+        {PostBind\\\scriptsize WallFilter: $\Lambda(f(t)) \leftarrow \Lambda(f(t)) \cup ctx^*(t)$};
+        
+    \node[terminal, fill=gray!10, below=of postbind] (exec)
+        {Esecuzione del \texttt{Job} su $f(t)$};
+        
+    \draw[arrow] (job)      -- (filter);
+    \draw[arrow] (filter)   -- (prescore);
+    \draw[arrow] (prescore) -- (score);
+    \draw[arrow] (score)    -- (reserve);
+    \draw[arrow] (reserve)  -- (bind);
+    \draw[arrow] (bind)     -- (postbind);
+    \draw[arrow] (postbind) -- (exec);
+    
+    % --- servizi esterni interrogati durante il ciclo ---
+    \node[support, fill=dioorange, right=3.6cm of filter] (cs)
+        {context-service};
+        
+    \node[support, fill=dioorange, right=3.6cm of prescore] (ds)
+        {dataset-service};
+        
+    \draw[leaderarrow] (filter.east)    -- node[edgelabel, above] {$(auth(iss(t)) \times \Lambda(n)) \cap \mathcal{X}_{conf}$} (cs.west);
+    \draw[leaderarrow] (prescore.east)  -- node[edgelabel, above] {$size(d)$, $\lambda(d)$ $\forall d \in req(t)$} (ds.west);
+    
+    \end{tikzpicture}
+    \caption{Ciclo di scheduling per un singolo \texttt{Job}, con gli extension point coinvolti e i plugin che li implementano.}
+    \label{fig:ciclo_scheduling}
+\end{figure}
+
+Per gestire $c_{wall}$, si implementa il plugin \emph{WallFilter} che sfrutta tre diverse fasi del ciclo di scheduling. Nell'estensione della fase di \emph{Filter}, che viene eseguita speculativamente su tutti i nodi candidati, il plugin estrae l'issuer dalle annotazioni del \texttt{Job} e recupera la traccia contestuale $\Lambda(n)$ dalle annotazioni del nodo che si sta considerando, appoggiandosi all'endpoint apposito del \emph{context-service} per validarne l'ammissibilità rispetto a $c_{wall}$. Successivamente, nell'estensione di \emph{PostBind}, eseguita una volta sola dopo che un nodo è stato effettivamente selezionato, si aggiorna il relativo $\Lambda(n)$ con la nuova impronta contestuale $ctx^*(t)$, realizzando l'aggiornamento definito nell'Equazione~\eqref{eq:aggiornamento_lambda_wall}. Dividere il lavoro in fasi differenti è fondamentale: se $\Lambda(n)$ venisse modificato già durante la fase di \emph{Filter}, ogni nodo valutato memorizzerebbe l'impronta contestuale del task, anche nel caso in cui non gli venisse mai assegnato. 
+
+Tra le due si colloca però una finestra da gestire. In Kubernetes il ciclo di binding, a cui \emph{PostBind} appartiene, viene eseguito in modo asincrono rispetto al ciclo di scheduling~\cite{k8s-scheduler-framework}, per cui il task successivo potrebbe essere filtrato prima che l'aggiornamento di $\Lambda(n)$ sia stato scritto e reso visibile. Per questo il plugin interviene anche nell'estensione di \emph{Reserve}, eseguita in modo sincrono non appena il nodo è stato scelto e quindi sempre prima del \emph{Filter} del task successivo: qui l'impronta $ctx^*(t)$ viene registrata in una struttura in memoria, che la fase di \emph{Filter} unisce al valore di $\Lambda(n)$ letto dal nodo. L'assunzione viene rimossa quando l'aggiornamento persistente diventa visibile, oppure annullata se il binding non va a buon fine.
+
+Inoltre, la medesima estensione di \emph{PostBind} rappresenta il punto naturale in cui una futura estensione del sistema potrebbe avviare concretamente il trasferimento o garantire l'accesso remoto ai dataset in $remote(n,t)$ non ancora disponibili localmente sul nodo selezionato, dato che è soltanto a questo punto del ciclo di scheduling che il nodo finale selezionato risulta essere quello definitivo. Però, come già discusso nella Sezione~\ref{sec:assunzioni_preliminari}, il problema affrontato da questo sistema si limita a valutarne l'ammissibilità e il costo tramite $\phi_{transfer}$, senza eseguire alcun trasferimento effettivo.
+
+Il calcolo di $\phi_{prop}(n,t)$ è invece affidato al plugin \emph{PropScore}, che opera all'interno dell'estensione di \emph{Score}. Il suo compito è confrontare $\beta^*(t)$, disponibile nelle annotazioni del \texttt{Job}, con $\alpha(n)$, ottenuto a partire dalle label di proprietà del nodo descritte nella Sezione~\ref{subsec:node_controller}. A differenza di quanto descritto per il successivo plugin, qui non serve ricorrere a un'estensione di \emph{PreScore}: le definizioni delle \texttt{NodeProperty} del cluster vengono infatti mantenute sincronizzate in background in maniera continua, indipendentemente dal ciclo di scheduling.
+
+Passando infine a $\phi_{transfer}(n,t)$, il relativo calcolo è gestito dal plugin \emph{TransferScore}, il quale necessita dell'estensione di \emph{PreScore}. Infatti, prima di valutare i singoli nodi nella fase di \emph{Score}, viene effettuata una singola richiesta all'endpoint apposito del \emph{dataset-service} per ottenere i metadati relativi a tutti i dataset presenti in $req(t)$, fondamentali per il calcolo di $\phi_{transfer}(n,t)$ per ogni nodo ammissibile. Il risultato di questa chiamata viene poi salvato e condiviso tra le varie valutazioni dei nodi nella fase di \emph{Score} attraverso lo stato interno del ciclo di scheduling, evitando così di eseguire l'interrogazione al servizio esterno per ogni candidato.
+
+Una volta concluse queste operazioni, l'insieme dei nodi ammissibili $\mathcal{F_C}(t)$ si ottiene incrociando i vincoli già imposti nativamente tramite \emph{nodeAffinity} dal \emph{task-request-controller} con l'esito di \emph{WallFilter}. Su questo sottoinsieme, i valori di $\phi_{prop}$ e $\phi_{transfer}$, calcolati dai rispettivi plugin, vengono combinati nella funzione di ottimizzazione $\mathcal{S}_\Phi$ definita nel Capitolo~\ref{cap:definizione}. La corrispondenza con il meccanismo di scoring nativo di Kubernetes, in cui ogni plugin registrato contribuisce al punteggio complessivo con un peso configurabile~\cite{k8s-scheduler-config}, è diretta: ciascun indicatore $\phi \in \Phi$ è realizzato da un plugin di \emph{Score}, e il peso $w_\phi$ coincide con il peso con cui quel plugin è registrato nella configurazione dello scheduler, per cui $w_{\phi_{prop}}$ e $w_{\phi_{transfer}}$ sono rispettivamente i pesi di \emph{PropScore} e \emph{TransferScore}. 
+
+Poiché lo Scheduler Framework lavora con punteggi interi compresi tra $0$ e $100$, ogni plugin restituisce il proprio indicatore moltiplicato per $100$ e arrotondato all'intero più vicino. Di conseguenza non serve implementare manualmente la selezione del punteggio massimo: è lo stesso scheduler a sommare nativamente i contributi pesati dei plugin di \emph{Score} e a scegliere il nodo con il punteggio totale più alto, realizzando così la funzione di assegnazione $f(t)$ definita nel Problema~\ref{def:formulazione_problema}. È inoltre importante tenere conto del fatto che al punteggio complessivo contribuiscono anche i plugin di \emph{Score} nativi, che nel prototipo restano attivi nella configurazione dello scheduler. Infine, nel caso in cui più nodi ottengano lo stesso punteggio complessivo, lo scheduler seleziona casualmente uno dei nodi a pari merito~\cite{k8s-scheduler}, adottando così un criterio di spareggio lasciato libero dal modello.
+
+% ------------------------------------------------------------ %
+
+\section{Riepilogo dell'Implementazione}
+\label{sec:sintesi_implementazione}
+
+Pur essendo distribuita su sei componenti distinte, la pipeline affida la logica di ogni politica e di ogni indicatore definiti nel modello formale presentato al Capitolo~\ref{cap:modello} a un singolo componente responsabile. Per le politiche tradotte in \emph{nodeAffinity} tale componente è il \emph{task-request-controller}, che ne costruisce i vincoli, mentre allo scheduler resta soltanto la loro valutazione nativa sui nodi candidati.
+
+La Tabella~\ref{tab:riepilogo_modello} del capitolo precedente aveva già riepilogato ogni politica e ogni indicatore del modello, indicandone la famiglia o l'insieme di appartenenza e l'oggetto specifico. 
+
+Questa relazione tra politiche, indicatori e componenti implementative è ora sintetizzata nella seguente Tabella~\ref{tab:riepilogo_implementazione}, specificando, per ciascun elemento, la componente responsabile della codifica o del calcolo della sua logica specifica.
+
+\begin{table}[htb]
+    \centering
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Politica / Indicatore} & \textbf{Componente responsabile} \\
+        \midrule
+        $c_{auth}$        & Gatekeeper \\
+        $c_{prop}$        & task-request-controller \\
+        $c_{geo}$         & task-request-controller \\
+        $c_{static}$      & task-request-controller \\
+        $c_{wall}$        & Scheduler: WallFilter \\
+        \midrule
+        $\phi_{transfer}$ & Scheduler: TransferScore \\
+        $\phi_{prop}$     & Scheduler: PropScore \\
+        \bottomrule
+    \end{tabular}
+    \caption{Corrispondenza tra le politiche e gli indicatori del Capitolo~\ref{cap:modello} e la componente responsabile della loro codifica o del loro calcolo.}
+    \label{tab:riepilogo_implementazione}
+\end{table}

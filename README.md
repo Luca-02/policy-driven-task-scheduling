@@ -72,9 +72,9 @@ tasks to finish, clears the residual traces and resets `Λ(n)`.
 | [`evaluation/`](evaluation)                           | Python, Jupyter | experimental harness and analysis used in the thesis                                |
 | [`examples/`](examples)                               | YAML, JSON      | sample cluster, properties, groups, seed data and task requests                     |
 | [`scripts/`](scripts)                                 | Bash            | cluster bootstrap, seeding and end-to-end tests                                     |
+| [`docs/`](docs)                                       | LaTeX, PDF      | documentation                                                                       |
 
-Each component has its own README with configuration, deployment and testing
-details.
+Each component has its own README with configuration, deployment and testing details.
 
 ### Custom resources
 
